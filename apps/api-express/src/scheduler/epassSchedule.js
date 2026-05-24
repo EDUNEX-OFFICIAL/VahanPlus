@@ -1,6 +1,6 @@
-import { loadKhananConfig, scheduleReportDateIso } from '@vahan360/khanan-config';
+import { loadKhananConfig, scheduleReportDateIso } from '@vahanplus/khanan-config';
 
-import { isoToPortalDate } from '@vahan360/scraper-bihar-epass';
+import { isoToPortalDate } from '@vahanplus/scraper-bihar-epass';
 
 import { getScrapeQueue } from '../queues/scrapeQueue.js';
 
@@ -44,7 +44,7 @@ function scheduledDistrictMetadata(cfg) {
 
  * Sync Bull repeatable district scrape job from DB config.
 
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
 
  */
 
@@ -130,7 +130,7 @@ export async function syncEpassSchedule(prisma) {
 
 export async function registerEpassSchedule() {
 
-  const { getPrisma } = await import('@vahan360/db');
+  const { getPrisma } = await import('@vahanplus/db');
 
   return syncEpassSchedule(getPrisma());
 

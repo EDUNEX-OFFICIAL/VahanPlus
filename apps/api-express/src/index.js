@@ -4,7 +4,7 @@ initOtel();
 
 import { config } from './config.js';
 import { createApp } from './app.js';
-import { disconnectPrisma } from '@vahan360/db';
+import { disconnectPrisma } from '@vahanplus/db';
 import { registerEpassSchedule } from './scheduler/epassSchedule.js';
 
 const app = createApp();

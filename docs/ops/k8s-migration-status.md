@@ -6,7 +6,7 @@ Last verified: code + Docker builds on dev machine. Cluster cutover is operator-
 
 | Item | Status |
 |------|--------|
-| Helm chart (`deploy/helm/vahan360`) | Done |
+| Helm chart (`deploy/helm/vahanplus`) | Done |
 | Ingress `/api` rewrite + TLS | Done |
 | Prisma migrate Job | Done |
 | External secrets (`existingSecret` + script) | Done |
@@ -16,16 +16,17 @@ Last verified: code + Docker builds on dev machine. Cluster cutover is operator-
 | CI: lint, build, Helm template | Done |
 | CI: `docker-publish` → GHCR (4 images) | Done |
 | Cutover runbook | [`k8s-cutover.md`](k8s-cutover.md) |
+| Hostinger KVM4 (k3s + infra compose) | [`hostinger-kvm4-deploy.md`](hostinger-kvm4-deploy.md) |
 | Argo CD prod + staging manifests | Done |
 
 ## Docker images (must pass before deploy)
 
 | Image | Dockerfile |
 |-------|------------|
-| `vahan360-web` | `apps/web/Dockerfile` |
-| `vahan360-api-express` | `apps/api-express/Dockerfile` |
-| `vahan360-worker` | `apps/worker/Dockerfile` |
-| `vahan360-api-nest` | `apps/api-nest/Dockerfile` |
+| `vahanplus-web` | `apps/web/Dockerfile` |
+| `vahanplus-api-express` | `apps/api-express/Dockerfile` |
+| `vahanplus-worker` | `apps/worker/Dockerfile` |
+| `vahanplus-api-nest` | `apps/api-nest/Dockerfile` |
 
 ## Not migrated to Kubernetes (by design)
 

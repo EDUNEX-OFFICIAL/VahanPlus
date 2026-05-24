@@ -12,7 +12,7 @@ global:
 apiExpress:
   enabled: true
   replicaCount: 1
-  image: vahan360-api-express:latest
+  image: vahanplus-api-express:latest
   port: 3001
   resources:
     requests:
@@ -25,7 +25,7 @@ apiExpress:
 apiNest:
   enabled: false
   replicaCount: 1
-  image: vahan360-api-nest:latest
+  image: vahanplus-api-nest:latest
   port: 3002
   resources:
     requests:
@@ -38,7 +38,7 @@ apiNest:
 web:
   enabled: true
   replicaCount: 1
-  image: vahan360-web:latest
+  image: vahanplus-web:latest
   port: 3000
   # NEXT_PUBLIC_API_URL is baked at Docker build time (see docker-publish workflow).
   resources:
@@ -52,7 +52,7 @@ web:
 worker:
   enabled: true
   replicaCount: 1
-  image: vahan360-worker:latest
+  image: vahanplus-worker:latest
   healthPort: 8080
   browserPoolStub: true
   concurrency: 4
@@ -76,7 +76,7 @@ worker:
 postgresql:
   host: postgres
   port: 5432
-  database: vahan360
+  database: vahanplus
 
 redis:
   host: redis
@@ -98,11 +98,12 @@ hpa:
 
 ingress:
   enabled: false
-  host: vahan360.local
+  host: vahanplus.local
   className: nginx
+  annotations: {}
   tls:
     enabled: false
-    secretName: vahan360-tls
+    secretName: vahanplus-tls
 
 migrate:
   enabled: true
@@ -125,5 +126,5 @@ secrets:
   # Set to pre-created Secret name in production (see docs/ops/k8s-cutover.md).
   existingSecret: ""
   jwtSecret: change-me-in-production
-  databaseUrl: postgresql://vahan360:vahan360@postgres:5432/vahan360
+  databaseUrl: postgresql://vahanplus:vahanplus@postgres:5432/vahanplus
   redisUrl: redis://redis:6379

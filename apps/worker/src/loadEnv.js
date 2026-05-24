@@ -33,7 +33,7 @@ for (const file of ['.env', '.env.local']) {
 }
 
 const devDefaults = {
-  DATABASE_URL: 'postgresql://vahan360:vahan360@localhost:5434/vahan360?schema=public',
+  DATABASE_URL: 'postgresql://vahanplus:vahanplus@localhost:5434/vahanplus?schema=public',
   REDIS_URL: 'redis://localhost:6379',
 };
 

@@ -25,7 +25,7 @@ export function Sidebar() {
           </div>
           <div>
             <p className="bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-lg font-black tracking-tight text-transparent">
-              VAHAN360
+              VAHANPLUS
             </p>
           </div>
         </div>

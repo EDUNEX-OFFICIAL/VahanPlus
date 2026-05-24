@@ -1,6 +1,8 @@
-# Vahan360
+# VahanPlus
 
 pnpm + Turborepo monorepo for vehicle / Khanan ingest and control plane.
+
+> Renamed from Vahan360. GitHub repo: **VahanPlus**. Migration notes: [`docs/ops/rename-to-vahanplus.md`](docs/ops/rename-to-vahanplus.md).
 
 ## Architecture
 
@@ -38,16 +40,16 @@ Agent/build notes: [AGENTS.md](AGENTS.md)
 ```bash
 cp .env.example .env
 pnpm install
-pnpm --filter @vahan360/contracts build
-pnpm --filter @vahan360/db exec prisma generate
-pnpm --filter @vahan360/db build
-pnpm --filter @vahan360/scraper-core build
-pnpm --filter @vahan360/browser-pool build
+pnpm --filter @vahanplus/contracts build
+pnpm --filter @vahanplus/db exec prisma generate
+pnpm --filter @vahanplus/db build
+pnpm --filter @vahanplus/scraper-core build
+pnpm --filter @vahanplus/browser-pool build
 
 # Start Postgres + Redis (Docker)
 docker compose up -d postgres redis
 
-> **Note:** Postgres is mapped to host port **5434** (not 5432) to avoid conflicts with a local PostgreSQL install. Use `DATABASE_URL=...@127.0.0.1:5434/vahan360` in `.env`.
+> **Note:** Postgres is mapped to host port **5434** (not 5432) to avoid conflicts with a local PostgreSQL install. Use `DATABASE_URL=...@127.0.0.1:5434/vahanplus` in `.env`.
 
 # Migrate and seed (loads DATABASE_URL from repo root .env)
 pnpm db:deploy
@@ -69,8 +71,9 @@ Do **not** run `pnpm dev` and Kubernetes port-forward on the same ports at once.
 |------|---------|
 | **Local** (hot reload) | `docker compose up -d postgres redis` then `pnpm dev` |
 | **Kubernetes** (Docker Desktop) | `.\deploy\scripts\local-k8s-deploy.ps1` then port-forward (see [docs/ops/k8s-cutover.md](docs/ops/k8s-cutover.md)) |
+| **Production** (Hostinger KVM4) | [docs/ops/hostinger-kvm4-deploy.md](docs/ops/hostinger-kvm4-deploy.md) — k3s + Helm on VPS |
 
-Optional Nest API: `pnpm --filter @vahan360/api-nest dev` (not started by default `pnpm dev`).
+Optional Nest API: `pnpm --filter @vahanplus/api-nest dev` (not started by default `pnpm dev`).
 
 ## Docker Compose (full stack)
 
@@ -123,15 +126,16 @@ Apps run on Kubernetes; **Docker Compose** is for local dev infra only (`postgre
 |------|----------------|
 | Build images (CI) | Push to `main` → [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml) (GHCR) |
 | Create secrets | [`deploy/scripts/create-k8s-secrets.sh`](deploy/scripts/create-k8s-secrets.sh) |
-| Staging deploy | `helm upgrade --install vahan360 deploy/helm/vahan360 -n vahan360-staging -f deploy/helm/vahan360/values-staging.yaml` |
-| Production deploy | `helm upgrade --install vahan360 deploy/helm/vahan360 -n vahan360 -f deploy/helm/vahan360/values-prod.yaml` |
+| Staging deploy | `helm upgrade --install vahanplus deploy/helm/vahanplus -n vahanplus-staging -f deploy/helm/vahanplus/values-staging.yaml` |
+| Production deploy (cloud / multi-node) | `helm upgrade --install vahanplus deploy/helm/vahanplus -n vahanplus -f deploy/helm/vahanplus/values-prod.yaml` |
+| **Hostinger KVM4** (single VPS) | [`docs/ops/hostinger-kvm4-deploy.md`](docs/ops/hostinger-kvm4-deploy.md) — `./deploy/scripts/hostinger/deploy.sh` |
 | Cutover runbook | [`docs/ops/k8s-cutover.md`](docs/ops/k8s-cutover.md) |
 | Smoke tests | [`deploy/scripts/k8s-smoke-test.sh`](deploy/scripts/k8s-smoke-test.sh) |
 
 Set GitHub repo variable `NEXT_PUBLIC_API_URL` to `https://<your-domain>/api` before building the web image.
 
 ```bash
-helm lint deploy/helm/vahan360
+helm lint deploy/helm/vahanplus
 ./deploy/scripts/helm-validate.sh
 ```
 
@@ -144,6 +148,6 @@ GitHub Actions runs turbo lint/build, Prisma validate, api-express tests, Helm l
 ## Playwright (non-stub worker)
 
 ```bash
-pnpm --filter @vahan360/worker exec playwright install chromium
-BROWSER_POOL_STUB=false pnpm --filter @vahan360/worker dev
+pnpm --filter @vahanplus/worker exec playwright install chromium
+BROWSER_POOL_STUB=false pnpm --filter @vahanplus/worker dev
 ```

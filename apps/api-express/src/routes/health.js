@@ -1,6 +1,6 @@
 import express from 'express';
 import Redis from 'ioredis';
-import { getPrisma } from '@vahan360/db';
+import { getPrisma } from '@vahanplus/db';
 import { config } from '../config.js';
 
 const router = express.Router();

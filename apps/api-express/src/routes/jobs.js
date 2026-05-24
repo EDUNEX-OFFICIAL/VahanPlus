@@ -1,6 +1,6 @@
 import express from 'express';
-import { ScrapeJobPayloadSchema } from '@vahan360/contracts';
-import { getPrisma } from '@vahan360/db';
+import { ScrapeJobPayloadSchema } from '@vahanplus/contracts';
+import { getPrisma } from '@vahanplus/db';
 import { requireAuth } from '../middleware/auth.js';
 import { enqueueScrapeJob } from '../services/enqueueScrape.js';
 

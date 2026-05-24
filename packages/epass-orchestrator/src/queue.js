@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { QUEUE_NAMES } from '@vahan360/contracts';
+import { QUEUE_NAMES } from '@vahanplus/contracts';
 import { DEFAULT_JOB_OPTIONS } from './config.js';
 
 let queue;

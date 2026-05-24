@@ -1,5 +1,5 @@
 {
-  "name": "@vahan360/db",
+  "name": "@vahanplus/db",
   "version": "0.0.0",
   "private": true,
   "main": "./dist/index.js",
@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
-    "@vahan360/khanan-config": "workspace:*",
+    "@vahanplus/khanan-config": "workspace:*",
     "bcryptjs": "^3.0.2"
   },
   "devDependencies": {

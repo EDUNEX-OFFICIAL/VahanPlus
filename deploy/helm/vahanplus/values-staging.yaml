@@ -3,19 +3,19 @@ global:
 
 apiExpress:
   replicaCount: 1
-  image: vahan360-api-express:latest
+  image: vahanplus-api-express:latest
 
 web:
   replicaCount: 1
-  image: vahan360-web:latest
+  image: vahanplus-web:latest
 
 worker:
   replicaCount: 1
-  image: vahan360-worker:latest
+  image: vahanplus-worker:latest
 
 ingress:
   enabled: true
-  host: vahan360.staging.local
+  host: vahanplus.staging.local
   className: nginx
   tls:
     enabled: false

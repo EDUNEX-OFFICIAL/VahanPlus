@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { seedDefaults, CONFIG_ID } from '@vahan360/khanan-config';
+import { seedDefaults, CONFIG_ID } from '@vahanplus/khanan-config';
 
 const prisma = new PrismaClient();
 

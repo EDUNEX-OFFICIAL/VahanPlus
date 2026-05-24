@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getPrisma } from '@vahan360/db';
+import { getPrisma } from '@vahanplus/db';
 import { config } from '../config.js';
 import { requireAuth } from '../middleware/auth.js';
 

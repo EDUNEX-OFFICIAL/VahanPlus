@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-NAMESPACE="${NAMESPACE:-vahan360}"
-SECRET_NAME="${SECRET_NAME:-vahan360-app-secrets}"
+NAMESPACE="${NAMESPACE:-vahanplus}"
+SECRET_NAME="${SECRET_NAME:-vahanplus-app-secrets}"
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
 : "${REDIS_URL:?REDIS_URL is required}"

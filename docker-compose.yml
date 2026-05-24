@@ -1,18 +1,18 @@
-name: vahan360
+name: vahanplus
 
 services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: vahan360
-      POSTGRES_PASSWORD: vahan360
-      POSTGRES_DB: vahan360
+      POSTGRES_USER: vahanplus
+      POSTGRES_PASSWORD: vahanplus
+      POSTGRES_DB: vahanplus
     ports:
       - '5434:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U vahan360']
+      test: ['CMD-SHELL', 'pg_isready -U vahanplus']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: apps/api-express/Dockerfile
     environment:
-      DATABASE_URL: postgresql://vahan360:vahan360@postgres:5432/vahan360
+      DATABASE_URL: postgresql://vahanplus:vahanplus@postgres:5432/vahanplus
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       PORT: 3001
@@ -49,7 +49,7 @@ services:
       context: .
       dockerfile: apps/worker/Dockerfile
     environment:
-      DATABASE_URL: postgresql://vahan360:vahan360@postgres:5432/vahan360
+      DATABASE_URL: postgresql://vahanplus:vahanplus@postgres:5432/vahanplus
       REDIS_URL: redis://redis:6379
       BROWSER_POOL_STUB: 'true'
       WORKER_CONCURRENCY: 4
@@ -95,7 +95,7 @@ services:
       context: .
       dockerfile: apps/api-nest/Dockerfile
     environment:
-      DATABASE_URL: postgresql://vahan360:vahan360@postgres:5432/vahan360
+      DATABASE_URL: postgresql://vahanplus:vahanplus@postgres:5432/vahanplus
       NEST_PORT: 3002
     ports:
       - '3002:3002'

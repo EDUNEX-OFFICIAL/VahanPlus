@@ -2,9 +2,9 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "vahan360.fullname" . }}-api-express
+  name: {{ include "vahanplus.fullname" . }}-api-express
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: api-express
 spec:
   selector:

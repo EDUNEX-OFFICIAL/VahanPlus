@@ -2,9 +2,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "vahan360.fullname" . }}-api-nest
+  name: {{ include "vahanplus.fullname" . }}-api-nest
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: api-nest
 spec:
   replicas: {{ .Values.apiNest.replicaCount }}
@@ -28,7 +28,7 @@ spec:
       {{- end }}
       containers:
         - name: api-nest
-          image: {{ include "vahan360.image" (dict "Values" .Values "image" .Values.apiNest.image) }}
+          image: {{ include "vahanplus.image" (dict "Values" .Values "image" .Values.apiNest.image) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- with .Values.global.containerSecurityContext }}
           securityContext:
@@ -42,7 +42,7 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "vahan360.secretName" . }}
+                  name: {{ include "vahanplus.secretName" . }}
                   key: databaseUrl
           resources:
             {{- toYaml .Values.apiNest.resources | nindent 12 }}
@@ -60,9 +60,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "vahan360.fullname" . }}-api-nest
+  name: {{ include "vahanplus.fullname" . }}-api-nest
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: api-nest
 spec:
   selector:

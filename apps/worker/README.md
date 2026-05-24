@@ -1,4 +1,4 @@
-# @vahan360/worker
+# @vahanplus/worker
 
 BullMQ consumer for scrape jobs. Runs Bihar ePass HTTP scrapers (and Playwright stub for other types).
 
@@ -6,10 +6,10 @@ BullMQ consumer for scrape jobs. Runs Bihar ePass HTTP scrapers (and Playwright 
 
 ```bash
 # From repo root (with Postgres + Redis up)
-pnpm --filter @vahan360/worker dev
+pnpm --filter @vahanplus/worker dev
 
 # Production
-pnpm --filter @vahan360/worker start
+pnpm --filter @vahanplus/worker start
 ```
 
 Requires `DATABASE_URL`, `REDIS_URL`.
@@ -29,9 +29,9 @@ Use the web UI: **Khanan → Khanan Config** (`/khanan/config`). Settings live i
 
 | Script | Command |
 |--------|---------|
-| Vehicle status backfill | `pnpm --filter @vahan360/worker backfill:vehicle-status` |
-| Capped backfill (100) | `pnpm --filter @vahan360/worker backfill:vehicle-status:100` |
-| Challan pass backfill | `pnpm --filter @vahan360/worker backfill:challan-passes` |
+| Vehicle status backfill | `pnpm --filter @vahanplus/worker backfill:vehicle-status` |
+| Capped backfill (100) | `pnpm --filter @vahanplus/worker backfill:vehicle-status:100` |
+| Challan pass backfill | `pnpm --filter @vahanplus/worker backfill:challan-passes` |
 | Fanout consigners for latest snapshot | `node apps/worker/scripts/trigger-epass-details.mjs` |
 | Integration smoke | `node apps/worker/scripts/test-epass-integration.mjs` |
 
@@ -53,4 +53,4 @@ By default only a summary is stored (`STORE_RAW_CAPTURE=false`). Set `STORE_RAW_
 
 - [Bihar ePass pipeline](../../docs/scraping/bihar-epass-pipeline.md)
 - [Khanan Config UI](../../apps/web/src/app/(dashboard)/khanan/config/page.tsx) — scraper control for operators
-- [@vahan360/epass-orchestrator](../../packages/epass-orchestrator/README.md)
+- [@vahanplus/epass-orchestrator](../../packages/epass-orchestrator/README.md)

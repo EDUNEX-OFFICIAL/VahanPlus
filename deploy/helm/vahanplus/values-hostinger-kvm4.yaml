@@ -1,0 +1,88 @@
+# Hostinger KVM4 — single-node k3s + Postgres/Redis on host (docker-compose.infra.prod.yml).
+# Pods reach DB via host.k3s.internal (k3s built-in host gateway).
+#
+# Before deploy:
+#   1. Set global.imageRegistry to ghcr.io/<your-github-org> (or --set on helm)
+#   2. Set ingress.host to your domain (DNS A record → VPS IP)
+#   3. Create secrets: DATABASE_URL, REDIS_URL, JWT_SECRET (see docs/ops/hostinger-kvm4-deploy.md)
+#   4. Build web image with NEXT_PUBLIC_API_URL=https://<domain>/api
+
+global:
+  imagePullPolicy: Always
+  imageRegistry: ghcr.io/your-org
+  imagePullSecrets:
+    - name: ghcr-pull
+
+apiExpress:
+  replicaCount: 1
+  image: vahanplus-api-express:latest
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+
+web:
+  replicaCount: 1
+  image: vahanplus-web:latest
+  resources:
+    requests:
+      cpu: 200m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+worker:
+  replicaCount: 1
+  image: vahanplus-worker:latest
+  browserPoolStub: true
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 1536Mi
+
+ingress:
+  enabled: true
+  host: vahanplus.example.com
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    enabled: true
+    secretName: vahanplus-tls
+
+networkPolicy:
+  enabled: false
+
+hpa:
+  enabled: false
+
+pdb:
+  enabled: false
+
+migrate:
+  enabled: true
+
+monitoring:
+  serviceMonitor:
+    enabled: false
+
+# Connection strings for create-k8s-secrets.sh (not used when existingSecret is set):
+#   DATABASE_URL=postgresql://vahanplus:<POSTGRES_PASSWORD>@host.k3s.internal:5434/vahanplus
+#   REDIS_URL=redis://host.k3s.internal:6379
+secrets:
+  existingSecret: vahanplus-app-secrets
+
+postgresql:
+  host: host.k3s.internal
+  port: 5434
+
+redis:
+  host: host.k3s.internal
+  port: 6379

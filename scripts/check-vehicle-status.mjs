@@ -1,4 +1,4 @@
-import { getPrisma, disconnectPrisma } from '@vahan360/db';
+import { getPrisma, disconnectPrisma } from '@vahanplus/db';
 
 const prisma = getPrisma();
 

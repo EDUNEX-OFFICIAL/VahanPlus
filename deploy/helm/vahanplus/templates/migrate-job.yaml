@@ -2,9 +2,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "vahan360.fullname" . }}-migrate
+  name: {{ include "vahanplus.fullname" . }}-migrate
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: migrate
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
@@ -25,7 +25,7 @@ spec:
       {{- end }}
       containers:
         - name: migrate
-          image: {{ include "vahan360.image" (dict "Values" .Values "image" .Values.apiExpress.image) }}
+          image: {{ include "vahanplus.image" (dict "Values" .Values "image" .Values.apiExpress.image) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           workingDir: /app
           command:
@@ -38,6 +38,6 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "vahan360.secretName" . }}
+                  name: {{ include "vahanplus.secretName" . }}
                   key: databaseUrl
 {{- end }}

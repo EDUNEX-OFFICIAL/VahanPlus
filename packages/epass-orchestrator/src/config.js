@@ -1,4 +1,4 @@
-import { loadKhananConfig, rateLimiterFromConfig } from '@vahan360/khanan-config';
+import { loadKhananConfig, rateLimiterFromConfig } from '@vahanplus/khanan-config';
 
 let detailDelayWarned = false;
 
@@ -13,7 +13,7 @@ function warnDeprecatedDetailDelay() {
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} [prisma]
+ * @param {import('@vahanplus/db').PrismaClient} [prisma]
  */
 export async function getOrchestratorConfig(prisma) {
   warnDeprecatedDetailDelay();
@@ -63,7 +63,7 @@ export const DEFAULT_JOB_OPTIONS = {
 };
 
 /**
- * @param {import('@vahan360/db').PrismaClient} [prisma]
+ * @param {import('@vahanplus/db').PrismaClient} [prisma]
  */
 export async function getRateLimiterOptions(prisma) {
   if (prisma) {

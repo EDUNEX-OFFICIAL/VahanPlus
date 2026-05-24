@@ -1,11 +1,11 @@
-# Deploy Vahan360 to Docker Desktop Kubernetes.
+# Deploy VahanPlus to Docker Desktop Kubernetes.
 # Usage: .\deploy\scripts\local-k8s-deploy.ps1
 #
 # If pods show ImagePullBackOff with kind: switch Docker Desktop Kubernetes to **Kubeadm**
 # (reset cluster) — Kubeadm shares images with `docker build` automatically.
 
 $ErrorActionPreference = "Stop"
-$root = "D:\AK47\Officials\Development\Projects\Iqbal Bhaijan\Vahan360"
+$root = "D:\AK47\Officials\Development\Projects\Iqbal Bhaijan\VahanPlus"
 Set-Location $root
 
 function Ensure-K8sRunning {
@@ -33,7 +33,7 @@ function Load-ImagesIntoKind {
   if ($clusters -match "docker-desktop") { $cluster = "docker-desktop" }
   elseif ($clusters -match "desktop") { $cluster = "desktop" }
   Write-Host "Loading images into kind cluster '$cluster'..."
-  foreach ($img in @("vahan360-web:latest", "vahan360-api-express:latest", "vahan360-worker:latest")) {
+  foreach ($img in @("vahanplus-web:latest", "vahanplus-api-express:latest", "vahanplus-worker:latest")) {
     kind load docker-image $img --name $cluster 2>&1
   }
 }
@@ -48,7 +48,7 @@ Start-Sleep -Seconds 4
 
 Write-Host "`n=== 3. Ensure images exist ==="
 $missing = @()
-foreach ($img in @("vahan360-web:latest", "vahan360-api-express:latest", "vahan360-worker:latest")) {
+foreach ($img in @("vahanplus-web:latest", "vahanplus-api-express:latest", "vahanplus-worker:latest")) {
   if (-not (docker image inspect $img 2>$null)) { $missing += $img }
 }
 if ($missing.Count -gt 0) {
@@ -60,23 +60,23 @@ Write-Host "`n=== 4. Load images into kind (if applicable) ==="
 Load-ImagesIntoKind
 
 Write-Host "`n=== 5. Helm deploy ==="
-helm upgrade --install vahan360 "$root\deploy\helm\vahan360" `
-  -n vahan360 --create-namespace `
-  -f "$root\deploy\helm\vahan360\values-local-k8s.yaml" `
+helm upgrade --install vahanplus "$root\deploy\helm\vahanplus" `
+  -n vahanplus --create-namespace `
+  -f "$root\deploy\helm\vahanplus\values-local-k8s.yaml" `
   --timeout 8m
 
 Write-Host "`n=== 6. Rollout ==="
-kubectl rollout status deployment/vahan360-vahan360-api-express -n vahan360 --timeout=300s
-kubectl rollout status deployment/vahan360-vahan360-web -n vahan360 --timeout=300s
-kubectl rollout status deployment/vahan360-vahan360-worker -n vahan360 --timeout=300s
+kubectl rollout status deployment/vahanplus-vahanplus-api-express -n vahanplus --timeout=300s
+kubectl rollout status deployment/vahanplus-vahanplus-web -n vahanplus --timeout=300s
+kubectl rollout status deployment/vahanplus-vahanplus-worker -n vahanplus --timeout=300s
 
-kubectl get pods -n vahan360
+kubectl get pods -n vahanplus
 
 Write-Host @"
 
 Done. Access:
-  kubectl port-forward -n vahan360 svc/vahan360-vahan360-web 3000:3000
-  kubectl port-forward -n vahan360 svc/vahan360-vahan360-api-express 3001:3001
+  kubectl port-forward -n vahanplus svc/vahanplus-vahanplus-web 3000:3000
+  kubectl port-forward -n vahanplus svc/vahanplus-vahanplus-api-express 3001:3001
 
   Web: http://localhost:3000
   API health: http://localhost:3001/health

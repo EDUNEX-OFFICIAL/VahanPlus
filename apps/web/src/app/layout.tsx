@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Vahan360',
+  title: 'VahanPlus',
   description: 'Vehicle and Khanan ingest control plane',
 };
 

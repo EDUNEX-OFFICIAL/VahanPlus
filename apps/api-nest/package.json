@@ -1,5 +1,5 @@
 {
-  "name": "@vahan360/api-nest",
+  "name": "@vahanplus/api-nest",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
     "@nestjs/common": "^11.1.2",
     "@nestjs/core": "^11.1.2",
     "@nestjs/platform-express": "^11.1.2",
-    "@vahan360/db": "workspace:*",
+    "@vahanplus/db": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },

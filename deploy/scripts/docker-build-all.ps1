@@ -1,4 +1,4 @@
-# Build all four Vahan360 production images locally.
+# Build all four VahanPlus production images locally.
 # Usage: .\deploy\scripts\docker-build-all.ps1
 
 $ErrorActionPreference = "Stop"
@@ -17,17 +17,17 @@ $apiUrl = $env:NEXT_PUBLIC_API_URL
 if (-not $apiUrl) { $apiUrl = "http://localhost:3001/api" }
 
 Write-Host "Building web (NEXT_PUBLIC_API_URL=$apiUrl)..."
-docker build -f "$root\apps\web\Dockerfile" --build-arg "NEXT_PUBLIC_API_URL=$apiUrl" -t vahan360-web:latest $root
+docker build -f "$root\apps\web\Dockerfile" --build-arg "NEXT_PUBLIC_API_URL=$apiUrl" -t vahanplus-web:latest $root
 
 Write-Host "Building api-express..."
-docker build -f "$root\apps\api-express\Dockerfile" -t vahan360-api-express:latest $root
+docker build -f "$root\apps\api-express\Dockerfile" -t vahanplus-api-express:latest $root
 
 Write-Host "Building worker..."
-docker build -f "$root\apps\worker\Dockerfile" -t vahan360-worker:latest $root
+docker build -f "$root\apps\worker\Dockerfile" -t vahanplus-worker:latest $root
 
 Write-Host "Building api-nest..."
-docker build -f "$root\apps\api-nest\Dockerfile" -t vahan360-api-nest:latest $root
+docker build -f "$root\apps\api-nest\Dockerfile" -t vahanplus-api-nest:latest $root
 
 Write-Host ""
 Write-Host "All 4 images built:"
-docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | Select-String "vahan360"
+docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | Select-String "vahanplus"

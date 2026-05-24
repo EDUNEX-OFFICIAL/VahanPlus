@@ -1,8 +1,8 @@
-{{- define "vahan360.name" -}}
+{{- define "vahanplus.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{- define "vahan360.fullname" -}}
+{{- define "vahanplus.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -11,22 +11,22 @@
 {{- end }}
 {{- end }}
 
-{{- define "vahan360.labels" -}}
-app.kubernetes.io/name: {{ include "vahan360.name" . }}
+{{- define "vahanplus.labels" -}}
+app.kubernetes.io/name: {{ include "vahanplus.name" . }}
 helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
-{{- define "vahan360.secretName" -}}
+{{- define "vahanplus.secretName" -}}
 {{- if .Values.secrets.existingSecret }}
 {{- .Values.secrets.existingSecret }}
 {{- else }}
-{{- include "vahan360.fullname" . }}-secrets
+{{- include "vahanplus.fullname" . }}-secrets
 {{- end }}
 {{- end }}
 
-{{- define "vahan360.image" -}}
+{{- define "vahanplus.image" -}}
 {{- $registry := .Values.global.imageRegistry -}}
 {{- $image := .image -}}
 {{- if $registry -}}
@@ -36,7 +36,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 {{- end }}
 
-{{- define "vahan360.containerSecurityContext" -}}
+{{- define "vahanplus.containerSecurityContext" -}}
 {{- with .Values.global.containerSecurityContext }}
 securityContext:
   {{- toYaml . | nindent 2 }}

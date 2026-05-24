@@ -1,4 +1,4 @@
-# Free disk space: remove Vahan360 test images, unused Docker data, and local build caches.
+# Free disk space: remove VahanPlus test images, unused Docker data, and local build caches.
 # Run in PowerShell after Docker Desktop is running.
 # Usage: .\deploy\scripts\docker-cleanup.ps1
 
@@ -17,7 +17,7 @@ if ($LASTEXITCODE -ne 0) {
 
 docker ps -aq 2>$null | ForEach-Object { docker stop $_ 2>$null | Out-Null }
 docker container prune -f
-docker images --format "{{.Repository}}:{{.Tag}}" | Select-String "vahan360" | ForEach-Object {
+docker images --format "{{.Repository}}:{{.Tag}}" | Select-String "vahanplus" | ForEach-Object {
   docker rmi -f $_.Line.Trim() 2>$null
 }
 docker image prune -f
@@ -26,7 +26,7 @@ Write-Host ""
 docker system df
 
 Write-Host ""
-Write-Host "=== Local Vahan360 build cache (safe to delete) ==="
+Write-Host "=== Local VahanPlus build cache (safe to delete) ==="
 $paths = @(
   "$root\apps\web\.next",
   "$root\.turbo",

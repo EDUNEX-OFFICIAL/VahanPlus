@@ -6,7 +6,7 @@ FROM base AS build
 COPY . .
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-RUN pnpm install && pnpm --filter @vahan360/web build
+RUN pnpm install && pnpm --filter @vahanplus/web build
 
 FROM node:20-alpine AS runner
 WORKDIR /app

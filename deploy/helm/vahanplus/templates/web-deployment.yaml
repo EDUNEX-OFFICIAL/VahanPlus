@@ -2,9 +2,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "vahan360.fullname" . }}-web
+  name: {{ include "vahanplus.fullname" . }}-web
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
   replicas: {{ .Values.web.replicaCount }}
@@ -28,7 +28,7 @@ spec:
       {{- end }}
       containers:
         - name: web
-          image: {{ include "vahan360.image" (dict "Values" .Values "image" .Values.web.image) }}
+          image: {{ include "vahanplus.image" (dict "Values" .Values "image" .Values.web.image) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- with .Values.global.containerSecurityContext }}
           securityContext:
@@ -52,9 +52,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "vahan360.fullname" . }}-web
+  name: {{ include "vahanplus.fullname" . }}-web
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
   selector:

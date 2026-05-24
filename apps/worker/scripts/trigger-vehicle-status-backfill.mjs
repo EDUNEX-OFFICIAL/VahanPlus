@@ -1,6 +1,6 @@
 import '../src/loadEnv.js';
-import { getPrisma, disconnectPrisma } from '@vahan360/db';
-import { enqueueMissingVehicleStatusFromPasses } from '@vahan360/epass-orchestrator';
+import { getPrisma, disconnectPrisma } from '@vahanplus/db';
+import { enqueueMissingVehicleStatusFromPasses } from '@vahanplus/epass-orchestrator';
 
 function parseArgs(argv) {
   let limit = undefined;
@@ -29,6 +29,6 @@ if (limit) console.log('Enqueue limit:', limit);
 
 const fanout = await enqueueMissingVehicleStatusFromPasses(prisma, { limit });
 console.log(JSON.stringify(fanout, null, 2));
-console.log('Ensure worker is running: pnpm dev (or pnpm --filter @vahan360/worker dev)');
+console.log('Ensure worker is running: pnpm dev (or pnpm --filter @vahanplus/worker dev)');
 
 await disconnectPrisma();

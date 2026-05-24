@@ -2,20 +2,20 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vahan360
+  name: vahanplus
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/vahan360.git
+    repoURL: https://github.com/your-org/VahanPlus.git
     targetRevision: main
-    path: deploy/helm/vahan360
+    path: deploy/helm/vahanplus
     helm:
       valueFiles:
         - values-prod.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: vahan360
+    namespace: vahanplus
   syncPolicy:
     syncOptions:
       - CreateNamespace=true

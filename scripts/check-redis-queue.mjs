@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { QUEUE_NAMES } from '@vahan360/contracts';
+import { QUEUE_NAMES } from '@vahanplus/contracts';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const queue = new Queue(QUEUE_NAMES.SCRAPE, { connection: { url: redisUrl } });

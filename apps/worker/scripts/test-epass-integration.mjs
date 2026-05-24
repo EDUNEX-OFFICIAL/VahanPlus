@@ -1,8 +1,8 @@
 import '../src/loadEnv.js';
-import { getPrisma, disconnectPrisma } from '@vahan360/db';
-import { resolveScraper } from '@vahan360/scraper-core';
+import { getPrisma, disconnectPrisma } from '@vahanplus/db';
+import { resolveScraper } from '@vahanplus/scraper-core';
 import { persistEpassReport } from '../src/epassEtl.js';
-import { enqueueConsignerJobsForSnapshot } from '@vahan360/epass-orchestrator';
+import { enqueueConsignerJobsForSnapshot } from '@vahanplus/epass-orchestrator';
 
 const URL =
   'https://khanansoft.bihar.gov.in/portal/CitizenRpt/epassreportAllDist.aspx';

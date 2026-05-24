@@ -4,15 +4,15 @@ global:
 
 apiExpress:
   replicaCount: 2
-  image: vahan360-api-express:latest
+  image: vahanplus-api-express:latest
 
 web:
   replicaCount: 2
-  image: vahan360-web:latest
+  image: vahanplus-web:latest
 
 worker:
   replicaCount: 1
-  image: vahan360-worker:latest
+  image: vahanplus-worker:latest
   browserPoolStub: false
 
 postgresql:
@@ -31,15 +31,15 @@ networkPolicy:
 
 ingress:
   enabled: true
-  host: vahan360.example.com
+  host: vahanplus.example.com
   className: nginx
   tls:
     enabled: true
-    secretName: vahan360-tls
+    secretName: vahanplus-tls
 
 monitoring:
   serviceMonitor:
     enabled: true
 
 secrets:
-  existingSecret: vahan360-app-secrets
+  existingSecret: vahanplus-app-secrets

@@ -5,9 +5,9 @@ WORKDIR /app
 FROM base AS build
 COPY . .
 RUN pnpm install --frozen-lockfile || pnpm install \
-  && pnpm --filter @vahan360/db exec prisma generate \
-  && pnpm --filter @vahan360/db build \
-  && pnpm --filter @vahan360/api-nest build
+  && pnpm --filter @vahanplus/db exec prisma generate \
+  && pnpm --filter @vahanplus/db build \
+  && pnpm --filter @vahanplus/api-nest build
 
 FROM node:20-alpine AS runner
 WORKDIR /app

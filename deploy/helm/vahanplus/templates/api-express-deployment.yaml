@@ -2,9 +2,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "vahan360.fullname" . }}-api-express
+  name: {{ include "vahanplus.fullname" . }}-api-express
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: api-express
 spec:
   replicas: {{ .Values.apiExpress.replicaCount }}
@@ -28,7 +28,7 @@ spec:
       {{- end }}
       containers:
         - name: api-express
-          image: {{ include "vahan360.image" (dict "Values" .Values "image" .Values.apiExpress.image) }}
+          image: {{ include "vahanplus.image" (dict "Values" .Values "image" .Values.apiExpress.image) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- with .Values.global.containerSecurityContext }}
           securityContext:
@@ -42,17 +42,17 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "vahan360.secretName" . }}
+                  name: {{ include "vahanplus.secretName" . }}
                   key: databaseUrl
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "vahan360.secretName" . }}
+                  name: {{ include "vahanplus.secretName" . }}
                   key: redisUrl
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "vahan360.secretName" . }}
+                  name: {{ include "vahanplus.secretName" . }}
                   key: jwtSecret
             {{- if .Values.otel.endpoint }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -74,9 +74,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "vahan360.fullname" . }}-api-express
+  name: {{ include "vahanplus.fullname" . }}-api-express
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: api-express
 spec:
   selector:

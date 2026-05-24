@@ -1,7 +1,7 @@
 import { getScrapeQueue } from '../queues/scrapeQueue.js';
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {{ type: string; target: string; metadata?: Record<string, unknown> }} payload
  */
 export async function enqueueScrapeJob(prisma, payload) {

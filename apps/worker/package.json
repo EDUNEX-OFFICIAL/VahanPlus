@@ -1,5 +1,5 @@
 {
-  "name": "@vahan360/worker",
+  "name": "@vahanplus/worker",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,12 +13,12 @@
     "backfill:vehicle-status:100": "node scripts/trigger-vehicle-status-backfill.mjs --limit 100"
   },
   "dependencies": {
-    "@vahan360/browser-pool": "workspace:*",
-    "@vahan360/contracts": "workspace:*",
-    "@vahan360/epass-orchestrator": "workspace:*",
-    "@vahan360/khanan-config": "workspace:*",
-    "@vahan360/db": "workspace:*",
-    "@vahan360/scraper-core": "workspace:*",
+    "@vahanplus/browser-pool": "workspace:*",
+    "@vahanplus/contracts": "workspace:*",
+    "@vahanplus/epass-orchestrator": "workspace:*",
+    "@vahanplus/khanan-config": "workspace:*",
+    "@vahanplus/db": "workspace:*",
+    "@vahanplus/scraper-core": "workspace:*",
     "bullmq": "^5.52.2",
     "ioredis": "^5.6.1",
     "playwright": "^1.52.0"

@@ -2,9 +2,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "vahan360.fullname" . }}-worker
+  name: {{ include "vahanplus.fullname" . }}-worker
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
     app.kubernetes.io/component: worker
 spec:
   replicas: {{ .Values.worker.replicaCount }}
@@ -28,7 +28,7 @@ spec:
       {{- end }}
       containers:
         - name: worker
-          image: {{ include "vahan360.image" (dict "Values" .Values "image" .Values.worker.image) }}
+          image: {{ include "vahanplus.image" (dict "Values" .Values "image" .Values.worker.image) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- with .Values.global.containerSecurityContext }}
           securityContext:
@@ -41,12 +41,12 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "vahan360.secretName" . }}
+                  name: {{ include "vahanplus.secretName" . }}
                   key: databaseUrl
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "vahan360.secretName" . }}
+                  name: {{ include "vahanplus.secretName" . }}
                   key: redisUrl
             - name: HEALTH_PORT
               value: {{ .Values.worker.healthPort | quote }}

@@ -1,4 +1,4 @@
-# @vahan360/scraper-bihar-epass
+# @vahanplus/scraper-bihar-epass
 
 HTTP scrapers for Bihar KhananSoft ePass and MCV vehicle status portals.
 
@@ -35,10 +35,10 @@ Job `metadata` may override `timeoutMs`, `retries`, `postDelayMs`.
 ## Fixtures and tests
 
 ```bash
-pnpm --filter @vahan360/scraper-bihar-epass build
-pnpm --filter @vahan360/scraper-bihar-epass test:challan-pass
-pnpm --filter @vahan360/scraper-bihar-epass test:mcv-vehicle-status
-pnpm --filter @vahan360/scraper-bihar-epass test:http-client
+pnpm --filter @vahanplus/scraper-bihar-epass build
+pnpm --filter @vahanplus/scraper-bihar-epass test:challan-pass
+pnpm --filter @vahanplus/scraper-bihar-epass test:mcv-vehicle-status
+pnpm --filter @vahanplus/scraper-bihar-epass test:http-client
 ```
 
 Fixtures: `fixtures/challan-pass-sample.html`, `fixtures/mcv-vehicle-status-sample.html`.
@@ -46,11 +46,11 @@ Fixtures: `fixtures/challan-pass-sample.html`, `fixtures/mcv-vehicle-status-samp
 ## Smoke (live portal)
 
 ```bash
-pnpm --filter @vahan360/scraper-bihar-epass smoke
+pnpm --filter @vahanplus/scraper-bihar-epass smoke
 ```
 
 Requires network access to the Bihar portal.
 
 ## Exports
 
-Registered via `@vahan360/scraper-core` (`resolveScraper`). Main types: `FetchOptions`, district/consigner/challan/pass/MCV scrapers.
+Registered via `@vahanplus/scraper-core` (`resolveScraper`). Main types: `FetchOptions`, district/consigner/challan/pass/MCV scrapers.

@@ -2,12 +2,15 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "vahan360.fullname" . }}
+  name: {{ include "vahanplus.fullname" . }}
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   {{- if .Values.ingress.tls.enabled }}
@@ -24,7 +27,7 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ include "vahan360.fullname" . }}-api-express
+                name: {{ include "vahanplus.fullname" . }}-api-express
                 port:
                   number: {{ .Values.apiExpress.port }}
           {{- if .Values.apiNest.enabled }}
@@ -32,7 +35,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "vahan360.fullname" . }}-api-nest
+                name: {{ include "vahanplus.fullname" . }}-api-nest
                 port:
                   number: {{ .Values.apiNest.port }}
           {{- end }}
@@ -40,7 +43,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "vahan360.fullname" . }}-web
+                name: {{ include "vahanplus.fullname" . }}-web
                 port:
                   number: {{ .Values.web.port }}
 {{- end }}

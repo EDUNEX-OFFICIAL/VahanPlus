@@ -4,7 +4,7 @@ import {
   biharEpassChallanScraper,
   biharEpassChallanPassScraper,
   biharMcvVehicleStatusScraper,
-} from '@vahan360/scraper-bihar-epass';
+} from '@vahanplus/scraper-bihar-epass';
 
 export interface ScrapeContext {
   target: string;

@@ -1,6 +1,6 @@
-import { getPrisma, disconnectPrisma } from '@vahan360/db';
+import { getPrisma, disconnectPrisma } from '@vahanplus/db';
 import '../src/loadEnv.js';
-import { enqueueChallanPassJobs } from '@vahan360/epass-orchestrator';
+import { enqueueChallanPassJobs } from '@vahanplus/epass-orchestrator';
 
 function parseArgs(argv) {
   let snapshotId = null;
@@ -82,6 +82,6 @@ if (eligible.length === 0) {
 
 const fanout = await enqueueChallanPassJobs(prisma, eligible);
 console.log(JSON.stringify(fanout, null, 2));
-console.log('Ensure worker is running: pnpm --filter @vahan360/worker dev');
+console.log('Ensure worker is running: pnpm --filter @vahanplus/worker dev');
 
 await disconnectPrisma();

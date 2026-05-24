@@ -5,15 +5,15 @@ global:
 
 apiExpress:
   replicaCount: 1
-  image: vahan360-api-express:latest
+  image: vahanplus-api-express:latest
 
 web:
   replicaCount: 1
-  image: vahan360-web:latest
+  image: vahanplus-web:latest
 
 worker:
   replicaCount: 1
-  image: vahan360-worker:latest
+  image: vahanplus-worker:latest
   browserPoolStub: true
 
 ingress:
@@ -36,5 +36,5 @@ secrets:
   existingSecret: ""
   jwtSecret: local-dev-jwt-secret
   # Postgres/Redis from: docker compose up -d postgres redis
-  databaseUrl: postgresql://vahan360:vahan360@host.docker.internal:5434/vahan360
+  databaseUrl: postgresql://vahanplus:vahanplus@host.docker.internal:5434/vahanplus
   redisUrl: redis://host.docker.internal:6379

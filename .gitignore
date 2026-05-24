@@ -5,6 +5,7 @@ dist
 coverage
 .env
 .env.local
+deploy/env/hostinger.env
 *.log
 .DS_Store
 playwright-report

@@ -1,6 +1,6 @@
-import { getPrisma, disconnectPrisma } from '@vahan360/db';
+import { getPrisma, disconnectPrisma } from '@vahanplus/db';
 import '../src/loadEnv.js';
-import { enqueueConsignerJobsForSnapshot } from '@vahan360/epass-orchestrator';
+import { enqueueConsignerJobsForSnapshot } from '@vahanplus/epass-orchestrator';
 
 const prisma = getPrisma();
 const snapshotId = process.argv[2];
@@ -28,6 +28,6 @@ console.log('Snapshot:', snapshot.id, snapshot.reportDate, 'rows with pass URLs:
 
 const fanout = await enqueueConsignerJobsForSnapshot(prisma, snapshot.id, 'manual-trigger');
 console.log(JSON.stringify(fanout, null, 2));
-console.log('Ensure worker is running: pnpm --filter @vahan360/worker dev');
+console.log('Ensure worker is running: pnpm --filter @vahanplus/worker dev');
 
 await disconnectPrisma();

@@ -3,4 +3,4 @@ apiNest:
 
 ingress:
   enabled: true
-  host: vahan360.dev.local
+  host: vahanplus.dev.local

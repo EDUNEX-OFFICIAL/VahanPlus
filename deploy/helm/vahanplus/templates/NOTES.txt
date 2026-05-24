@@ -1,0 +1,19 @@
+VahanPlus deployed to namespace {{ .Release.Namespace }}.
+
+{{- if .Values.ingress.enabled }}
+
+Ingress: https://{{ .Values.ingress.host }}
+  Dashboard: /
+  API (via /api prefix): /api/*
+{{- else }}
+
+Port-forward:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "vahanplus.fullname" . }}-web 3000:{{ .Values.web.port }}
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "vahanplus.fullname" . }}-api-express 3001:{{ .Values.apiExpress.port }}
+{{- end }}
+
+Secrets: {{ include "vahanplus.secretName" . }}
+Production cutover: docs/ops/k8s-cutover.md
+
+Smoke test:
+  ./deploy/scripts/k8s-smoke-test.sh {{ .Release.Name }} {{ .Release.Namespace }}

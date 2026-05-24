@@ -3,9 +3,9 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "vahan360.fullname" . }}-web
+  name: {{ include "vahanplus.fullname" . }}-web
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
@@ -38,9 +38,9 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "vahan360.fullname" . }}-api-express
+  name: {{ include "vahanplus.fullname" . }}-api-express
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
@@ -69,9 +69,9 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "vahan360.fullname" . }}-worker
+  name: {{ include "vahanplus.fullname" . }}-worker
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:

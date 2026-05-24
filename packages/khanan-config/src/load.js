@@ -38,7 +38,7 @@ export function clearKhananConfigCache() {
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  */
 export async function loadKhananConfig(prisma) {
   const now = Date.now();

@@ -1,11 +1,11 @@
 import express from 'express';
-import { getPrisma } from '@vahan360/db';
+import { getPrisma } from '@vahanplus/db';
 import { requireAuth } from '../middleware/auth.js';
 import {
   enqueueChallanPassJobs,
   enqueueConsignerJobsForSnapshot,
   enqueueMissingVehicleStatusFromPasses,
-} from '@vahan360/epass-orchestrator';
+} from '@vahanplus/epass-orchestrator';
 
 const router = express.Router();
 

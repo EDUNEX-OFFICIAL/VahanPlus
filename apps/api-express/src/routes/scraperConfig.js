@@ -1,8 +1,8 @@
 import express from 'express';
 import {
   KhananScraperConfigPatchSchema,
-} from '@vahan360/contracts';
-import { getPrisma } from '@vahan360/db';
+} from '@vahanplus/contracts';
+import { getPrisma } from '@vahanplus/db';
 import {
   CONFIG_ID,
   clearKhananConfigCache,
@@ -10,13 +10,13 @@ import {
   getSpeedPreset,
   loadKhananConfig,
   scheduleReportDateIso,
-} from '@vahan360/khanan-config';
-import { eachIsoDayInclusive, isoToPortalDate, parseIsoDate } from '@vahan360/scraper-bihar-epass';
+} from '@vahanplus/khanan-config';
+import { eachIsoDayInclusive, isoToPortalDate, parseIsoDate } from '@vahanplus/scraper-bihar-epass';
 import {
   enqueueChallanPassJobs,
   enqueueConsignerJobsForSnapshot,
   enqueueMissingVehicleStatusFromPasses,
-} from '@vahan360/epass-orchestrator';
+} from '@vahanplus/epass-orchestrator';
 import { requireAuth } from '../middleware/auth.js';
 import { getScrapeQueue } from '../queues/scrapeQueue.js';
 import { enqueueScrapeJob } from '../services/enqueueScrape.js';
@@ -41,7 +41,7 @@ function districtJobMetadata(cfg, isoDate) {
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {Record<string, unknown>} cfg
  * @param {string} isoDate
  */

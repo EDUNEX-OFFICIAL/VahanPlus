@@ -1,1 +1,1 @@
-export { getScrapeQueue, getQueueConnection, DEFAULT_JOB_OPTIONS } from '@vahan360/epass-orchestrator';
+export { getScrapeQueue, getQueueConnection, DEFAULT_JOB_OPTIONS } from '@vahanplus/epass-orchestrator';

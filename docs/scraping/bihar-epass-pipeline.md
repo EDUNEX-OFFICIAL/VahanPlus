@@ -65,7 +65,7 @@ HTTP scrapers read `timeoutMs`, `retries`, `postDelayMs` from metadata or env de
 
 ## Fanout rules
 
-Orchestration lives in **`@vahan360/epass-orchestrator`** (do not duplicate in apps).
+Orchestration lives in **`@vahanplus/epass-orchestrator`** (do not duplicate in apps).
 
 | After job | Enqueues | Skip flag |
 |-----------|----------|-----------|
@@ -79,7 +79,7 @@ Bulk enqueue: `scrapeJob` creates in transactions of 100 + `queue.addBulk`.
 Missing VRN backfill uses SQL `NOT EXISTS` (not loading all passes into memory):
 
 ```bash
-pnpm --filter @vahan360/worker backfill:vehicle-status --limit 100
+pnpm --filter @vahanplus/worker backfill:vehicle-status --limit 100
 ```
 
 ## UI control plane (Khanan Config)
@@ -105,7 +105,7 @@ The Bihar district report portal accepts **one date per request** (`txtDate1`). 
 | **Advanced → Scheduled report date** | `yesterday` / `today` / `none` — cron repeatable job passes `metadata.date` for that run |
 | Consigner / Chalaan browse filters | View already-scraped snapshots only; they do not enqueue new portal fetches |
 
-Helpers: `@vahan360/scraper-bihar-epass` (`isoToPortalDate`, `eachIsoDayInclusive`), `@vahan360/khanan-config` (`scheduleReportDateIso`).
+Helpers: `@vahanplus/scraper-bihar-epass` (`isoToPortalDate`, `eachIsoDayInclusive`), `@vahanplus/khanan-config` (`scheduleReportDateIso`).
 
 ## Auto vs backfill
 
@@ -113,7 +113,7 @@ Helpers: `@vahan360/scraper-bihar-epass` (`isoToPortalDate`, `eachIsoDayInclusiv
 |---------|-----------|
 | Daily L1 | Khanan Config cron + `scheduleReportDateMode` (default yesterday IST) or `BIHAR_EPASS_SCHEDULE_CRON` env at seed |
 | L2–L5 fanout | Worker after successful ETL |
-| Challan passes only | `pnpm --filter @vahan360/worker backfill:challan-passes` |
+| Challan passes only | `pnpm --filter @vahanplus/worker backfill:challan-passes` |
 | Vehicle status gaps | `backfill:vehicle-status` CLI (API `POST /epass/vehicle-status/scrape-missing?limit=N` also available) |
 
 ## Tuning matrix
@@ -140,7 +140,7 @@ Helpers: `@vahan360/scraper-bihar-epass` (`isoToPortalDate`, `eachIsoDayInclusiv
 ```bash
 pnpm dev
 # or
-pnpm --filter @vahan360/worker dev
+pnpm --filter @vahanplus/worker dev
 ```
 
 ### Queue paused

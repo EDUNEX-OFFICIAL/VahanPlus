@@ -2,14 +2,14 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "vahan360.fullname" . }}-api-express
+  name: {{ include "vahanplus.fullname" . }}-api-express
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "vahan360.fullname" . }}-api-express
+    name: {{ include "vahanplus.fullname" . }}-api-express
   minReplicas: {{ .Values.hpa.apiExpress.minReplicas }}
   maxReplicas: {{ .Values.hpa.apiExpress.maxReplicas }}
   metrics:
@@ -25,14 +25,14 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "vahan360.fullname" . }}-web
+  name: {{ include "vahanplus.fullname" . }}-web
   labels:
-    {{- include "vahan360.labels" . | nindent 4 }}
+    {{- include "vahanplus.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "vahan360.fullname" . }}-web
+    name: {{ include "vahanplus.fullname" . }}-web
   minReplicas: {{ .Values.hpa.web.minReplicas }}
   maxReplicas: {{ .Values.hpa.web.maxReplicas }}
   metrics:

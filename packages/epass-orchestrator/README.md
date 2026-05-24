@@ -1,4 +1,4 @@
-# @vahan360/epass-orchestrator
+# @vahanplus/epass-orchestrator
 
 Shared BullMQ enqueue and fanout for the Bihar ePass pipeline. **Use this package from worker and api-express — do not copy orchestrator logic into apps.**
 
@@ -22,9 +22,9 @@ Bulk: `bulkEnqueueScrapeJobs` (chunks of 100).
 ## CLI backfill (via worker package)
 
 ```bash
-pnpm --filter @vahan360/worker backfill:vehicle-status
-pnpm --filter @vahan360/worker backfill:vehicle-status --limit 100
-pnpm --filter @vahan360/worker backfill:challan-passes
+pnpm --filter @vahanplus/worker backfill:vehicle-status
+pnpm --filter @vahanplus/worker backfill:vehicle-status --limit 100
+pnpm --filter @vahanplus/worker backfill:challan-passes
 ```
 
 ## Environment flags
@@ -42,4 +42,4 @@ Queue job defaults: 3 attempts, exponential backoff, Redis retention limits (see
 
 ## Dependencies
 
-`@vahan360/contracts`, `@vahan360/db`, `bullmq`.
+`@vahanplus/contracts`, `@vahanplus/db`, `bullmq`.

@@ -5,13 +5,13 @@ WORKDIR /app
 FROM base AS build
 COPY . .
 RUN pnpm install \
-  && pnpm --filter @vahan360/contracts build \
-  && pnpm --filter @vahan360/scraper-bihar-epass build \
-  && pnpm --filter @vahan360/scraper-core build \
-  && pnpm --filter @vahan360/epass-orchestrator build \
-  && pnpm --filter @vahan360/browser-pool build \
-  && pnpm --filter @vahan360/db exec prisma generate \
-  && pnpm --filter @vahan360/db build
+  && pnpm --filter @vahanplus/contracts build \
+  && pnpm --filter @vahanplus/scraper-bihar-epass build \
+  && pnpm --filter @vahanplus/scraper-core build \
+  && pnpm --filter @vahanplus/epass-orchestrator build \
+  && pnpm --filter @vahanplus/browser-pool build \
+  && pnpm --filter @vahanplus/db exec prisma generate \
+  && pnpm --filter @vahanplus/db build
 
 FROM node:20-alpine AS runner
 WORKDIR /app

@@ -1,14 +1,14 @@
 import './loadEnv.js';
 import { Worker } from 'bullmq';
-import { QUEUE_NAMES } from '@vahan360/contracts';
-import { getPrisma, disconnectPrisma } from '@vahan360/db';
-import { createBrowserPool } from '@vahan360/browser-pool';
-import { resolveScraper } from '@vahan360/scraper-core';
+import { QUEUE_NAMES } from '@vahanplus/contracts';
+import { getPrisma, disconnectPrisma } from '@vahanplus/db';
+import { createBrowserPool } from '@vahanplus/browser-pool';
+import { resolveScraper } from '@vahanplus/scraper-core';
 import {
   loadKhananConfig,
   httpMetadataOverrides,
   rateLimiterFromConfig,
-} from '@vahan360/khanan-config';
+} from '@vahanplus/khanan-config';
 import {
   getQueueConnection,
   enqueueConsignerJobsForSnapshot,
@@ -16,7 +16,7 @@ import {
   enqueueChallanPassJobs,
   enqueueVehicleStatusJobs,
   getVehicleRegNosForChallanRow,
-} from '@vahan360/epass-orchestrator';
+} from '@vahanplus/epass-orchestrator';
 import { persistEpassReport } from './epassEtl.js';
 import { persistConsignerReport } from './consignerEtl.js';
 import { persistChallanReport } from './challanEtl.js';

@@ -4,7 +4,7 @@ import { normalizeVehicleRegNo } from './normalizeVrn.js';
 import { getScrapeQueue } from './queue.js';
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  */
 async function buildStaggerDelayFn(prisma) {
   const { fanoutStaggerMs } = await getOrchestratorConfig(prisma);
@@ -12,7 +12,7 @@ async function buildStaggerDelayFn(prisma) {
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {{ limit?: number }} [options]
  */
 export async function findMissingVehicleRegNos(prisma, options = {}) {
@@ -45,7 +45,7 @@ export async function findMissingVehicleRegNos(prisma, options = {}) {
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {string} snapshotId
  * @param {string} [parentJobId]
  */
@@ -85,7 +85,7 @@ export async function enqueueConsignerJobsForSnapshot(prisma, snapshotId, parent
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {string} districtRowId
  * @param {'lessee'|'dealer'} operatorType
  * @param {string} url
@@ -116,7 +116,7 @@ export async function enqueueSingleConsignerJob(
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {Array<{ id: string; challanDetailUrl: string | null; challanCount: number }>} consignerRows
  */
 export async function enqueueChallanJobsForConsigners(prisma, consignerRows) {
@@ -139,7 +139,7 @@ export async function enqueueChallanJobsForConsigners(prisma, consignerRows) {
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {Array<{ id: string; detailUrl: string | null; challanCount: number }>} challanRows
  */
 export async function enqueueChallanPassJobs(prisma, challanRows) {
@@ -162,7 +162,7 @@ export async function enqueueChallanPassJobs(prisma, challanRows) {
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {string[]} vehicleRegNos
  * @param {string} [parentJobId]
  */
@@ -213,7 +213,7 @@ export async function enqueueVehicleStatusJobs(prisma, vehicleRegNos, parentJobI
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {{ limit?: number }} [options]
  */
 export async function enqueueMissingVehicleStatusFromPasses(prisma, options = {}) {
@@ -226,7 +226,7 @@ export async function enqueueMissingVehicleStatusFromPasses(prisma, options = {}
 }
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {string} challanRowId
  */
 export async function getVehicleRegNosForChallanRow(prisma, challanRowId) {

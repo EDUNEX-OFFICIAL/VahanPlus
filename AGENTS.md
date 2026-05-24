@@ -1,4 +1,4 @@
-# Agent guide — Vahan360
+# Agent guide — VahanPlus
 
 ## Monorepo layout
 
@@ -20,13 +20,13 @@
 ```bash
 pnpm bootstrap
 # or manually:
-pnpm --filter @vahan360/contracts build
-pnpm --filter @vahan360/scraper-bihar-epass build
-pnpm --filter @vahan360/scraper-core build
-pnpm --filter @vahan360/khanan-config build
-pnpm --filter @vahan360/epass-orchestrator build
-pnpm --filter @vahan360/browser-pool build
-pnpm db:generate && pnpm --filter @vahan360/db build
+pnpm --filter @vahanplus/contracts build
+pnpm --filter @vahanplus/scraper-bihar-epass build
+pnpm --filter @vahanplus/scraper-core build
+pnpm --filter @vahanplus/khanan-config build
+pnpm --filter @vahanplus/epass-orchestrator build
+pnpm --filter @vahanplus/browser-pool build
+pnpm db:generate && pnpm --filter @vahanplus/db build
 ```
 
 Then `pnpm build` for apps.
@@ -37,7 +37,7 @@ Full pipeline doc: [docs/scraping/bihar-epass-pipeline.md](docs/scraping/bihar-e
 
 ### Do not duplicate orchestrator logic
 
-Enqueue/fanout **must** live in `packages/epass-orchestrator`. Import from `@vahan360/epass-orchestrator` in worker and api-express — never add a second `epassOrchestrator.js` in apps.
+Enqueue/fanout **must** live in `packages/epass-orchestrator`. Import from `@vahanplus/epass-orchestrator` in worker and api-express — never add a second `epassOrchestrator.js` in apps.
 
 ### Key worker entry
 
@@ -54,9 +54,9 @@ Portal safety uses worker BullMQ limiter + post delay from **Khanan Config** (DB
 ## Tests
 
 ```bash
-pnpm --filter @vahan360/scraper-bihar-epass test:challan-pass
-pnpm --filter @vahan360/scraper-bihar-epass test:mcv-vehicle-status
-pnpm --filter @vahan360/scraper-bihar-epass test:http-client
+pnpm --filter @vahanplus/scraper-bihar-epass test:challan-pass
+pnpm --filter @vahanplus/scraper-bihar-epass test:mcv-vehicle-status
+pnpm --filter @vahanplus/scraper-bihar-epass test:http-client
 pnpm build
 pnpm lint
 ```

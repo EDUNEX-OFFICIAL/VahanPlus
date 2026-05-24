@@ -1,5 +1,5 @@
 {
-  "name": "@vahan360/scraper-core",
+  "name": "@vahanplus/scraper-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@vahan360/scraper-bihar-epass": "workspace:*"
+    "@vahanplus/scraper-bihar-epass": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

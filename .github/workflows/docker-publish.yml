@@ -20,19 +20,19 @@ jobs:
         include:
           - app: web
             dockerfile: apps/web/Dockerfile
-            image: vahan360-web
+            image: vahanplus-web
             needs_api_url: true
           - app: api-express
             dockerfile: apps/api-express/Dockerfile
-            image: vahan360-api-express
+            image: vahanplus-api-express
             needs_api_url: false
           - app: worker
             dockerfile: apps/worker/Dockerfile
-            image: vahan360-worker
+            image: vahanplus-worker
             needs_api_url: false
           - app: api-nest
             dockerfile: apps/api-nest/Dockerfile
-            image: vahan360-api-nest
+            image: vahanplus-api-nest
             needs_api_url: false
     steps:
       - uses: actions/checkout@v4
@@ -62,4 +62,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            ${{ matrix.needs_api_url && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || 'https://vahan360.example.com/api') || '' }}
+            ${{ matrix.needs_api_url && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || 'https://vahanplus.example.com/api') || '' }}

@@ -47,19 +47,19 @@ importers:
       '@opentelemetry/sdk-node':
         specifier: ^0.201.1
         version: 0.201.1(@opentelemetry/api@1.9.1)
-      '@vahan360/contracts':
+      '@vahanplus/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@vahan360/db':
+      '@vahanplus/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@vahan360/epass-orchestrator':
+      '@vahanplus/epass-orchestrator':
         specifier: workspace:*
         version: link:../../packages/epass-orchestrator
-      '@vahan360/khanan-config':
+      '@vahanplus/khanan-config':
         specifier: workspace:*
         version: link:../../packages/khanan-config
-      '@vahan360/scraper-bihar-epass':
+      '@vahanplus/scraper-bihar-epass':
         specifier: workspace:*
         version: link:../../packages/scraper-bihar-epass
       bcryptjs:
@@ -102,7 +102,7 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.1.2
         version: 11.1.21(@nestjs/common@11.1.21(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.21)
-      '@vahan360/db':
+      '@vahanplus/db':
         specifier: workspace:*
         version: link:../../packages/db
       reflect-metadata:
@@ -173,22 +173,22 @@ importers:
 
   apps/worker:
     dependencies:
-      '@vahan360/browser-pool':
+      '@vahanplus/browser-pool':
         specifier: workspace:*
         version: link:../../packages/browser-pool
-      '@vahan360/contracts':
+      '@vahanplus/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@vahan360/db':
+      '@vahanplus/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@vahan360/epass-orchestrator':
+      '@vahanplus/epass-orchestrator':
         specifier: workspace:*
         version: link:../../packages/epass-orchestrator
-      '@vahan360/khanan-config':
+      '@vahanplus/khanan-config':
         specifier: workspace:*
         version: link:../../packages/khanan-config
-      '@vahan360/scraper-core':
+      '@vahanplus/scraper-core':
         specifier: workspace:*
         version: link:../../packages/scraper-core
       bullmq:
@@ -228,7 +228,7 @@ importers:
       '@prisma/client':
         specifier: ^6.8.2
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
-      '@vahan360/khanan-config':
+      '@vahanplus/khanan-config':
         specifier: workspace:*
         version: link:../khanan-config
       bcryptjs:
@@ -244,13 +244,13 @@ importers:
 
   packages/epass-orchestrator:
     dependencies:
-      '@vahan360/contracts':
+      '@vahanplus/contracts':
         specifier: workspace:*
         version: link:../contracts
-      '@vahan360/db':
+      '@vahanplus/db':
         specifier: workspace:*
         version: link:../db
-      '@vahan360/khanan-config':
+      '@vahanplus/khanan-config':
         specifier: workspace:*
         version: link:../khanan-config
       bullmq:
@@ -280,7 +280,7 @@ importers:
 
   packages/scraper-core:
     dependencies:
-      '@vahan360/scraper-bihar-epass':
+      '@vahanplus/scraper-bihar-epass':
         specifier: workspace:*
         version: link:../scraper-bihar-epass
     devDependencies:

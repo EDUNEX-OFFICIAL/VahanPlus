@@ -1,7 +1,7 @@
 import { normalizeVehicleRegNo } from './normalizeVrn.js';
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {Record<string, unknown>} report
  * @param {string} [jobId]
  */

@@ -1,5 +1,5 @@
 {
-  "name": "vahan360",
+  "name": "vahanplus",
   "private": true,
   "packageManager": "pnpm@10.28.2",
   "engines": {
@@ -7,10 +7,10 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --filter=@vahan360/web --filter=@vahan360/api-express --filter=@vahan360/worker",
+    "dev": "turbo run dev --filter=@vahanplus/web --filter=@vahanplus/api-express --filter=@vahanplus/worker",
     "dev:setup": "pnpm bootstrap",
     "dev:all": "turbo run dev",
-    "dev:k8s": "echo Use: docker compose up -d postgres redis && kubectl port-forward -n vahan360 svc/vahan360-vahan360-web 3000:3000",
+    "dev:k8s": "echo Use: docker compose up -d postgres redis && kubectl port-forward -n vahanplus svc/vahanplus-vahanplus-web 3000:3000",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
@@ -23,7 +23,7 @@
     "db:verify-admin": "node packages/db/scripts/verify-admin-login.js",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "bootstrap": "pnpm --filter @vahan360/contracts build && pnpm --filter @vahan360/scraper-bihar-epass build && pnpm --filter @vahan360/scraper-core build && pnpm --filter @vahan360/khanan-config build && pnpm --filter @vahan360/epass-orchestrator build && pnpm --filter @vahan360/browser-pool build && pnpm db:generate && pnpm --filter @vahan360/db build",
+    "bootstrap": "pnpm --filter @vahanplus/contracts build && pnpm --filter @vahanplus/scraper-bihar-epass build && pnpm --filter @vahanplus/scraper-core build && pnpm --filter @vahanplus/khanan-config build && pnpm --filter @vahanplus/epass-orchestrator build && pnpm --filter @vahanplus/browser-pool build && pnpm db:generate && pnpm --filter @vahanplus/db build",
     "prepare": "husky"
   },
   "devDependencies": {

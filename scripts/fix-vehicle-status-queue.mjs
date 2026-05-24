@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
-import { getPrisma, disconnectPrisma } from '@vahan360/db';
-import { QUEUE_NAMES } from '@vahan360/contracts';
+import { getPrisma, disconnectPrisma } from '@vahanplus/db';
+import { QUEUE_NAMES } from '@vahanplus/contracts';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const LIMIT = Number(process.env.LIMIT || '100');
@@ -43,5 +43,5 @@ console.log('After cleanup:', after);
 await queue.close();
 await disconnectPrisma();
 
-console.log(`\nNow run: pnpm --filter @vahan360/worker backfill:vehicle-status -- --limit ${LIMIT}`);
+console.log(`\nNow run: pnpm --filter @vahanplus/worker backfill:vehicle-status -- --limit ${LIMIT}`);
 console.log('Ensure worker is running (pnpm dev)');

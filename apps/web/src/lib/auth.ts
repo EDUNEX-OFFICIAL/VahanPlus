@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'vahan360_token';
+const TOKEN_KEY = 'vahanplus_token';
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;

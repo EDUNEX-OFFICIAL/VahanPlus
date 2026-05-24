@@ -61,7 +61,7 @@ function LoginForm() {
             V
           </div>
           <h1 className="bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-2xl font-black text-transparent">
-            VAHAN360
+            VAHANPLUS
           </h1>
           <p className="mt-2 text-sm text-text-muted">Sign in to continue</p>
         </div>

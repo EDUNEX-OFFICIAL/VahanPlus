@@ -1,7 +1,7 @@
 const BULK_CHUNK = 100;
 
 /**
- * @param {import('@vahan360/db').PrismaClient} prisma
+ * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {import('bullmq').Queue} queue
  * @param {{
  *   type: string;

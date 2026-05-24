@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!DOCTYPE HTML>
+
+<html>
+<head id="Head1"><meta charset="utf-8" /><meta http-equiv="X-UA-Compatible" content="IE=EDGE,chrome=1" /><meta http-equiv="Page-Enter" content="blendTrans(Duration=0.1)" /><meta http-equiv="Page-Exit" content="blendTrans(Duration=0.1)" /><meta name="keywords" content="Steel &amp; Mines, Jharkhand Mining Corporation, Directorate of Mines" /><meta name="description" content="Department of Steel &amp; Mines" /><title>
+	Department of Mines & Geology, Government of Bihar
+</title>
+    <script type="text/javascript" src="../../Scripts/jquery-1.7.1.js" language="javascript"></script>
+    <script type="text/javascript" src="../../Scripts/loadComponent.js" language="javascript"></script>
+    <script type="text/javascript" src="../../Scripts/Validator.js" language="javascript"></script>
+    <script type="text/javascript" src="../../Styles/print.css"></script>
+    <link href="../../Styles/misReport.css" type="text/css" rel="Stylesheet" />
+    <!--[if IE]><script src="../../Scripts/html5.js"></script><![endif]-->
+    <script language="javascript" type="text/javascript">
+        pageHeader = "Vehicle Status Report"
+        strFirstLink = ""
+        strLastLink = ""
+
+        function loadScript() {
+            configTitleBar()
+            viewTable()
+        }
+        function printWindow(me) {
+            debugger;
+            var divToPrint = $('#printarea').html();
+            Popup(divToPrint);
+        }
+
+    </script>
+    <style type="text/css">
+        .GridPager a, .GridPager span {
+            display: inline-block;
+            padding: 0px 9px;
+            margin-right: 4px;
+            border-radius: 3px;
+            border: solid 1px #c0c0c0;
+            background: #e9e9e9;
+            box-shadow: inset 0px 1px 0px rgba(255,255,255, .8), 0px 1px 3px rgba(0,0,0, .1);
+            font-size: .875em;
+            font-weight: bold;
+            text-decoration: none;
+            color: #717171;
+            text-shadow: 0px 1px 0px rgba(255,255,255, 1);
+        }
+
+        .GridPager a {
+            background-color: #f5f5f5;
+            color: #969696;
+            border: 1px solid #969696;
+        }
+
+        .GridPager span {
+            background: #616161;
+            box-shadow: inset 0px 0px 8px rgba(0,0,0, .5), 0px 1px 0px rgba(255,255,255, .8);
+            color: #f0f0f0;
+            text-shadow: 0px 0px 3px rgba(0,0,0, .5);
+            border: 1px solid #3AC0F2;
+        }
+    </style>
+    <style type="text/css">
+        .backnew {
+            height: 18px;
+            width: 60px;
+            display: block;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            color: #000;
+            text-decoration: none;
+            float: left;
+            margin-left: 10px;
+            background-color: #FFF;
+            padding-top: 2px;
+            padding-right: 6px;
+            padding-bottom: 2px;
+            padding-left: 6px;
+            border: 1px solid #999;
+        }
+
+        .viewTable th {
+            padding: 4px;
+            color: #000;
+            border: solid 1px #CACACA;
+            border-collapse: collapse;
+            /*text-align: center;*/
+            background-color: #E2E2E2;
+        }
+
+        .noPrint {
+            display: none;
+        }
+    </style>
+    <script type="text/javascript">
+        function print_page() {
+            var ButtonControl = document.getElementById("print");
+            var lb = document.getElementById("lbtnExcel");
+            var lb2 = document.getElementById("img");
+            var lb1 = document.getElementById("lblPaging");
+            ButtonControl.style.visibility = "hidden";
+            lb.style.visibility = "hidden";
+            lb1.style.visibility = "hidden";
+            lb2.style.visibility = "hidden";
+
+
+            window.print();
+            $("#content").addClass("noPrint");
+
+
+        }
+        $(document).ready(function () {
+            $('#txtvehicleno').keyup(function () {
+                $(this).val($(this).val().toUpperCase());
+                var yourInput = $(this).val();
+                re = /[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi;
+                var isSplChar = re.test(yourInput);
+                if (isSplChar) {
+                    var no_spl_char = yourInput.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
+                    $(this).val(no_spl_char);
+                }
+            });
+            $('#txtvehicleno').keydown(function (event) {
+                if (event.keyCode == 46 || event.keyCode == 8) {
+                }
+                else {
+                    if (event.keyCode == 32) {
+                        event.preventDefault();
+                    }
+                }
+            });
+        });
+        function checkvalidation() {
+            if ($('#txtvehicleno').val() == '') {
+                if ($('#ddlGpsStatus').val() == 0) {
+                    alert('Please Enter Vehicle No. or Select GPS Status')
+
+                    return false;
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="wrapper" class="col-xl-8">
+        <form name="form1" method="post" action="./MCVReportWiseStatus.aspx" id="form1" enctype="multipart/form-data">
+<div>
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="xK4RQiorMXv9+JkWhoQMIG1mcWkqDZRMZiq7z8OIYsxuEqS1Gen9MRl6RkMO5mbbrA8etsbcoOfnbSV2XTQsDBRsuM2EcCXah6CO5UNEhDAsSCfDoHJJJb/981H9YarxpHLHyoDwiPBjvrekzxtkjByN9Aj7iFNKO2pJLrPP7RsBiLwD75SMTh0Eruf4inboOzEgCHAnY/qO+xqhjEqPtq7OGunaRFUAERviq3zl9KcpOoPpDel1k2JGSfn3+9nwe9Idu0K2l7uECt7pXSsJyqBj3Xn6AtRv/sKuSZPjPQHoNtz0o3XEhRLHvgwzfbqzS6SfydM0PVWTgWjQPEF/SKUt991DJ9nr+rGYpo/UvE1/ubFm/cX+q9nNpIh6lVxthSta4bSnGn7+4F2NFFIF218xeI0zaTXs+CC/6zCNqS7WjSZyQZVjt5lNbd0n+yHzfibG2ybB5JSPm55kL6k+Ced/jDETlZJQUBXk0qEaM06aasEPd7F7KE9LyfzLeUMZgBlDNQ8nPlvTFF9J9iSFqpOfsvGvXjquFQLST4Mu1gHA3Oe1XgPtpiwcBX2TNtAk/LH0cp2+Dkx+C9NcwMI5JB4r11IpRT1y0TQf3FUvGPrucwhvTFlyrYtI9t0o8LNvq3KxCNNA6mWdrKPUijqH8fgeO4pmnk8QyjKMbVPXQDr2RFLgmrxuwesOQsaoUb91gtv5ctgRTFnnc4RY8c1nAw==" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=VYsWrgIelgOkcJagSCvyG7eTDm3QNSLdkt4dE7BCd3DoAEo4YFfnsCm9r3tEomdp6Wr6Ktev491bY289lAj-lyq5Fh0LSSLd93mpX6UdXFU1&amp;t=638344266336178820" type="text/javascript"></script>
+
+
+<script src="/ScriptResource.axd?d=R8aPdc2ajwSNyYq8BpnaV2oa0YeJUtAaYJq0GiqNaGkegH5mFK006kIHBc1eeKUTlHgSl_wlL9Lif1lqKTJ81QcoBsbhVNhgW1BgRKuoZF1aFTTgpPW2qCCwcUwwz49t0&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=3GPckaxDnW2D13hn-JO4lDOs-fg4v-kXpnXHVO8pBKCQCsnTybJ4jpwzTI7roskPR6fjWee6xyANcqMeCo4iORFQTuFXZg3swSnzguOkfbo95xLqwB7yYDhWxlYERZ6NlWlzQqchbRr4YlkdT8dlJw2&amp;t=f2cd5c5" type="text/javascript"></script>
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="A73DF874" />
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+</div>
+            <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ScriptManager1', 'form1', [], [], [], 90, '');
+//]]>
+</script>
+
+            
+<div id="header">
+<div id="logo">
+    <img src="../../Images/JIMMS_Logo.png" alt="Department of Mines & Geology, Government of Bihar"></div>
+</div>
+
+            <div id="navigation" class="navigation">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td class="blkboldtxt">
+                            
+                            <a href="../../redirect.aspx" />
+                            
+                            <img src="../../Images/homeIcon.png" border="0" align="absmiddle" /><a></a> &nbsp;&nbsp;<strong>Vehicle
+                            Status Report</strong>
+                        </td>
+                        <td>&nbsp;
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="search" class="searchTable">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <strong>
+                                <h2>Total number of vehicles</h2>
+                            </strong>
+                        </td>
+                        <td>:
+                        </td>
+                        <td>
+                            
+                            <span id="lblToNo" style="font-size:Large;">105505</span>
+                            &nbsp;
+                        
+                        </td>
+
+                        <td>
+
+                            
+                        </td>
+                    </tr>
+                </table>
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="150px">
+
+                            <strong>Search Vehicle Number</strong>
+                            <span style="color: #ff0000">*</span></td>
+                        <td>:
+                        </td>
+                        <td width="200px">
+                            <input name="txtvehicleno" type="text" value="BR01GN8970" id="txtvehicleno" placeholder="Vehicle Reg No" />
+                        </td>
+
+                        <td width="200px">
+                            <input name="txtKsCode" type="text" id="txtKsCode" placeholder="KS Code" />
+                        </td>
+
+                        <td>
+                            <input type="submit" name="btnSubmit" value="Search" onclick="return checkvalidation();" id="btnSubmit" class="btnSubmit" />
+                            &nbsp
+                            <input type="submit" name="btnReset" value="Reset" id="btnReset" class="btnCancel" />
+                            &nbsp
+                        <input type="submit" name="btnback" value="Back" id="btnback" style="color: white; background-color: darkblue; height: 30px; width: 70px; border-radius: 10%;cursor:pointer;" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="content">
+		<span style="float:left;color:blue;font-weight:900;font-size: medium;"> IMEI will be displayed only after registration on Khanansoft portal in report</span>
+                
+                <div class="viewTable" id="viewTable">
+                    <div>
+	<table cellspacing="0" cellpadding="4" rules="all" border="1" id="grdVehicleSts" style="background-color:White;border-style:None;width:100%;border-collapse:collapse;">
+		<tr align="left" style="color:Black;font-weight:bold;">
+			<th scope="col" style="width:75px;">KS Reg No</th><th scope="col">Vehicle Registration No </th><th scope="col">Vehicle Class</th><th scope="col">Rc Fit Up To</th><th scope="col">Rc Tax Up To</th><th scope="col">Insurance Upto</th><th scope="col">PUCC Upto</th><th scope="col">IMEI No</th><th scope="col">ESIM Validity</th><th scope="col">Gross Weight (in MT)</th><th scope="col">Unladen Weight (in MT)</th>
+		</tr><tr style="background-color:White;font-size:14px;">
+			<td align="center">
+                                    KS-198047
+                                </td><td>BR01GN8970</td><td>
+                                    Goods Carrier(HGV)
+                                </td><td>
+                                    05-Aug-2026
+                                </td><td>
+                                    05-11-2026
+                                </td><td>
+                                    03-Aug-2026
+                                </td><td>
+                                     05-Aug-2026
+                                 </td><td>
+                                    IMEI Tagged
+                                </td><td>
+                                     Valid for challan
+                                </td><td>
+                                    55.0000000
+                                </td><td>
+                                    15.5000000
+                                </td>
+		</tr>
+	</table>
+</div>
+                </div>
+                <div align="right">
+                    
+                </div>
+                <div class="clear">
+                </div>
+            </div>
+            
+<div id="footer">
+Copyright © 
+    <span id="Footer1_lblyear">2026</span>, Mines & Geology Department, Government of Bihar, All Rights Reserved.
+</div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,640 @@
+'use client';
+
+import { Suspense, useCallback, useEffect, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import {
+  ConsignerEpassFilters,
+  type ConsignerDateMode,
+  type ConsignerFilterValues,
+} from '@/components/khanan/ConsignerEpassFilters';
+import { ConsignerGroupedView } from '@/components/khanan/ConsignerGroupedView';
+import { ConsignerTable } from '@/components/khanan/ConsignerTable';
+import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
+import { getToken } from '@/lib/auth';
+import {
+  collectDistricts,
+  collectMinerals,
+  parseDistrictsParam,
+  serializeDistricts,
+} from '@/lib/epass-district-view';
+import {
+  dedupeConsignerRows,
+  groupConsignerRowsByDistrict,
+  parseConsignerMineralsParam,
+  serializeConsignerMinerals,
+  sortConsignerRows,
+} from '@/lib/epass-consigner-view';
+import {
+  EPASS_SNAPSHOTS_QUERY_KEY,
+  fetchConsignerList,
+  fetchDistrictConsigners,
+  fetchEpassSnapshots,
+  fetchLatestEpass,
+  fetchSnapshotDistrictRows,
+} from '@/lib/epass';
+import {
+  hasActiveDateRangeWithNoSnapshots,
+  resolveSnapshotIdForDateFilters,
+  snapshotsForDateMode,
+} from '@/lib/epass-report-date';
+import { parseOperatorParam } from '@/lib/operator';
+import type {
+  ConsignerSortDir,
+  ConsignerSortKey,
+  OperatorType,
+  EpassSnapshotDto,
+} from '@/lib/epass-types';
+
+const PAGE_SIZE = 50;
+const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
+
+function snapshotFromList(
+  snap: { id: string; reportDate: string; scrapedAt: string } | null,
+): EpassSnapshotDto | null {
+  if (!snap) return null;
+  return {
+    id: snap.id,
+    reportDate: snap.reportDate,
+    reportGeneratedOn: '',
+    scrapedAt: snap.scrapedAt,
+    rowCount: 0,
+    jobId: null,
+  };
+}
+
+function parseSortKey(value: string | null): ConsignerSortKey | null {
+  const keys: ConsignerSortKey[] = [
+    'district',
+    'consigner',
+    'mineral',
+    'operator',
+    'role',
+    'challans',
+    'slNo',
+  ];
+  return keys.includes(value as ConsignerSortKey) ? (value as ConsignerSortKey) : null;
+}
+
+function parseDateMode(value: string | null): ConsignerDateMode {
+  return value === 'range' ? 'range' : 'specific';
+}
+
+function filtersFromParams(searchParams: URLSearchParams): ConsignerFilterValues {
+  const districtRaw =
+    searchParams.get('district') ?? searchParams.get('dmo') ?? '';
+  return {
+    operator: parseOperatorParam(
+      searchParams.get('operator'),
+      searchParams.get('role'),
+    ),
+    minerals: parseConsignerMineralsParam(searchParams.get('mineral')),
+    dateMode: parseDateMode(searchParams.get('dateMode')),
+    dateFrom: searchParams.get('dateFrom') ?? '',
+    dateTo: searchParams.get('dateTo') ?? '',
+    reportDate: searchParams.get('reportDate') ?? '',
+    snapshotId: searchParams.get('snapshotId') ?? '',
+    districts: parseDistrictsParam(districtRaw),
+    consignerSearch: searchParams.get('consigner') ?? '',
+    hideZeroChallans: searchParams.get('hideZeroChallans') === '1',
+  };
+}
+
+function paramsFromFilters(
+  filters: ConsignerFilterValues,
+  sortKey: ConsignerSortKey | null,
+  sortDir: ConsignerSortDir,
+  offset: number,
+): Record<string, string | null> {
+  return {
+    snapshotId: filters.snapshotId || null,
+    reportDate: filters.reportDate || null,
+    dateMode: filters.dateMode === 'specific' ? null : filters.dateMode,
+    dateFrom: filters.dateFrom || null,
+    dateTo: filters.dateTo || null,
+    operator: filters.operator === 'all' ? null : filters.operator,
+    role: null,
+    mineral: serializeConsignerMinerals(filters.minerals) ?? null,
+    district: serializeDistricts(filters.districts),
+    dmo: null,
+    consigner: filters.consignerSearch.trim() || null,
+    hideZeroChallans: filters.hideZeroChallans ? '1' : null,
+    sort: sortKey,
+    dir: sortKey ? sortDir : null,
+    offset: offset > 0 ? String(offset) : null,
+  };
+}
+
+function useConsignerSortHandlers(
+  searchParams: URLSearchParams,
+  router: ReturnType<typeof useRouter>,
+) {
+  const sortKey = parseSortKey(searchParams.get('sort'));
+  const sortDir: ConsignerSortDir = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
+
+  const updateParams = useCallback(
+    (patch: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(patch)) {
+        if (value == null || value === '') next.delete(key);
+        else next.set(key, value);
+      }
+      router.replace(`/khanan/consigner?${next.toString()}`);
+    },
+    [router, searchParams],
+  );
+
+  const handleSort = useCallback(
+    (key: ConsignerSortKey) => {
+      if (sortKey !== key) {
+        updateParams({ sort: key, dir: 'asc', offset: '0' });
+        return;
+      }
+      if (sortDir === 'asc') {
+        updateParams({ sort: key, dir: 'desc', offset: '0' });
+        return;
+      }
+      updateParams({ sort: null, dir: null, offset: '0' });
+    },
+    [sortKey, sortDir, updateParams],
+  );
+
+  const handleApplyFilters = useCallback(
+    (next: ConsignerFilterValues) => {
+      const patch = paramsFromFilters(next, sortKey, sortDir, 0);
+      updateParams(patch);
+    },
+    [sortKey, sortDir, updateParams],
+  );
+
+  return { sortKey, sortDir, updateParams, handleSort, handleApplyFilters };
+}
+
+function ConsignerDrillDown({
+  districtRowId,
+  operatorType,
+}: {
+  districtRowId: string;
+  operatorType: OperatorType;
+}) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const sortKey = parseSortKey(searchParams.get('sort'));
+  const sortDir: ConsignerSortDir = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
+
+  const updateParams = useCallback(
+    (patch: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(patch)) {
+        if (value == null || value === '') next.delete(key);
+        else next.set(key, value);
+      }
+      router.replace(`/khanan/consigner?${next.toString()}`);
+    },
+    [router, searchParams],
+  );
+
+  const handleSort = useCallback(
+    (key: ConsignerSortKey) => {
+      if (sortKey !== key) {
+        updateParams({ sort: key, dir: 'asc' });
+        return;
+      }
+      if (sortDir === 'asc') {
+        updateParams({ sort: key, dir: 'desc' });
+        return;
+      }
+      updateParams({ sort: null, dir: null });
+    },
+    [sortKey, sortDir, updateParams],
+  );
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['epass', 'consigners', districtRowId, operatorType],
+    queryFn: () => {
+      const token = getToken();
+      if (!token) throw new Error('Not authenticated');
+      return fetchDistrictConsigners(token, districtRowId, operatorType);
+    },
+  });
+
+  const displayRows = useMemo(() => {
+    if (!data?.items) return [];
+    return sortConsignerRows(data.items, sortKey, sortDir);
+  }, [data?.items, sortKey, sortDir]);
+
+  if (isLoading) {
+    return (
+      <Card className="animate-pulse p-12">
+        <div className="h-8 w-64 rounded bg-surface-deep" />
+        <div className="mt-6 h-48 rounded bg-surface-deep" />
+      </Card>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <Card className="border-red-500/30">
+        <p className="text-sm font-semibold text-red-400">Unable to load data</p>
+        <Button className="mt-4" variant="secondary" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </Card>
+    );
+  }
+
+  const opLabel = operatorType === 'lessee' ? 'Lessee' : 'Dealer';
+  const opColor = operatorType === 'lessee' ? 'text-indigo-300' : 'text-emerald-300';
+
+  return (
+    <>
+      <h1 className="text-2xl font-semibold text-white">
+        {data.districtRow.dmoName}{' '}
+        <span className={`text-lg font-medium ${opColor}`}>({opLabel})</span>
+      </h1>
+
+      {displayRows.length === 0 ? (
+        <Card>
+          <p className="text-sm text-text-secondary">No consigners found</p>
+        </Card>
+      ) : (
+        <ConsignerTable
+          rows={displayRows}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={handleSort}
+          consigneeLinkBase="/khanan/consignee"
+          linkSearchParams={new URLSearchParams(searchParams.toString())}
+        />
+      )}
+    </>
+  );
+}
+
+function ConsignerBrowse() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const appliedFilters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
+  const offset = Math.max(Number(searchParams.get('offset') || '0'), 0);
+  const { sortKey, sortDir, updateParams, handleSort, handleApplyFilters } =
+    useConsignerSortHandlers(searchParams, router);
+
+  const roleFilter =
+    appliedFilters.operator === 'all' ? undefined : appliedFilters.operator;
+
+  const {
+    data: snapshotsData,
+    isLoading: snapshotsLoading,
+    isError: snapshotsError,
+    refetch: refetchSnapshots,
+  } = useQuery({
+    queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
+    queryFn: () => {
+      const token = getToken();
+      if (!token) throw new Error('Not authenticated');
+      return fetchEpassSnapshots(token);
+    },
+    staleTime: SNAPSHOTS_STALE_MS,
+  });
+
+  const dateFilterInput = useMemo(
+    () => ({
+      dateMode: appliedFilters.dateMode,
+      dateFrom: appliedFilters.dateFrom,
+      dateTo: appliedFilters.dateTo,
+      snapshotId: appliedFilters.snapshotId,
+    }),
+    [appliedFilters],
+  );
+
+  const snapshotId = useMemo(() => {
+    if (!snapshotsData?.items.length) return appliedFilters.snapshotId || null;
+    return resolveSnapshotIdForDateFilters(snapshotsData.items, dateFilterInput);
+  }, [snapshotsData?.items, dateFilterInput, appliedFilters.snapshotId]);
+
+  const noSnapshotsInRange = useMemo(
+    () =>
+      snapshotsData?.items
+        ? hasActiveDateRangeWithNoSnapshots(snapshotsData.items, dateFilterInput)
+        : false,
+    [snapshotsData?.items, dateFilterInput],
+  );
+
+  useEffect(() => {
+    if (snapshotsLoading || !snapshotsData?.items.length) return;
+    if (snapshotId) return;
+    if (noSnapshotsInRange) return;
+
+    if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
+      const inRange = snapshotsForDateMode(
+        snapshotsData.items,
+        appliedFilters.dateMode,
+        appliedFilters.dateFrom,
+        appliedFilters.dateTo,
+      );
+      if (inRange.length > 0) {
+        const pick = [...inRange].sort(
+          (a, b) => new Date(b.scrapedAt).getTime() - new Date(a.scrapedAt).getTime(),
+        )[0];
+        updateParams({ snapshotId: pick.id, reportDate: pick.reportDate });
+      }
+      return;
+    }
+
+    const bootstrap = async () => {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const latest = await fetchLatestEpass(token);
+        if (latest.snapshot) {
+          updateParams({
+            snapshotId: latest.snapshot.id,
+            reportDate: latest.snapshot.reportDate,
+          });
+        }
+      } catch {
+        const first = snapshotsData.items[0];
+        if (first) {
+          updateParams({ snapshotId: first.id, reportDate: first.reportDate });
+        }
+      }
+    };
+
+    void bootstrap();
+  }, [
+    snapshotId,
+    snapshotsLoading,
+    snapshotsData,
+    updateParams,
+    noSnapshotsInRange,
+    appliedFilters.dateMode,
+    appliedFilters.dateFrom,
+    appliedFilters.dateTo,
+  ]);
+
+  useEffect(() => {
+    if (snapshotsLoading || !snapshotsData?.items.length) return;
+    if (!appliedFilters.snapshotId) return;
+    if (snapshotId === appliedFilters.snapshotId) return;
+    updateParams({
+      snapshotId: snapshotId,
+      reportDate: snapshotId
+        ? snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null
+        : null,
+    });
+  }, [
+    snapshotId,
+    appliedFilters.snapshotId,
+    snapshotsLoading,
+    snapshotsData,
+    updateParams,
+  ]);
+
+  const { data: districtRowsData } = useQuery({
+    queryKey: ['epass', 'snapshot-rows', snapshotId, 'minerals'],
+    queryFn: () => {
+      const token = getToken();
+      if (!token || !snapshotId) throw new Error('Not authenticated');
+      return fetchSnapshotDistrictRows(token, snapshotId);
+    },
+    enabled: Boolean(snapshotId),
+  });
+
+  const minerals = useMemo(
+    () => (districtRowsData?.rows ? collectMinerals(districtRowsData.rows) : []),
+    [districtRowsData?.rows],
+  );
+
+  const districts = useMemo(
+    () => (districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : []),
+    [districtRowsData?.rows],
+  );
+
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: [
+      'epass',
+      'consigner-list',
+      snapshotId,
+      roleFilter,
+      appliedFilters.districts,
+      appliedFilters.minerals,
+      appliedFilters.consignerSearch,
+      appliedFilters.hideZeroChallans,
+      sortKey,
+      sortDir,
+      offset,
+    ],
+    queryFn: () => {
+      const token = getToken();
+      if (!token) throw new Error('Not signed in');
+      return fetchConsignerList(token, {
+        snapshotId: snapshotId || undefined,
+        operator: roleFilter,
+        district: serializeDistricts(appliedFilters.districts) ?? undefined,
+        mineral: serializeConsignerMinerals(appliedFilters.minerals),
+        consigner: appliedFilters.consignerSearch.trim() || undefined,
+        hideZeroChallans: appliedFilters.hideZeroChallans,
+        sort: sortKey ?? 'district',
+        dir: sortDir,
+        limit: PAGE_SIZE,
+        offset,
+      });
+    },
+    enabled: Boolean(snapshotId),
+  });
+
+  const useGroupedView = sortKey == null || sortKey === 'district';
+
+  const displayItems = useMemo(
+    () => (data?.items ? dedupeConsignerRows(data.items) : []),
+    [data?.items],
+  );
+
+  const groups = useMemo(() => {
+    if (!displayItems.length || !useGroupedView) return [];
+    return groupConsignerRowsByDistrict(displayItems, sortKey, sortDir);
+  }, [displayItems, useGroupedView, sortKey, sortDir]);
+
+  const handleClearFilters = useCallback(() => {
+    const latest = snapshotsData?.items[0];
+    updateParams({
+      role: null,
+      mineral: null,
+      dateMode: null,
+      dateFrom: null,
+      dateTo: null,
+      district: null,
+      dmo: null,
+      consigner: null,
+      hideZeroChallans: null,
+      snapshotId: latest?.id ?? null,
+      reportDate: latest?.reportDate ?? null,
+      sort: null,
+      dir: null,
+      offset: null,
+    });
+  }, [snapshotsData, updateParams]);
+
+  const snapshot = snapshotFromList(data?.snapshot ?? null);
+  const total = data?.total ?? 0;
+  const pageStart = total === 0 ? 0 : offset + 1;
+  const pageEnd = Math.min(offset + PAGE_SIZE, total);
+  const isLoadingAll = snapshotsLoading || (Boolean(snapshotId) && isLoading);
+  const isErrorAll = snapshotsError || isError;
+
+  const refetchAll = () => {
+    void refetchSnapshots();
+    if (snapshotId) void refetch();
+  };
+
+  if (isErrorAll) {
+    return (
+      <Card className="border-red-500/30">
+        <p className="text-sm font-semibold text-red-400">Unable to load data</p>
+        {error instanceof Error && error.message ? (
+          <p className="mt-2 text-xs text-text-secondary">{error.message}</p>
+        ) : null}
+        <Button className="mt-4" variant="secondary" onClick={() => refetchAll()}>
+          Retry
+        </Button>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      {isLoadingAll ? (
+        <Card className="animate-pulse">
+          <div className="h-4 w-32 rounded bg-surface-deep" />
+          <div className="mt-4 h-6 w-64 rounded bg-surface-deep" />
+        </Card>
+      ) : snapshotId && snapshot ? (
+        <EpassReportMetaBar snapshot={snapshot} />
+      ) : null}
+
+      {!snapshotsLoading && snapshotsData ? (
+        <ConsignerEpassFilters
+          snapshots={snapshotsData.items}
+          minerals={minerals}
+          districts={districts}
+          values={appliedFilters}
+          onApply={handleApplyFilters}
+          onClear={handleClearFilters}
+        />
+      ) : null}
+
+      {noSnapshotsInRange ? (
+        <Card>
+          <p className="text-sm text-text-secondary">
+            No reports found for the selected date range. Adjust the range or switch to a specific
+            report date.
+          </p>
+        </Card>
+      ) : null}
+
+      {isLoadingAll ? (
+        <Card className="animate-pulse p-12">
+          <div className="h-48 rounded bg-surface-deep" />
+        </Card>
+      ) : null}
+
+      {!noSnapshotsInRange && !isLoadingAll && !isError && data && snapshotId ? (
+        <>
+          {data.items.length === 0 ? (
+            <Card>
+              <p className="text-sm text-text-secondary">No consigners found</p>
+            </Card>
+          ) : (
+            <>
+              <p className="text-sm text-text-secondary tabular-nums">
+                {pageStart}–{pageEnd} of {total}
+              </p>
+
+              {useGroupedView ? (
+                <ConsignerGroupedView
+                  groups={groups}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  linkSearchParams={new URLSearchParams(searchParams.toString())}
+                />
+              ) : (
+                <ConsignerTable
+                  rows={displayItems}
+                  showDmo
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  consigneeLinkBase="/khanan/consignee"
+                  linkSearchParams={new URLSearchParams(searchParams.toString())}
+                />
+              )}
+
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="secondary"
+                  className="min-h-8 px-3 py-1 text-xs"
+                  disabled={offset <= 0}
+                  onClick={() =>
+                    updateParams({ offset: String(Math.max(0, offset - PAGE_SIZE)) })
+                  }
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="min-h-8 px-3 py-1 text-xs"
+                  disabled={offset + PAGE_SIZE >= total}
+                  onClick={() => updateParams({ offset: String(offset + PAGE_SIZE) })}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
+          )}
+        </>
+      ) : null}
+    </>
+  );
+}
+
+function ConsignerPageContent() {
+  const searchParams = useSearchParams();
+  const districtRowId = searchParams.get('districtRowId') ?? '';
+  const operatorParam = parseOperatorParam(
+    searchParams.get('operator'),
+    searchParams.get('role'),
+  );
+  const operatorType: OperatorType =
+    operatorParam === 'dealer' ? 'dealer' : 'lessee';
+
+  if (districtRowId) {
+    return (
+      <div className="animate-slide-right space-y-6">
+        <ConsignerDrillDown districtRowId={districtRowId} operatorType={operatorType} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-slide-right space-y-6">
+      <ConsignerBrowse />
+    </div>
+  );
+}
+
+export default function ConsignerPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="animate-pulse p-12">
+          <div className="h-8 w-64 rounded bg-surface-deep" />
+        </Card>
+      }
+    >
+      <ConsignerPageContent />
+    </Suspense>
+  );
+}

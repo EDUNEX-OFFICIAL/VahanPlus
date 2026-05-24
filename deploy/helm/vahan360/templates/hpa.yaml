@@ -1,0 +1,45 @@
+{{- if and .Values.hpa.enabled .Values.apiExpress.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "vahan360.fullname" . }}-api-express
+  labels:
+    {{- include "vahan360.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "vahan360.fullname" . }}-api-express
+  minReplicas: {{ .Values.hpa.apiExpress.minReplicas }}
+  maxReplicas: {{ .Values.hpa.apiExpress.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.apiExpress.targetCPUUtilizationPercentage }}
+---
+{{- end }}
+{{- if and .Values.hpa.enabled .Values.web.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "vahan360.fullname" . }}-web
+  labels:
+    {{- include "vahan360.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "vahan360.fullname" . }}-web
+  minReplicas: {{ .Values.hpa.web.minReplicas }}
+  maxReplicas: {{ .Values.hpa.web.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.web.targetCPUUtilizationPercentage }}
+{{- end }}

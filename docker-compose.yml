@@ -1,0 +1,107 @@
+name: vahan360
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: vahan360
+      POSTGRES_PASSWORD: vahan360
+      POSTGRES_DB: vahan360
+    ports:
+      - '5434:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vahan360']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api-express:
+    build:
+      context: .
+      dockerfile: apps/api-express/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://vahan360:vahan360@postgres:5432/vahan360
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      PORT: 3001
+    ports:
+      - '3001:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://vahan360:vahan360@postgres:5432/vahan360
+      REDIS_URL: redis://redis:6379
+      BROWSER_POOL_STUB: 'true'
+      WORKER_CONCURRENCY: 4
+      BIHAR_PORTAL_RATE_LIMIT_MAX: 2
+      BIHAR_PORTAL_RATE_LIMIT_DURATION_MS: 1000
+      BIHAR_PORTAL_POST_DELAY_MS: 1000
+      BIHAR_FANOUT_STAGGER_MS: 0
+      BIHAR_FETCH_TIMEOUT_MS: 30000
+      BIHAR_FETCH_RETRIES: 3
+      STORE_RAW_CAPTURE: 'false'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api-express:
+        condition: service_started
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://api-express:3001
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api-express
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - '80:80'
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - web
+      - api-express
+
+  api-nest:
+    profiles: ['nest']
+    build:
+      context: .
+      dockerfile: apps/api-nest/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://vahan360:vahan360@postgres:5432/vahan360
+      NEST_PORT: 3002
+    ports:
+      - '3002:3002'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -1,0 +1,32 @@
+{
+  "name": "@vahan360/browser-pool",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "playwright": "^1.52.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "playwright": "^1.52.0",
+    "typescript": "^5.8.3"
+  }
+}

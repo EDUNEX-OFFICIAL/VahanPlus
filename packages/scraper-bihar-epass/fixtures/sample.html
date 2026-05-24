@@ -1,0 +1,1935 @@
+
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><meta charset="utf-8" /><meta name="google-site-verification" content="z1uUG3UVnjoYnYzkiCRedJYpnHhaHDHRrArpkgcWBtI" /><meta name="robots" content="noindex, nofollow" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>
+	खान एवं भूतत्व विभाग, बिहार
+</title><link rel="icon" href="../../NIC/Images/bihar_govt_logo.png" type="image/x-icon" />
+
+    
+
+    <meta http-equiv="X-UA-Compatible" content="IE=EDGE,chrome=1" />
+    <meta http-equiv="Page-Enter" content="blendTrans(Duration=0.1)" />
+    <meta http-equiv="Page-Exit" content="blendTrans(Duration=0.1)" />
+    <meta name="keywords" content="Steel &amp; Minew, Jharkhand Mining Corporation, Directorate of Mines" />
+    <meta name="description" content="Department of Steel &amp; Mines" />
+    <title>Department of Mines & Geology, Government of Bihar</title>
+    <script src="../../Scripts/jquery-1.7.1.js" type="text/javascript"></script>
+    <script type="text/javascript" src="../../Scripts/loadComponent.js"></script>
+    <script type="text/javascript" src="../../Scripts/Validator.js"></script>
+    <link href="../../Styles/style.css" type="text/css" rel="Stylesheet" />
+    <script type="text/javascript">
+        pageHeader = "District Wise No of Pass Report"
+        strFirstLink = "ePass"
+        strLastLink = "ePass Reports"
+        indicate = "yes"
+        //        $(document).ready(function () {
+        //            function disableBack() { window.history.forward() }
+        //            window.onload = disableBack();
+        //            window.onpageshow = function (evt) { if (evt.persisted) disableBack() }
+        //        });
+        function checkValidation() {
+            if (!DropDownValidation('ddlFY', 'financial year')) {
+                return false;
+            }
+            if (!DropDownValidation('ddlMonth', 'month')) {
+                return false;
+            }
+            var StartDate = document.getElementById('txtFromDate').value;
+            var EndDate = document.getElementById('txtTodate').value;
+            var eDate = new Date(EndDate);
+            var sDate = new Date(StartDate);
+            if (StartDate != '' && EndDate != '' && sDate > eDate) {
+                alert("FromDate Can not be greater than ToDate.!");
+                return false;
+            }
+        }
+
+ 
+        function CheckDateFuture(sender, args) {
+            if (sender._selectedDate > new Date()) {
+                alert("Selected date can not be a future date!");
+                sender._textbox.set_Value("");
+            }
+        }
+    </script>
+    <style>
+        .viewTable table th
+        {
+            text-align: center;
+        }
+    </style>
+    <script type="text/javascript">
+        function ShowProgress() {
+            setTimeout(function () {
+                var modal = $('<div />');
+                modal.addClass("modal");
+                $('body').append(modal);
+                var loading = $(".loading");
+                loading.show();
+                var top = Math.max($(window).height() / 2 - loading[0].offsetHeight / 2, 0);
+                var left = Math.max($(window).width() / 2 - loading[0].offsetWidth / 2, 0);
+                loading.css({ top: top, left: left });
+            }, 200);
+        }
+        $('form').live("submit", function () {
+            ShowProgress();
+        });
+    </script>
+    <style type="text/css">
+        .modal
+        {
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #006600;
+            z-index: 99;
+            opacity: 0.2;
+            filter: alpha(opacity=20);
+            -moz-opacity: 0.8;
+            min-height: 100%;
+            width: 100%;
+        }
+        .loading
+        {
+            display: none;
+            position: fixed;
+        }
+    </style>
+
+
+
+
+<!--
+    <script src="NIC/Frontpage/menu/jquery.min.js" type="text/javascript"></script>
+    <script src="NIC/Frontpage/menu/script.js"></script>
+    <link href="../../NIC/Frontpage/menu/style.css" rel="stylesheet" />
+    <script src="NIC/Frontpage/js/menu.js"></script>
+    <link href="../../NIC/Frontpage/assets/css/bootstrap.min.css" rel="stylesheet" /><link href="../../NIC/Frontpage/assets/css/font-awesome.min.css" rel="stylesheet" /><link href="../../NIC/Frontpage/assets/css/style.css" rel="stylesheet" /><link href="../../NIC/Frontpage/css/style.css" rel="stylesheet" /> -->
+
+ <script src="/NIC/Frontpage/menu/jquery.min.js" type="text/javascript"></script>
+    <script src="/NIC/Frontpage/menu/script.js"></script>
+    <link href="/NIC/Frontpage/menu/style.css" rel="stylesheet" />
+    <script src="/NIC/Frontpage/js/menu.js"></script>
+    <link href="/NIC/Frontpage/assets/css/bootstrap.min.css" rel="stylesheet" /><link href="/NIC/Frontpage/assets/css/font-awesome.min.css" rel="stylesheet" /><link href="/NIC/Frontpage/assets/css/style.css" rel="stylesheet" /><link href="/NIC/Frontpage/css/style.css" rel="stylesheet" />
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+    </style>
+
+    <style type="text/css">
+        .lnk {
+            display: inline-block;
+            border-right: 1px solid #333;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 20px 15px;
+            text-transform: uppercase;
+            -webkit-transition: all 0.5s;
+            -o-transition: all 0.5s;
+            transition: all 0.5s;
+        }
+
+        .dropdown-item {
+            color: White;
+        }
+
+        .divMain {
+            padding-left: 50px;
+            padding-right: 50px;
+        }
+    </style>
+
+    <style type="text/css">
+        @media only screen and (max-width: 100%) {
+            .mobileMode {
+                padding-left: 0px;
+                padding-right: 0px;
+            }
+        }
+
+        .marquee {
+            width: 100%;
+            background-color: #14427d;
+            color: yellow;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+            .marquee p {
+                display: inline-block;
+                padding-left: 100%;
+                animation: marquee 30s linear infinite;
+                text-transform: uppercase;
+            }
+
+        @keyframes marquee {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(-100%, 0);
+            }
+        }
+    </style>
+
+<link href="/WebResource.axd?d=hDtH61wJQNuhKEawJpOwqmlGZQvWH-a_eH5STb_-NfjRq9_zQKsDm5uB1jpJxBtXyVU8C_i3m0QcEGJqS8u70LpqiwaJ8L9RMr4qjQTyob1ScIn-zCAkY3f5H3QXDMTM8k1rM1j8A7be3xDhplpB9g2&amp;t=634092602420000000" type="text/css" rel="stylesheet" /></head>
+<body>
+    <form name="aspnetForm" method="post" action="./epassreportAllDist.aspx" id="aspnetForm">
+<div>
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=VYsWrgIelgOkcJagSCvyG7eTDm3QNSLdkt4dE7BCd3DoAEo4YFfnsCm9r3tEomdp6Wr6Ktev491bY289lAj-lyq5Fh0LSSLd93mpX6UdXFU1&amp;t=638344266336178820" type="text/javascript"></script>
+
+
+<script src="/ScriptResource.axd?d=v9asflimA1s7ipV2en9RPSsuWh-ckQdFQ6fJ06ri-P2bY3gIof0pRsMHOc-F-mYNm3tJT-YDtyqYpyYTXp2JdCvaULu6_ZBDqJOjPSozpyjZlpgmWkzkTejEgZi_mXJm0&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=jnrcVdx2ovS-JQr-8yj4qvTxm_J269yTEtxFozUZTe7amp0TLAyRUk3ww76UTxZON3Ldcv4fcSDcr6KXyV-2nYHVg9xYKS9fszpIQ0B92gDpYf5JUNb8cWP8i_kRLMtwYm7Ngs5Gz9MEWdpTaFkCNQ2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=V6Vz_dyZrxvpOsNMXeOQhYjTD8AkUiEjMZQ75byWpLnZ_Kelr7BwFO4E6RrdsOLXwASWrN94sshpVZ3z8nBwSHDuqzCsS7skNMzjYVJCjghpLB5fCuM7-ZoqJY2gxoOb0&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=8WgY6NxsnnnLHtI4c5PHzBq1mEfTTRAs_H82MgjL9DdUAA5hE8zkdMIdrADtGJHUcvDa2dI0CZ7XFAGadkeYzMojr3kIklvmeoLUSFJycqHA-2KZZ6GRr5wvjVdq5pJG0&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=ZcWhtNNBTOtxX7XKUkmzIHmO2pWgVNQ5pIPJ0RdPCHYLC-CGeMIcXCK63ZIpUwWpWn0ue86fKxZq0Cv782mLOaoyaLiPnRz6j88f-Us6uRHyTp2EPj9JuwZoDUgJcGSza0VWlv4IlPPxe-UaOWxDNw2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=4HowytoYXemnRjIUsMEMctvHRCDbZl2VrHA7dsS9tIRgkcdVLxjlvaR00oUSCIvZ5_PTG4cI030qM921mCzWTImiNDQwAlJm5iZQd0bdueKxoRgoqstVh2xkUvKEglN_4yLx18HlP-SkBAcx41nPwg2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=BpS-f2MpjWU2UGZL4GijVduFoyu3JaOP9IL8j1v4nmF2OSufKQ5mju7BMV95QUpw_ZzYgbdz6yuocTbscqzyPYiefwkDgviNUe34fyepo8FsK1WQfz559mmjqcNU4B6gMVk5ws0z3z0XxBt0rE521A2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=hNYszkaDUpPmfBYsCxDJQ-hwrEJBOE1sZJaxGUmQAFvWXRCyEOZ6o3witOqFGdy0l0ibHQaSZHL-mRaU_z2RyRpgrosmHvrR_q6ZSThSa8AzJ46CQHJujE4e5HW28hBsemexTKWCUPlHwye6l9uuyw2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=J27ioZHlCG3-aC5qBswxT4YMRN-ahbL_a3Rms1Uh79ww_H_bvjIRs5A0k-xkP-9tXFvpBpvKEzTsuSYZUXwwLbvnn-mWorLgSjpQItQrAopx_o_PaWOL5svqskPZuFthVqldA02qjPubo0BKQPAE5A2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=VlkcMASYBmVGKDW4KYaT01_JKu3yM38N9kyVqqRbd5zdKs0DGFeBrcHCwPq4bzzYtjT3Ha4bpE44WbsRrRawRpb4HvGsasMbV8JYfQcmkXrFirCYqsaOy0Zyns81AnC8vZrVGiSqLt8IMs1BPOlQFQ2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=lkEuGBUnrmCSiTZf2pJGPpalIWXrOAKluuptV_UOKyCKDKR8bAMcyY1RYeSF1XzbwjsPM9rAGoHHJw227q1TeAymiqt5WqqaYYe_u0KBm3uioHfvpQX3IadQWvhPwl0Dq_7l1sQdzpwDwja44KRFVg2&amp;t=f2cd5c5" type="text/javascript"></script>
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="49E77179" />
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+	<input type="hidden" name="__PREVIOUSPAGE" id="__PREVIOUSPAGE" value="cJqtahY6I5muB5xo0sv7mMtyVdwDidswYgo-MVUudkIw7RtgWf0RxENsDWal-fc_WYxhFtVkbuy_AYAOEJgGv5NsrZ4W1Fi_soVF9WivHoRXc0kgzNFsvP5RDhHpp2mLca1aHFezXrwBpyeQn9iUYQ2" />
+</div>
+
+        <div class="row  divMain mobileMode" style="background-color: #202a3c !important">
+            <div class="col-md-12">
+                <a class="scrollToTop" href="#"><i class="fa fa-angle-up"></i></a>
+                
+                <div class="top-bar" style="background-color: #202a3c; color: White">
+                    <div class="container-fluid" style="padding-right: 0px; padding-left: 20px; text-align: center">
+                        <div class="row">
+                            <div class="col-lg-12" style="text-align: right !important; padding-left: 0px; padding-right: 0px; float: right">
+                                <ul style="margin-left: -45px;">
+                                    <li style="float: right; font-family: 'Poppins', sans-serif"><i class="fa fa-envelope"></i>&nbsp;khanansofthelp@gmail.com
+                                    &nbsp; |
+                                        <i class="fa fa-home" style="color: cyan !important"></i>&nbsp;
+                                        <a href="Default.aspx" style="color: cyan !important; font-family: 'Poppins', sans-serif;">Home Page </a>
+                                        |
+                                        <i class="fa fa-book"></i>&nbsp;
+                                     <a id="ctl00_lnkScreenReader" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$lnkScreenReader&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../ScreenReader.aspx&quot;, false, true))" style="color: White; font-family: 'Poppins', sans-serif;">Screen Reader</a>
+                                        |
+                                        <i class="fa fa-key"></i>&nbsp;
+                                    <a id="ctl00_lnkShortcutkey" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$lnkShortcutkey&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../ShortcutKeys.aspx&quot;, false, true))" style="color: White; font-family: 'Poppins', sans-serif;">Screen Reader</a>
+                                        | 
+                                        <i class="fa fa-text-height"></i>&nbsp;
+                                    Text Size
+                                        : <a href="JavaScript:" class="Aplus" style="color: White; font-family: 'Poppins', sans-serif;">
+                                            A+</a>
+                                        | 
+                                        
+                                        <a href="JavaScript:" class="reset" style="color: White; font-family: 'Poppins', sans-serif;">
+                                            A</a>
+                                        <a href="JavaScript:" class="Aminus" style="color: White; font-family: 'Poppins', sans-serif;">&nbsp; | &nbsp;
+                                        A-</a>&nbsp;
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <img src="../../NIC/Images/Transfer.jpg" id="ctl00_Img1" class="img-responsive" style="width: 100%; height: auto;" />
+
+        <section class="sticky">
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="content">
+                        <ul class="jetmenu blue">
+                            <li class="home">
+                                <a id="ctl00_Linkbutton2" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Linkbutton2&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../Default.aspx&quot;, false, true))">Home</a>
+                            </li>
+                            <li class="home">
+                                <a id="ctl00_Linkbutton3" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Linkbutton3&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../About.aspx&quot;, false, true))">About</a>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                Vehicle</a>
+                                <ul class="dropdown">
+
+                                    <li><a href="https://khanansoft.bihar.gov.in/PersonalVerification.aspx" target="_blank">
+                                        Registration</a></li>
+                                    <li>
+									<a href="https://khanansoft.bihar.gov.in/UpdateVehicleDetails.aspx" target="_blank">
+					<!--<a href="https://khanansoft.bihar.gov.in/VehicleExtDetailUpd1.aspx" target="_blank"> -->
+                                        Vehicle Detail Update</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/VehiclePINGeneration.aspx" target="_blank">
+                                        Vehicle PIN Generation</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/portal/MCVReports/MCVReportWiseStatus.aspx" target="_blank">
+                                        Vehicle Status</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/Vehicle/VehicleOwnerVerification.aspx" target="_blank">
+                                        Vehicle IMEI Check on VLTD</a></li>
+
+                                  
+                                     
+									 
+									  <li><a href="https://khanansoft.bihar.gov.in/VehicleMobileUpdSrvcNew.aspx" target="_blank">
+									  Vehicle Owner Mobile Update</a></li>
+									
+
+
+
+                                </ul>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                K-Licence</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/common/OnlineRegistration.aspx?regid=2" target="_blank">
+                                        Registration</a></li>
+                                    <li><a href="loginPage.aspx" target="_blank">
+                                        Renewal</a></li>
+
+                                </ul>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                Permit</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/common/OnlineRegistration.aspx?regid=10" target="_blank">
+                                        Registration</a></li>
+                                </ul>
+                            </li>
+                           
+
+                              <li class="rpt"><a href="JavaScript:">Reports</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/DashBoardPublicNew.aspx" target="_blank">
+                                        Citizen Dashboard</a></li>
+				    <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/epassreportAllDist.aspx" target="_blank">
+                                        ePass Report</a></li>
+ 				<li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/StockistSourceRpt.aspx"target="_blank">
+     Stockist Source Report</a></li>
+                                
+                                </ul>
+                            </li>
+							 <li class="rpt"><a href="JavaScript:">How To</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/MINES_RETURN_Part1_FIRST_TIME_RETURN_FILLING.pdf" target="_blank">
+                                        File monthly return Part 1</a></li>
+									<li><a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/MINES_RETURN_Part2 _SECOND_TIME_PROCESS.pdf" target="_blank">
+                                        File monthly return Part 2</a></li>
+								</ul>
+							</li>
+							
+							
+							<li class="rpt"><a href="JavaScript:">Grievance</a>
+                                <ul class="dropdown">
+                                     
+									 <li><a href="https://khanansoft.bihar.gov.in/portal/Grievance/GrivanceComplainExternal.aspx" target="_blank">
+                                        Register your Grievance</a></li>
+                                </ul>
+                            </li>
+							
+							
+							
+							
+			<li style="width: 60%;">
+                                <div class="marquee" style="border: none !important">
+                                    
+				  
+      
+	  
+
+                                </div>
+                            </li>
+
+
+
+                            <li class="rpt" style="float: right">
+                                <a href="/loginPage.aspx">  
+                                    <i class="fa fa-sign-in"></i>&nbsp;
+                                        Log In
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="responsive-header">
+                                <div class="marquee" style="border: none !important">
+                                  
+                               
+							   
+
+				</div>
+
+                            
+                    <div class="row col-xs-11" style="padding: 1px">
+
+                    </div>
+                    <div class=" col-xs-1 text-right">
+                        <div class="responsive-logobar menu-button">
+                            <a><i class="fa fa-bars"></i></a>
+                        </div>
+                    </div>
+                    <div class="responsive-menu">
+
+                        <a class="close-menu" title=""><i class="fa fa-remove"></i></a>
+                        <ul class="ints-ul">
+                            <li class="home">
+                                <a id="ctl00_Linkbutton1" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Linkbutton1&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../Default.aspx&quot;, false, true))">Home</a>
+                            </li>
+                            <li class="home">
+                                <a id="ctl00_Linkbutton4" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Linkbutton4&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../About.aspx&quot;, false, true))">About</a>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                Vehicle</a>
+                                <ul class="dropdown">
+                                   <!-- <li><a href="https://khanansoft.bihar.gov.in/PersonalVerification.aspx" target="_blank">
+                                        Registration</a></li>
+                                    <li><a href="https://khanansoft.bihar.gov.in/UpdateVehicleDetails.aspx" target="_blank">
+                                        Vehicle Fitness Detail Update" /></a></li>
+				-->
+
+ 				 <li><a href="https://khanansoft.bihar.gov.in/PersonalVerification.aspx" target="_blank">
+                                        Registration</a></li>
+                                    <li>
+									<a href="https://khanansoft.bihar.gov.in/UpdateVehicleDetails.aspx" target="_blank">
+					<!--<a href="https://khanansoft.bihar.gov.in/VehicleExtDetailUpd1.aspx" target="_blank"> -->
+                                        Vehicle Detail Update</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/VehiclePINGeneration.aspx" target="_blank">
+                                        Vehicle PIN Generation</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/portal/MCVReports/MCVReportWiseStatus.aspx" target="_blank">
+                                       Vehicle Status</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/Vehicle/VehicleOwnerVerification.aspx" target="_blank">
+                                        Vehicle IMEI Check on VLTD</a></li>
+                                     
+									  
+                                     <li><a href="https://khanansoft.bihar.gov.in/VehicleMobileUpdSrvcNew.aspx" target="_blank">
+									  Vehicle Owner Mobile Number Update</a></li>
+									
+										 
+                                         <!--
+                                        <li><a href="../portal/Grievance/GrivanceComplainExternal.aspx" target="_blank">
+										 <li><a href="https://khanansoft.bihar.gov.in/portal/Grievance/GrivanceComplainExternal.aspx" target="_blank">
+                                        Vehicle Owner Mobile Number Update</a></li>
+                                        -->
+
+
+                                </ul>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                K-Licence</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/common/OnlineRegistration.aspx?regid=2" target="_blank">
+                                        Registration</a></li>
+                                    <li><a href="loginPage.aspx" target="_blank">
+                                        Renewal</a></li>
+                                </ul>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                Permit</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/common/OnlineRegistration.aspx?regid=10" target="_blank">
+                                        Registration</a></li>
+                                </ul>
+                            </li>
+
+			                <li class="rpt"><a href="JavaScript:">Reports</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/DashBoardPublicNew.aspx" target="_blank">
+                                        Citizen Dashboard</a></li>
+				    <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/epassreportAllDist.aspx" target="_blank">
+                                        ePass Report</a></li>
+					 <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/StockistSourceRpt.aspx"target="_blank">
+     Stockist Source Report</a></li>
+                                
+                                </ul>
+                            </li>
+                             <li class="rpt"><a href="JavaScript:">How To</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/MINES_RETURN_Part1_FIRST_TIME_RETURN_FILLING.pdf" target="_blank">
+                                        File monthly return Part 1</a></li>
+									<li><a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/MINES_RETURN_Part2 _SECOND_TIME_PROCESS.pdf" target="_blank">
+                                        File monthly return Part 2</a></li>
+								</ul>
+							</li>
+							
+							
+							<li class="rpt"><a href="JavaScript:">Grievance</a>
+                                <ul class="dropdown">
+                                   
+									 <li><a href="https://khanansoft.bihar.gov.in/portal/Grievance/GrivanceComplainExternal.aspx" target="_blank">
+                                        Register your Grievance</a></li>
+                                </ul>
+                            </li>
+							
+							
+							
+							
+                            <li class="rpt" style="float: right">
+                                <a href="loginPage.aspx"> 
+                                    <i class="fa fa-sign-in"></i>&nbsp;
+                                        Log In
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        
+   
+    
+     <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$MainContent$ScriptManager1', 'aspnetForm', [], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+    
+    
+    <div align="center" class="mandatory">
+
+<span style="font-size: 16px;color:blue;background-color:white">नोट :-</span ><span style="font-size: 14px;color:yellow;background-color:black"> सूची को अद्यतन रखने हेतु यथासंभव प्रयास  किये गए है | त्रुटि पाए जाने के संबंध में विभाग को सूचित करें | इस डाटा का प्रयोग किसी माननीय  न्यायालय या  किसी अन्य प्राधिकार के  समक्ष वैध  नहीं होगा  |  </span>
+        <br />
+
+                            <span id="ctl00_MainContent_lblMsg" style="font-family:Calibri;font-size:Medium;font-weight:bold;"></span>
+                        </div>
+
+
+    <div class="searchTable col-12">
+                            <table border="0" cellpadding="3" cellspacing="0">
+                                
+                                
+                                
+                                <tr id="ctl00_MainContent_trDate">
+	<td>
+                                        <b>Date / तारीख </b></td>
+	<td width="5px">
+                                        :</td>
+	<td width="168px">
+                                        <input name="ctl00$MainContent$txtDate1" type="text" value="20-May-2026" id="ctl00_MainContent_txtDate1" />
+                                        
+                                    </td>
+	<td width="168px">
+                                        
+                                    </td>
+	<td>
+                                        &nbsp;</td>
+	<td>
+                                        </td>
+	<td>
+                                        <input type="submit" name="ctl00$MainContent$btnshow" value="Show" onclick="return checkValidation();" id="ctl00_MainContent_btnshow" class="button" />
+                                        </td>
+</tr>
+
+                </table> </div>
+
+
+
+
+<div class="row" style="background-color:white !important;color:black !important; padding-top:10px !important;padding-left:20px;">
+
+    <h3 class="m-auto" >ePass/Challan Date : <span id="ctl00_MainContent_cldDate">20-May-2026</span></h3>
+    <span class="mr-5" style="float:right !important;">Report Generated On :<span id="ctl00_MainContent_LblrptGenDtm">21-May-2026 18:09:27</span></span>
+    </div>
+    <div class="row" style="background-color:white !important;color:black !important; padding:20px !important;">
+        
+<div>
+	<table cellspacing="0" rules="all" border="1" id="ctl00_MainContent_grdepass" style="width:100%;border-collapse:collapse;">
+		<tr>
+			<td class="viewTable" align="center" colspan="2" style="color:White;background-color:#008000;border-color:Silver;border-width:2px;border-style:solid;font-weight:bold;"> </td><td class="viewTable" align="center" colspan="4" style="color:White;background-color:#008000;border-color:Silver;border-width:2px;border-style:solid;font-weight:bold;">Lessee / पट्टेदार</td><td class="viewTable" align="center" colspan="4" style="color:White;background-color:#008000;border-color:Silver;border-width:2px;border-style:solid;font-weight:bold;">Dealer / विक्रेता</td><td class="viewTable" align="center" colspan="2" style="color:White;background-color:#008000;border-color:Silver;border-width:2px;border-style:solid;font-weight:bold;">Total / कुल</td>
+		</tr><tr>
+			<th scope="col">
+                                        Sl.No/<br />
+                                        क्रमांक
+                                    </th><th scope="col">DMO Name/<br/>जिला खनन कार्यालय का नाम</th><th scope="col">Mineral Name/<br/>खनिज का नाम</th><th scope="col">
+                                        No Of User/<br />
+                                        उपयोगकर्ता की संख्या
+                                    </th><th scope="col">
+                                        No. Of Pass/<br />
+                                        पास की संख्या
+                                        <p class="bold" style="color:red">Click numbers to view detail</p>
+                                    </th><th scope="col">
+                                        Dispatched Quantity/<br/>डिस्पैच मात्रा
+                                    </th><th scope="col">Mineral Name/<br/>खनिज का नाम</th><th scope="col">
+                                        No Of User/<br />
+                                        उपयोगकर्ता की संख्या
+                                    </th><th scope="col">
+                                        No. Of Pass/<br />
+                                        पास की संख्या
+                                        <p class="bold" style="color:red">Click numbers to view detail</p>
+                                    </th><th scope="col">
+                                        Dispatched Quantity/<br/>डिस्पैच मात्रा
+                                    </th><th scope="col">Total No Of User/<br />कुल उपयोगकर्ता की संख्या</th><th scope="col">Total No Of Pass/<br />कुल पास की संख्या</th>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl05_lblslno">1</span>
+                                    </td><td>ARARIA</td><td>--</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl05$hdnDMO" id="ctl00_MainContent_grdepass_ctl05_hdnDMO" value="1" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl05$hdnMineralId" id="ctl00_MainContent_grdepass_ctl05_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl05$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl05_hdnDealerMineralId" value="0" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl05_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl05_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl05_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl05_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl05_lblLQty">0.000</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl05_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl05_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl05_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl05_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl05_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">0</td><td style="width:10%;">0</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl06_lblslno">2</span>
+                                    </td><td>ARWAL</td><td rowspan="7">SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl06$hdnDMO" id="ctl00_MainContent_grdepass_ctl06_hdnDMO" value="2" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl06$hdnMineralId" id="ctl00_MainContent_grdepass_ctl06_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl06$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl06_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl06_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl06_lblL1">17</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyLHysPqHK2s1TwFgowNPHidmL/gYzIZH0xyxWqSOsUR0TteLQaffqqmGrLGbt/uj23pPmZALc6GCpwCRB2Sf5EovXCAjjpq9D2KSnOXcCaOLm2b1cIAUOKV4ynehqPtVsw=" id="ctl00_MainContent_grdepass_ctl06_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl06_lblM1" style="font-size:large;color:blue;">1839</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl06_lblLQty">53386.070</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl06_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl06_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr7KzxdFwlx4ipjn3OhfPiN3YE+uLApTjiPwAQrvhky5jGrIrh9SPY9kOX7e5ef7etpiUP05iV0jEYF5J6uVfW8lo6FhwKAXFbufLZAz19h7Cl/+Nz9L7OnvdoXRdovArko=" id="ctl00_MainContent_grdepass_ctl06_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl06_lblG1" style="font-size:large;color:blue;">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl06_lblDQty">38.790</span>
+                                    </td><td style="width:10%;">18</td><td style="width:10%;">1840</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl07_lblslno">3</span>
+                                    </td><td rowspan="2">AURANGABAD</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl07$hdnDMO" id="ctl00_MainContent_grdepass_ctl07_hdnDMO" value="3" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl07$hdnMineralId" id="ctl00_MainContent_grdepass_ctl07_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl07$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl07_hdnDealerMineralId" value="48" />
+                                        <a id="ctl00_MainContent_grdepass_ctl07_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl07_lblL1">25</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyIg2sJOord33Z5FEPMHCCQ3LiEijmCo8mrGh6JZTqs1aOZB/QnaaikmLG/QiLQdY/zIDP9piS3vngbYjiQ1K8OLsq0LyLMqwndXqZg2m/GBjcCKI5TSfuQ9xPczXwX0EKA=" id="ctl00_MainContent_grdepass_ctl07_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl07_lblM1" style="font-size:large;color:blue;">3223</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl07_lblLQty">105901.820</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl07_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl07_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5iuuHTKTUELFb8K/OdI3ziiSsag74ysd3b7/YX+qOtnCxC9er46cW2plzvIjkNMHBYZwgG4fQNhkIvoOJb4dlUUJhwGX48Ih28ZLMjEn8RgDGCHE33PuYnaFcwnqoTims=" id="ctl00_MainContent_grdepass_ctl07_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl07_lblG1" style="font-size:large;color:blue;">47</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl07_lblDQty">1126.740</span>
+                                    </td><td style="width:10%;">26</td><td style="width:10%;">3270</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl08_lblslno">4</span>
+                                    </td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl08$hdnDMO" id="ctl00_MainContent_grdepass_ctl08_hdnDMO" value="3" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl08$hdnMineralId" id="ctl00_MainContent_grdepass_ctl08_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl08$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl08_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl08_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl08_lblL1">25</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyIg2sJOord33Z5FEPMHCCQ3LiEijmCo8mrGh6JZTqs1aOZB/QnaaikmLG/QiLQdY/zIDP9piS3vngbYjiQ1K8OLsq0LyLMqwndXqZg2m/GBjcCKI5TSfuQ9xPczXwX0EKA=" id="ctl00_MainContent_grdepass_ctl08_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl08_lblM1" style="font-size:large;color:blue;">3223</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl08_lblLQty">105901.820</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl08_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl08_lblD1">98</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5iuuHTKTUELFb8K/OdI3ziiSsag74ysd3b7/YX+qOtnCxC9er46cW2plzvIjkNMHBYZwgG4fQNhkIvoOJb4dlUUJhwGX48Ih28ZLMjEn8RgDGCHE33PuYnaFcwnqoTims=" id="ctl00_MainContent_grdepass_ctl08_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl08_lblG1" style="font-size:large;color:blue;">469</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl08_lblDQty">1875.070</span>
+                                    </td><td style="width:10%;">123</td><td style="width:10%;">3692</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl09_lblslno">5</span>
+                                    </td><td>BANKA </td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl09$hdnDMO" id="ctl00_MainContent_grdepass_ctl09_hdnDMO" value="4" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl09$hdnMineralId" id="ctl00_MainContent_grdepass_ctl09_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl09$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl09_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl09_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl09_lblL1">5</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyII7r2sqJ05D1Jf5pPOwvOTaqczJWoL2MRu2BJpNXjRtyeQC0oMxgrYo4a4ryhOEBJe6yWvyX45/Z72tBY3yvGRGLmxSMfvbIgqk5xS0pUi4uUB1Bl6/soYDBcQeYpmBfc=" id="ctl00_MainContent_grdepass_ctl09_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl09_lblM1" style="font-size:large;color:blue;">873</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl09_lblLQty">16319.900</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl09_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl09_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5ZIh39vAiNS0N9h4oKaxIljFG5h6CwRth/ivxgtZdImLbPLPqQTMMEzsOEKK/lTUcWR1WuEj+LMTqQSjBCGsws0skiV+8s3w+jWhw+xIwDvTkNlJx7kC84YfR8nzMoXzw=" id="ctl00_MainContent_grdepass_ctl09_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl09_lblG1" style="font-size:large;color:blue;">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl09_lblDQty">4.000</span>
+                                    </td><td style="width:10%;">6</td><td style="width:10%;">874</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl10_lblslno">6</span>
+                                    </td><td>BEGUSARAI</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl10$hdnDMO" id="ctl00_MainContent_grdepass_ctl10_hdnDMO" value="5" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl10$hdnMineralId" id="ctl00_MainContent_grdepass_ctl10_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl10$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl10_hdnDealerMineralId" value="0" />
+                                        <a id="ctl00_MainContent_grdepass_ctl10_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl10_lblL1">2</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyJKFO+u69kJA5nMN01LDxCmJ5gUwARsuhtXxjiM30SzN9ZLfXcf08gkDlnBQGh8ajzYURHxHF5QFlVDwsAi1v9Gk5zUTbGz/IvMM7tJaqEoQR8xgm40JpNuSXoUgaHPxDI=" id="ctl00_MainContent_grdepass_ctl10_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl10_lblM1" style="font-size:large;color:blue;">58</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl10_lblLQty">262.540</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl10_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl10_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl10_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl10_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl10_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">2</td><td style="width:10%;">58</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl11_lblslno">7</span>
+                                    </td><td>BHAGALPUR</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl11$hdnDMO" id="ctl00_MainContent_grdepass_ctl11_hdnDMO" value="6" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl11$hdnMineralId" id="ctl00_MainContent_grdepass_ctl11_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl11$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl11_hdnDealerMineralId" value="0" />
+                                        <a id="ctl00_MainContent_grdepass_ctl11_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl11_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyI24G5aHw65ey7048xcLZey7PqZtOUPc5kVYcanwFNUHRMhVoTBHXktmpyTnjo4zfw1ZHUmxLrewCwPvbtMAl38/xcylGbDxn8pngXYueX3vYKmk1tqPxeOeWDvnqCKWtA=" id="ctl00_MainContent_grdepass_ctl11_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl11_lblM1" style="font-size:large;color:blue;">13</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl11_lblLQty">51.310</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl11_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl11_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl11_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl11_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl11_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">1</td><td style="width:10%;">13</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl12_lblslno">8</span>
+                                    </td><td>BHOJPUR</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl12$hdnDMO" id="ctl00_MainContent_grdepass_ctl12_hdnDMO" value="7" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl12$hdnMineralId" id="ctl00_MainContent_grdepass_ctl12_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl12$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl12_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl12_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl12_lblL1">40</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyKVBBEHKFO5WIPRLWkX8mkNNeGFbduoneM6QGgiz3nvGjq3tbODAwRnNNGwQNTivltvxCiKvgOC1bByC6jlZ5RPquAwmW3fXm+opkG9mHksV1ucMw2JcHGiZm1n2ViWEs8=" id="ctl00_MainContent_grdepass_ctl12_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl12_lblM1" style="font-size:large;color:blue;">6113</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl12_lblLQty">178367.950</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl12_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl12_lblD1">5</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5ZRJBMrDqw5osU7TMH3PZ8PYi9mfpcN0bTLZRsIaRoSeIMuHFIjw2d1dPcvkzX+0bC/2fbN+qzcW4nFwek/QeOFxkh1PGA4YQpBRsxRh4M1J5RtQtzucd+rYdzNIWef90=" id="ctl00_MainContent_grdepass_ctl12_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl12_lblG1" style="font-size:large;color:blue;">33</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl12_lblDQty">132.000</span>
+                                    </td><td style="width:10%;">45</td><td style="width:10%;">6146</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl13_lblslno">9</span>
+                                    </td><td>BUXAR </td><td rowspan="3">--</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl13$hdnDMO" id="ctl00_MainContent_grdepass_ctl13_hdnDMO" value="8" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl13$hdnMineralId" id="ctl00_MainContent_grdepass_ctl13_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl13$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl13_hdnDealerMineralId" value="0" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl13_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl13_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl13_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl13_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl13_lblLQty">0.000</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl13_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl13_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl13_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl13_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl13_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">0</td><td style="width:10%;">0</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl14_lblslno">10</span>
+                                    </td><td rowspan="2">DARBHANGA</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl14$hdnDMO" id="ctl00_MainContent_grdepass_ctl14_hdnDMO" value="9" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl14$hdnMineralId" id="ctl00_MainContent_grdepass_ctl14_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl14$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl14_hdnDealerMineralId" value="48" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl14_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl14_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl14_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl14_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl14_lblLQty">0.000</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl14_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl14_lblD1">13</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr7XRDecDgHNwtvGHXN5pVC3MukjJ7fWXo8APY9i6c9l6d7V+bOeYoY4GRQk/BJl8ZPhiZEvPTq6+K59LWhYY31jJa3IKgThszzFACdnCcxvb7x1aMDGtBRvDazpGRbi5gI=" id="ctl00_MainContent_grdepass_ctl14_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl14_lblG1" style="font-size:large;color:blue;">108</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl14_lblDQty">2009.010</span>
+                                    </td><td style="width:10%;">13</td><td style="width:10%;">108</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl15_lblslno">11</span>
+                                    </td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl15$hdnDMO" id="ctl00_MainContent_grdepass_ctl15_hdnDMO" value="9" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl15$hdnMineralId" id="ctl00_MainContent_grdepass_ctl15_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl15$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl15_hdnDealerMineralId" value="74" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl15_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl15_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl15_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl15_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl15_lblLQty">0.000</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl15_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl15_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr7XRDecDgHNwtvGHXN5pVC3MukjJ7fWXo8APY9i6c9l6d7V+bOeYoY4GRQk/BJl8ZPhiZEvPTq6+K59LWhYY31jJa3IKgThszzFACdnCcxvb7x1aMDGtBRvDazpGRbi5gI=" id="ctl00_MainContent_grdepass_ctl15_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl15_lblG1" style="font-size:large;color:blue;">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl15_lblDQty">5.400</span>
+                                    </td><td style="width:10%;">1</td><td style="width:10%;">1</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl16_lblslno">12</span>
+                                    </td><td>GAYA</td><td>SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl16$hdnDMO" id="ctl00_MainContent_grdepass_ctl16_hdnDMO" value="10" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl16$hdnMineralId" id="ctl00_MainContent_grdepass_ctl16_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl16$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl16_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl16_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl16_lblL1">19</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyKWVTw3JRIqNxcbqoTn8ifRT+5+Fljj+RIW2b6TUpdEC3Ri/5qzPs8e8hYZcCCpckfb36D8ymwENb4DJ7LzQpBWsxDNuvKFI+s2mZz/pAMArbhRBjJqBzmYWa0CZyII/bc=" id="ctl00_MainContent_grdepass_ctl16_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl16_lblM1" style="font-size:large;color:blue;">2547</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl16_lblLQty">47961.000</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl16_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl16_lblD1">10</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr4XLnGeeLUjG83bH4AEXgawzPzUlPHiDPHFo2y9J55CaagqyeQ0unLyiOyJKpzT2C3wyQuE6UEs4LKuclOuiKRxWxiQI2dK4+NYuq7Y48DNtLr4Ao2RTvKGweAqckxn9ug=" id="ctl00_MainContent_grdepass_ctl16_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl16_lblG1" style="font-size:large;color:blue;">23</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl16_lblDQty">160.810</span>
+                                    </td><td style="width:10%;">29</td><td style="width:10%;">2570</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl17_lblslno">13</span>
+                                    </td><td>GOPALGANJ</td><td>--</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl17$hdnDMO" id="ctl00_MainContent_grdepass_ctl17_hdnDMO" value="11" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl17$hdnMineralId" id="ctl00_MainContent_grdepass_ctl17_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl17$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl17_hdnDealerMineralId" value="48" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl17_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl17_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl17_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl17_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl17_lblLQty">0.000</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl17_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl17_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5JlCnXk8lNianOeWC7yuSrrMnj6uMEGSO12+ZqHtX7FckWfTKjse7sGRQJxgAN7RsICoH7qgsnztn2SSCelsUE8YAw5r77wDpGMKs91vQ76K5sYAUlUCb9d6RJT8rY+Tc=" id="ctl00_MainContent_grdepass_ctl17_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl17_lblG1" style="font-size:large;color:blue;">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl17_lblDQty">20.920</span>
+                                    </td><td style="width:10%;">1</td><td style="width:10%;">1</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl18_lblslno">14</span>
+                                    </td><td>JAMUI</td><td>SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl18$hdnDMO" id="ctl00_MainContent_grdepass_ctl18_hdnDMO" value="12" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl18$hdnMineralId" id="ctl00_MainContent_grdepass_ctl18_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl18$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl18_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl18_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl18_lblL1">27</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyLGyWjRVHs7fEikmRxd4qsRQVGDRHiUmY5GNOdf++ZERjPCcW26MyroCbu394nSmkqAQJ4hd9INoh8zGQO2ZJ5NsG4DgQGYqCWkz3fJtj5N99UpzWa3EUbJnMCkBd4wQ74=" id="ctl00_MainContent_grdepass_ctl18_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl18_lblM1" style="font-size:large;color:blue;">1717</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl18_lblLQty">41445.420</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl18_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl18_lblD1">7</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr4/ASn8SwcAwr168YtcG1DpBkKb4KxCgHJ/Yv2zfhGFmSDehBBHGvTxVNgZA5YeYLlOPai31WSO2So7eJBHUKMlTX0uiuAv1qhtA9C0AKF5XgOG9+9VpsI2SVR+Oc/WlHU=" id="ctl00_MainContent_grdepass_ctl18_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl18_lblG1" style="font-size:large;color:blue;">217</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl18_lblDQty">5605.490</span>
+                                    </td><td style="width:10%;">34</td><td style="width:10%;">1934</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl19_lblslno">15</span>
+                                    </td><td>JEHANABAD</td><td>--</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl19$hdnDMO" id="ctl00_MainContent_grdepass_ctl19_hdnDMO" value="13" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl19$hdnMineralId" id="ctl00_MainContent_grdepass_ctl19_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl19$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl19_hdnDealerMineralId" value="74" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl19_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl19_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl19_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl19_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl19_lblLQty">0.000</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl19_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl19_lblD1">5</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr6OmJgyEe4KAqzGRMlTt0hNgrKwrt8G2FIhMP/EJ7sF9ZlGBQxt45erqfNkRKbf0xFWqd6oJ2qQfsH//NrK6lOo2pW2AD//HiWzzAe7P90VS233RdOyZdYLHj+eczbhpbE=" id="ctl00_MainContent_grdepass_ctl19_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl19_lblG1" style="font-size:large;color:blue;">14</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl19_lblDQty">56.000</span>
+                                    </td><td style="width:10%;">5</td><td style="width:10%;">14</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl20_lblslno">16</span>
+                                    </td><td>KAIMUR (BHABUA)</td><td>SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl20$hdnDMO" id="ctl00_MainContent_grdepass_ctl20_hdnDMO" value="14" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl20$hdnMineralId" id="ctl00_MainContent_grdepass_ctl20_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl20$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl20_hdnDealerMineralId" value="0" />
+                                        <a id="ctl00_MainContent_grdepass_ctl20_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl20_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyIa2RJVKbYjwHP51YLU1cR5QsYFNojVnVEAD2/A2af25cc+hc3zwrTjpFkdEYkxoR8mSWt5+a9Aa15x3rrjTQ0Se0uZKxhNIUM2YmRnhfOad5FVHitSPOrxkTBZCBbTPlw=" id="ctl00_MainContent_grdepass_ctl20_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl20_lblM1" style="font-size:large;color:blue;">2</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl20_lblLQty">8.000</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl20_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl20_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl20_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl20_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl20_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">1</td><td style="width:10%;">2</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl21_lblslno">17</span>
+                                    </td><td>KATIHAR</td><td rowspan="2">--</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl21$hdnDMO" id="ctl00_MainContent_grdepass_ctl21_hdnDMO" value="15" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl21$hdnMineralId" id="ctl00_MainContent_grdepass_ctl21_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl21$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl21_hdnDealerMineralId" value="0" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl21_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl21_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl21_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl21_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl21_lblLQty">0.000</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl21_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl21_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl21_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl21_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl21_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">0</td><td style="width:10%;">0</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl22_lblslno">18</span>
+                                    </td><td>KHAGARIA</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl22$hdnDMO" id="ctl00_MainContent_grdepass_ctl22_hdnDMO" value="16" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl22$hdnMineralId" id="ctl00_MainContent_grdepass_ctl22_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl22$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl22_hdnDealerMineralId" value="0" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl22_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl22_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl22_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl22_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl22_lblLQty">0.000</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl22_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl22_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl22_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl22_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl22_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">0</td><td style="width:10%;">0</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl23_lblslno">19</span>
+                                    </td><td>KISHANGANJ</td><td rowspan="8">SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl23$hdnDMO" id="ctl00_MainContent_grdepass_ctl23_hdnDMO" value="17" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl23$hdnMineralId" id="ctl00_MainContent_grdepass_ctl23_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl23$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl23_hdnDealerMineralId" value="0" />
+                                        <a id="ctl00_MainContent_grdepass_ctl23_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl23_lblL1">13</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyIzoWxdxmC5+Aq6JS/HRjzj52ZoVLtaIkQ2042xgdZQU/efHFyegthoeRZzup3ZmFlq+QQp4vm/F3IbYnazfFDcUoaPjcVSQYZHyutp/feNczJUMB9VD5o2oFA43xtq/Gc=" id="ctl00_MainContent_grdepass_ctl23_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl23_lblM1" style="font-size:large;color:blue;">509</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl23_lblLQty">10105.880</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl23_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl23_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl23_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl23_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl23_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">13</td><td style="width:10%;">509</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl24_lblslno">20</span>
+                                    </td><td>LAKHISARAI</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl24$hdnDMO" id="ctl00_MainContent_grdepass_ctl24_hdnDMO" value="18" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl24$hdnMineralId" id="ctl00_MainContent_grdepass_ctl24_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl24$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl24_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl24_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl24_lblL1">5</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyK57Dp7AdFlu0+F38RwByr9gezlJuvYqztSeCdeK2FmrZvUOzEpdgWs76gK9ksD4I3L+8zcPZXOSiB+kqICef6yY40YGB0iO3DJz8UCdNBLRkKb+XXvi5dNfCzh83Os8H0=" id="ctl00_MainContent_grdepass_ctl24_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl24_lblM1" style="font-size:large;color:blue;">817</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl24_lblLQty">7291.470</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl24_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl24_lblD1">4</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5Iy+XDestnKavFgQO2I72FoedEpMKTybHScoYeKBnTiA3Mv6J4C5x7jhGZ2adiA7qDat1ZPyEXmHnDW6h0HstKIO2u9RZnVTA15IPl9n7ltUsh3pswCp3yfYKVW8GLh1g=" id="ctl00_MainContent_grdepass_ctl24_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl24_lblG1" style="font-size:large;color:blue;">218</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl24_lblDQty">1074.380</span>
+                                    </td><td style="width:10%;">9</td><td style="width:10%;">1035</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl25_lblslno">21</span>
+                                    </td><td>MADHEPURA</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl25$hdnDMO" id="ctl00_MainContent_grdepass_ctl25_hdnDMO" value="19" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl25$hdnMineralId" id="ctl00_MainContent_grdepass_ctl25_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl25$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl25_hdnDealerMineralId" value="0" />
+                                        <a id="ctl00_MainContent_grdepass_ctl25_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl25_lblL1">2</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyJ0I2qHGlbFGHwUw9BKTe4G3P9aTJFXcEgz6Ia//MwykDeOCxO1pz7yN0xwdh+srmuBuFSDPG9Oo27N19CN16XrVyTDbXgKAp9eJautvweC5TL0dDRNhaII4S5rgrh0ZU0=" id="ctl00_MainContent_grdepass_ctl25_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl25_lblM1" style="font-size:large;color:blue;">53</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl25_lblLQty">710.370</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl25_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl25_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl25_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl25_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl25_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">2</td><td style="width:10%;">53</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl26_lblslno">22</span>
+                                    </td><td rowspan="2">MADHUBANI</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl26$hdnDMO" id="ctl00_MainContent_grdepass_ctl26_hdnDMO" value="20" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl26$hdnMineralId" id="ctl00_MainContent_grdepass_ctl26_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl26$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl26_hdnDealerMineralId" value="48" />
+                                        <a id="ctl00_MainContent_grdepass_ctl26_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl26_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyLkV+aXBI/OrJAojWbkYL+ktCmXDEwZPm2HPhQnSV/F582bk3UcYChuLA+/dK+iC0OARti/knrg0tkLCURLN0+a0q0XQvmj26IZxS+QDtZre7CeG+7iLdyPcvCcqM6Q65Y=" id="ctl00_MainContent_grdepass_ctl26_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl26_lblM1" style="font-size:large;color:blue;">59</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl26_lblLQty">632.020</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl26_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl26_lblD1">11</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr51N4diWzBTKLTVMB4C5myIi9TcP24ZZ+v31KOzYCZHCrqkMvmUFR9jzOxE1og1i63aKjRDi+Mf/srD/Z7Y/G5qkOkRt5SmXP3soHxpPNuiaZrrcKHbI+RwnKgXuxYpixM=" id="ctl00_MainContent_grdepass_ctl26_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl26_lblG1" style="font-size:large;color:blue;">92</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl26_lblDQty">608.780</span>
+                                    </td><td style="width:10%;">12</td><td style="width:10%;">151</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl27_lblslno">23</span>
+                                    </td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl27$hdnDMO" id="ctl00_MainContent_grdepass_ctl27_hdnDMO" value="20" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl27$hdnMineralId" id="ctl00_MainContent_grdepass_ctl27_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl27$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl27_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl27_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl27_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyLkV+aXBI/OrJAojWbkYL+ktCmXDEwZPm2HPhQnSV/F582bk3UcYChuLA+/dK+iC0OARti/knrg0tkLCURLN0+a0q0XQvmj26IZxS+QDtZre7CeG+7iLdyPcvCcqM6Q65Y=" id="ctl00_MainContent_grdepass_ctl27_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl27_lblM1" style="font-size:large;color:blue;">59</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl27_lblLQty">632.020</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl27_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl27_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr51N4diWzBTKLTVMB4C5myIi9TcP24ZZ+v31KOzYCZHCrqkMvmUFR9jzOxE1og1i63aKjRDi+Mf/srD/Z7Y/G5qkOkRt5SmXP3soHxpPNuiaZrrcKHbI+RwnKgXuxYpixM=" id="ctl00_MainContent_grdepass_ctl27_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl27_lblG1" style="font-size:large;color:blue;">2</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl27_lblDQty">25.150</span>
+                                    </td><td style="width:10%;">2</td><td style="width:10%;">61</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl28_lblslno">24</span>
+                                    </td><td>MUNGER</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl28$hdnDMO" id="ctl00_MainContent_grdepass_ctl28_hdnDMO" value="21" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl28$hdnMineralId" id="ctl00_MainContent_grdepass_ctl28_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl28$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl28_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl28_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl28_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyL+mMwBszQBfXLF0xR0KRTMtg1b8Aq5O+qYM6AEREOxUMFW1tLtQKepf/145Rks4E0A/283Ticb/QwCGn3nL0JvL5Z/yxwNC1zCAs74l0wS5WXVpLO7b3aq2Jfy6/mNvTM=" id="ctl00_MainContent_grdepass_ctl28_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl28_lblM1" style="font-size:large;color:blue;">50</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl28_lblLQty">211.760</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl28_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl28_lblD1">3</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr7lkOuv+V1wbnotMv63ndg+G9JDYPqTE+wDy3JHX+9D3MNiKy2nawYPNvFj4ec013ll+RFiY65xK/ebSH1bdDhikawHNmKaRjMa8IBvT4Y+dwXjo8Jhy9RZyrtqAUTpNK4=" id="ctl00_MainContent_grdepass_ctl28_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl28_lblG1" style="font-size:large;color:blue;">11</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl28_lblDQty">104.540</span>
+                                    </td><td style="width:10%;">4</td><td style="width:10%;">61</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl29_lblslno">25</span>
+                                    </td><td>MUZAFFARPUR</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl29$hdnDMO" id="ctl00_MainContent_grdepass_ctl29_hdnDMO" value="22" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl29$hdnMineralId" id="ctl00_MainContent_grdepass_ctl29_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl29$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl29_hdnDealerMineralId" value="48" />
+                                        <a id="ctl00_MainContent_grdepass_ctl29_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl29_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyINJOEUq4ZEOWrr7NSbJ3r5WjdQk7ETfShvwVRmDMr+oy3n0GVL4J3yFTUYnMOJHOMj/ZVPLnv3dOJMJ9Cgqx5Pna8SrR8F1CasVENIgt3JI95sr2wy87AixsMwuVhOmAA=" id="ctl00_MainContent_grdepass_ctl29_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl29_lblM1" style="font-size:large;color:blue;">63</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl29_lblLQty">1314.990</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl29_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl29_lblD1">14</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr6Sormi4W3Fn5ush5G4Tp17SYbiLchRDIYh1fUmgOQu88WMOuG1my47muGu7qwKhsocVlSespcjgox2GGx/r0vcOHFXjEkeAyHBB7ewL8DWObyGqVxpPjZwf9DPAVeGhiU=" id="ctl00_MainContent_grdepass_ctl29_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl29_lblG1" style="font-size:large;color:blue;">43</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl29_lblDQty">811.530</span>
+                                    </td><td style="width:10%;">15</td><td style="width:10%;">106</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl30_lblslno">26</span>
+                                    </td><td>NALANDA</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl30$hdnDMO" id="ctl00_MainContent_grdepass_ctl30_hdnDMO" value="23" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl30$hdnMineralId" id="ctl00_MainContent_grdepass_ctl30_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl30$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl30_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl30_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl30_lblL1">4</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyIq3ZqvYVqBFyHajET7L1M0f4bg+VVsWCq2GQ7S130HzboxpLlDv2bIyQdTLxTU8UaPBQ78FinIo6Qb0ofP4k+pgdmRhb8Oud09DliKsS4j3+4Ro1O8WkjlRM9TfX+FMyc=" id="ctl00_MainContent_grdepass_ctl30_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl30_lblM1" style="font-size:large;color:blue;">118</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl30_lblLQty">1548.570</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl30_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl30_lblD1">12</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5x3yfPZFaGv1Rx6iJBeVaiyAwumyFykViH6VJDydeohA2W5JW2wFIfDMRf1u00fJuV4KFOnJhJmcpCXE6yRlIrGilufghJoZNx4eZZcxMo2+LQN4fi9gbRbyOjHcq6l3M=" id="ctl00_MainContent_grdepass_ctl30_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl30_lblG1" style="font-size:large;color:blue;">65</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl30_lblDQty">444.950</span>
+                                    </td><td style="width:10%;">16</td><td style="width:10%;">183</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl31_lblslno">27</span>
+                                    </td><td rowspan="2">NAWADA</td><td>STONE</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl31$hdnDMO" id="ctl00_MainContent_grdepass_ctl31_hdnDMO" value="24" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl31$hdnMineralId" id="ctl00_MainContent_grdepass_ctl31_hdnMineralId" value="48" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl31$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl31_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl31_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl31_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyLCIrN0xZmiliSbmfpBaDcc7A+K0WHwBddwKuHZ8bRx3Qk3sw05cKO+zeMIlK9z4eUenHr19a0jGlD08myNSi9StrB3Y5iXihkxvUaBDQ+0dm4Feer9hWDHq+wN7vKR0Ro=" id="ctl00_MainContent_grdepass_ctl31_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl31_lblM1" style="font-size:large;color:blue;">309</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl31_lblLQty">8762.070</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl31_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl31_lblD1">3</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr4Bq+Bti2TfeW8sNy7EuL1KN9cLBFaLZukdJY7UGrUNsmzyZPW8Ljc3v4gOWcGYSzReMYMdiaP5pY4I27FeQYuqHfIiXpAiw1X7Eqn3iCv4lPKfWuGN152gBGoYjhbkO8s=" id="ctl00_MainContent_grdepass_ctl31_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl31_lblG1" style="font-size:large;color:blue;">86</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl31_lblDQty">2647.020</span>
+                                    </td><td style="width:10%;">4</td><td style="width:10%;">395</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl32_lblslno">28</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl32$hdnDMO" id="ctl00_MainContent_grdepass_ctl32_hdnDMO" value="24" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl32$hdnMineralId" id="ctl00_MainContent_grdepass_ctl32_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl32$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl32_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl32_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl32_lblL1">14</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyLCIrN0xZmiliSbmfpBaDcc7A+K0WHwBddwKuHZ8bRx3Qk3sw05cKO+zeMIlK9z4eUenHr19a0jGlD08myNSi9StrB3Y5iXihkxvUaBDQ+0dm4Feer9hWDHFIP9S+x7yDo=" id="ctl00_MainContent_grdepass_ctl32_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl32_lblM1" style="font-size:large;color:blue;">1663</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl32_lblLQty">28525.340</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl32_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl32_lblD1">3</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr4Bq+Bti2TfeW8sNy7EuL1KN9cLBFaLZukdJY7UGrUNsmzyZPW8Ljc3v4gOWcGYSzReMYMdiaP5pY4I27FeQYuqHfIiXpAiw1X7Eqn3iCv4lPKfWuGN152gSyGZjN4TS7w=" id="ctl00_MainContent_grdepass_ctl32_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl32_lblG1" style="font-size:large;color:blue;">86</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl32_lblDQty">2647.020</span>
+                                    </td><td style="width:10%;">17</td><td style="width:10%;">1749</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl33_lblslno">29</span>
+                                    </td><td>PASHCHIM CHAMPARAN</td><td>--</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl33$hdnDMO" id="ctl00_MainContent_grdepass_ctl33_hdnDMO" value="25" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl33$hdnMineralId" id="ctl00_MainContent_grdepass_ctl33_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl33$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl33_hdnDealerMineralId" value="0" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl33_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl33_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl33_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl33_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl33_lblLQty">0.000</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl33_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl33_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl33_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl33_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl33_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">0</td><td style="width:10%;">0</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl34_lblslno">30</span>
+                                    </td><td>PATNA</td><td rowspan="2">SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl34$hdnDMO" id="ctl00_MainContent_grdepass_ctl34_hdnDMO" value="26" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl34$hdnMineralId" id="ctl00_MainContent_grdepass_ctl34_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl34$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl34_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl34_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl34_lblL1">20</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyJivjiKXZCm7j4h1JkEr3+6oH765NIncWR2+0S7Bt+83kbiVmUhkwlfAbjopIrm9lUM+KxM0YimT499bXpSDD+4MJ8ACrh8TZiHBCD/gtAoq5A3/b/7YLjbGtZvHszeNU0=" id="ctl00_MainContent_grdepass_ctl34_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl34_lblM1" style="font-size:large;color:blue;">3977</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl34_lblLQty">79027.860</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl34_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl34_lblD1">3</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr69xN0pDuhhMgbNpVoGL0zqX5YFouLpKfRL4sShKeQgoaWR4gfMNMs3M0geb54YltP7ADzx5TBAwU/6y00qL0YTBsyGj5zTOZCmGGq/9IEmwuM4Svo0Et0VBYE8HYpGS9A=" id="ctl00_MainContent_grdepass_ctl34_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl34_lblG1" style="font-size:large;color:blue;">13</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl34_lblDQty">52.000</span>
+                                    </td><td style="width:10%;">23</td><td style="width:10%;">3990</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl35_lblslno">31</span>
+                                    </td><td>PURBI CHAMPARAN</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl35$hdnDMO" id="ctl00_MainContent_grdepass_ctl35_hdnDMO" value="27" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl35$hdnMineralId" id="ctl00_MainContent_grdepass_ctl35_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl35$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl35_hdnDealerMineralId" value="48" />
+                                        <a id="ctl00_MainContent_grdepass_ctl35_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl35_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyILEFXacwRDy+MRDYgw5euP/jpQNMj+t3Z2jsEKoEcBfvD6dnXhHTlMGQNcqFjt/b1FcAVnum4uJWHCfL4RTGfaBo7p9OIT45/jLnM33gZLI3wyjBb+MrFe3FQKFIr8ZUk=" id="ctl00_MainContent_grdepass_ctl35_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl35_lblM1" style="font-size:large;color:blue;">5</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl35_lblLQty">20.000</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl35_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl35_lblD1">2</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr7W/Nu3OH6Em1fpP2md/dTXIi8pXGsrdcyzBGfi2OOWFe0BHMaI1OlqULc4toDeEterOdTqd9S177b4p4YwRSD8S6nAnU2d+6wsIPOp8hmFdc32MxEZN3rJwMxaMbfx5ZU=" id="ctl00_MainContent_grdepass_ctl35_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl35_lblG1" style="font-size:large;color:blue;">11</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl35_lblDQty">415.800</span>
+                                    </td><td style="width:10%;">3</td><td style="width:10%;">16</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl36_lblslno">32</span>
+                                    </td><td>PURNIA</td><td>--</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl36$hdnDMO" id="ctl00_MainContent_grdepass_ctl36_hdnDMO" value="28" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl36$hdnMineralId" id="ctl00_MainContent_grdepass_ctl36_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl36$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl36_hdnDealerMineralId" value="74" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl36_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl36_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl36_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl36_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl36_lblLQty">0.000</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl36_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl36_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr7x3IB9si7QU+ECHBv4qM72sYJYlo3ZW5A2hvewbxnPTO2X0fZIClC43FgscKcF7TUqovYBc9dWEboNpGr5EuBi49wM6qOOWMrvCGH1ZVLaF2ZbJxQDlpuSsPDWbCPqSy8=" id="ctl00_MainContent_grdepass_ctl36_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl36_lblG1" style="font-size:large;color:blue;">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl36_lblDQty">4.000</span>
+                                    </td><td style="width:10%;">1</td><td style="width:10%;">1</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl37_lblslno">33</span>
+                                    </td><td>ROHTAS</td><td rowspan="5">SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl37$hdnDMO" id="ctl00_MainContent_grdepass_ctl37_hdnDMO" value="29" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl37$hdnMineralId" id="ctl00_MainContent_grdepass_ctl37_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl37$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl37_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl37_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl37_lblL1">10</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyIJhHWK7Go0u+GiqOQ7yJwwAwql7EZ4dQ2nrsf7kN+soqlQrpPawuTP1iRUGe/vMGkrHtwZWuAXQ4wzZSny3LRkx97qcJoWjzFOzzfBpk7Ykc7QDo1Nt/65alQHn9OUtkQ=" id="ctl00_MainContent_grdepass_ctl37_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl37_lblM1" style="font-size:large;color:blue;">2023</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl37_lblLQty">71092.670</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl37_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl37_lblD1">2</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr4NDfdXvZaPs/IK4Q/CHaR3+KW/pfVWeGzp1/DAR1kqPoxsMrSSb42zysUGjfvSYCRP6o1QHWXoylllFdY51on0udjT+IyfUBq+bxbHq23muR/Pxkilspz78KKFrx8+g8c=" id="ctl00_MainContent_grdepass_ctl37_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl37_lblG1" style="font-size:large;color:blue;">23</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl37_lblDQty">90.100</span>
+                                    </td><td style="width:10%;">12</td><td style="width:10%;">2046</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl38_lblslno">34</span>
+                                    </td><td>SAHARSA</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl38$hdnDMO" id="ctl00_MainContent_grdepass_ctl38_hdnDMO" value="30" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl38$hdnMineralId" id="ctl00_MainContent_grdepass_ctl38_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl38$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl38_hdnDealerMineralId" value="0" />
+                                        <a id="ctl00_MainContent_grdepass_ctl38_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl38_lblL1">3</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyL/fvskXz9QKZJi1eDM1OrViQM7hPS6fALeEIaRhOqeKZ1KvA4TCzMNAx5e8xAdNpt9WptQHumAloeZgbSSQ8W8W1bFF+OrqxoGvIZk4n1As39yCT0oI0LwtZBKPQhaQK4=" id="ctl00_MainContent_grdepass_ctl38_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl38_lblM1" style="font-size:large;color:blue;">129</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl38_lblLQty">2748.500</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl38_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl38_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl38_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl38_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl38_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">3</td><td style="width:10%;">129</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl39_lblslno">35</span>
+                                    </td><td>SAMASTIPUR</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl39$hdnDMO" id="ctl00_MainContent_grdepass_ctl39_hdnDMO" value="31" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl39$hdnMineralId" id="ctl00_MainContent_grdepass_ctl39_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl39$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl39_hdnDealerMineralId" value="48" />
+                                        <a id="ctl00_MainContent_grdepass_ctl39_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl39_lblL1">2</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyI9uVcCb108hz+QokMprwJKKeli3itSPoF+16qCCNna9IMHlLZ/XDynEgUcUIzhOEGUpdmWqu87bK9mjsVk8N39TMSlsVKzV3d51SBJebOJy9qdts1EZceIFNfwawlkyIE=" id="ctl00_MainContent_grdepass_ctl39_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl39_lblM1" style="font-size:large;color:blue;">14</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl39_lblLQty">141.050</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl39_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl39_lblD1">10</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr7GknffWctUia6l/eFSLU5vrk8up2rE7oSo1LLTcpDJh9WE+eYSvRON1eu3mayr9v3bZtUZyPCfCM/5IofL+HJkFC2bDGvH/lSuogWTYJtyUADkL+h4/zBtVAmGAwqTCAM=" id="ctl00_MainContent_grdepass_ctl39_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl39_lblG1" style="font-size:large;color:blue;">59</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl39_lblDQty">1383.610</span>
+                                    </td><td style="width:10%;">12</td><td style="width:10%;">73</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl40_lblslno">36</span>
+                                    </td><td rowspan="2">SARAN</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl40$hdnDMO" id="ctl00_MainContent_grdepass_ctl40_hdnDMO" value="32" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl40$hdnMineralId" id="ctl00_MainContent_grdepass_ctl40_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl40$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl40_hdnDealerMineralId" value="48" />
+                                        <a id="ctl00_MainContent_grdepass_ctl40_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl40_lblL1">3</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyK/ymn3LcNfSx8HMgFU1xKXJvmlB45i/IfKF3ZQnFC6E+CM5Hy+gH66xWd0uYJM6ZnH/l9VXCm7vZt3trPBCkbZBYZd8z7+N0yWi6uQQcZfmDDuXK60m34uBkiV3H4nDUw=" id="ctl00_MainContent_grdepass_ctl40_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl40_lblM1" style="font-size:large;color:blue;">133</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl40_lblLQty">2809.220</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl40_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl40_lblD1">9</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr52h+v4Vcq4kAkN6sPchMrnHsqln4wQWtaUBnsLD0MmO4Mb5qyZGQOAwfMSbAhbduZdtzn7MPSuFc4m3+Hs3RvSnpOkoWQX9Mfa8KJKfZd+s+IVlYFrGnbeWRMk0TYGwuc=" id="ctl00_MainContent_grdepass_ctl40_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl40_lblG1" style="font-size:large;color:blue;">41</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl40_lblDQty">574.650</span>
+                                    </td><td style="width:10%;">12</td><td style="width:10%;">174</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl41_lblslno">37</span>
+                                    </td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl41$hdnDMO" id="ctl00_MainContent_grdepass_ctl41_hdnDMO" value="32" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl41$hdnMineralId" id="ctl00_MainContent_grdepass_ctl41_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl41$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl41_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl41_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl41_lblL1">3</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyK/ymn3LcNfSx8HMgFU1xKXJvmlB45i/IfKF3ZQnFC6E+CM5Hy+gH66xWd0uYJM6ZnH/l9VXCm7vZt3trPBCkbZBYZd8z7+N0yWi6uQQcZfmDDuXK60m34uBkiV3H4nDUw=" id="ctl00_MainContent_grdepass_ctl41_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl41_lblM1" style="font-size:large;color:blue;">133</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl41_lblLQty">2809.220</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl41_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl41_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr52h+v4Vcq4kAkN6sPchMrnHsqln4wQWtaUBnsLD0MmO4Mb5qyZGQOAwfMSbAhbduZdtzn7MPSuFc4m3+Hs3RvSnpOkoWQX9Mfa8KJKfZd+s+IVlYFrGnbeWRMk0TYGwuc=" id="ctl00_MainContent_grdepass_ctl41_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl41_lblG1" style="font-size:large;color:blue;">11</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl41_lblDQty">44.230</span>
+                                    </td><td style="width:10%;">4</td><td style="width:10%;">144</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl42_lblslno">38</span>
+                                    </td><td rowspan="2">SHEIKHPURA </td><td rowspan="2">STONE</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl42$hdnDMO" id="ctl00_MainContent_grdepass_ctl42_hdnDMO" value="33" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl42$hdnMineralId" id="ctl00_MainContent_grdepass_ctl42_hdnMineralId" value="48" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl42$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl42_hdnDealerMineralId" value="48" />
+                                        <a id="ctl00_MainContent_grdepass_ctl42_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl42_lblL1">3</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyKkXZz1XuK7ZEEeT+9d3QF3H6+V7EzFOXtLQEHUyQmLSmMgklMYeEnqc2lKRjbI4mFUXGx6S9Av5QWbiM4lnetTKphvb5/lfLBsAvFWKmgMECHFKlUtFndyrqZTezbNCFk=" id="ctl00_MainContent_grdepass_ctl42_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl42_lblM1" style="font-size:large;color:blue;">241</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl42_lblLQty">6606.480</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl42_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl42_lblD1">20</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5vmyh/6GKVbR+Bu7fILCl6rCAe9B0/2GPAEOyUDEqAJcK1xosRg30YJk+Ut39IniuaaIqOn42OTVpSqkeaecWJNuyhKTwc9gmW3juoKP8pXHKaB7KBHKJ9gM75PEMkzvY=" id="ctl00_MainContent_grdepass_ctl42_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl42_lblG1" style="font-size:large;color:blue;">112</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl42_lblDQty">2307.660</span>
+                                    </td><td style="width:10%;">23</td><td style="width:10%;">353</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl43_lblslno">39</span>
+                                    </td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl43$hdnDMO" id="ctl00_MainContent_grdepass_ctl43_hdnDMO" value="33" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl43$hdnMineralId" id="ctl00_MainContent_grdepass_ctl43_hdnMineralId" value="48" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl43$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl43_hdnDealerMineralId" value="74" />
+                                        <a id="ctl00_MainContent_grdepass_ctl43_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl43_lblL1">3</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyKkXZz1XuK7ZEEeT+9d3QF3H6+V7EzFOXtLQEHUyQmLSmMgklMYeEnqc2lKRjbI4mFUXGx6S9Av5QWbiM4lnetTKphvb5/lfLBsAvFWKmgMECHFKlUtFndyrqZTezbNCFk=" id="ctl00_MainContent_grdepass_ctl43_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl43_lblM1" style="font-size:large;color:blue;">241</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl43_lblLQty">6606.480</span>
+                                    </td><td>SAND</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl43_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl43_lblD1">9</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5vmyh/6GKVbR+Bu7fILCl6rCAe9B0/2GPAEOyUDEqAJcK1xosRg30YJk+Ut39IniuaaIqOn42OTVpSqkeaecWJNuyhKTwc9gmW3juoKP8pXHKaB7KBHKJ9gM75PEMkzvY=" id="ctl00_MainContent_grdepass_ctl43_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl43_lblG1" style="font-size:large;color:blue;">42</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl43_lblDQty">168.000</span>
+                                    </td><td style="width:10%;">12</td><td style="width:10%;">283</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl44_lblslno">40</span>
+                                    </td><td>SHEOHAR</td><td>SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl44$hdnDMO" id="ctl00_MainContent_grdepass_ctl44_hdnDMO" value="34" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl44$hdnMineralId" id="ctl00_MainContent_grdepass_ctl44_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl44$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl44_hdnDealerMineralId" value="0" />
+                                        <a id="ctl00_MainContent_grdepass_ctl44_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl44_lblL1">2</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyIZiWHRiilqsNZMkT2F1MZbX31KJPmmvFdbIV3P9iW/YrNZQBpndz8bMX2PlTLCl6Zxxx+CZ54JG9dIOEO5ZGKOs4CFpzvc5dvtVQ5TUmWAQo6J8KGWAvDKU1Ql/DZUIWQ=" id="ctl00_MainContent_grdepass_ctl44_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl44_lblM1" style="font-size:large;color:blue;">43</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl44_lblLQty">621.760</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl44_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl44_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl44_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl44_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl44_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">2</td><td style="width:10%;">43</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl45_lblslno">41</span>
+                                    </td><td>SITAMARHI</td><td rowspan="3">--</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl45$hdnDMO" id="ctl00_MainContent_grdepass_ctl45_hdnDMO" value="35" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl45$hdnMineralId" id="ctl00_MainContent_grdepass_ctl45_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl45$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl45_hdnDealerMineralId" value="48" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl45_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl45_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl45_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl45_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl45_lblLQty">0.000</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl45_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl45_lblD1">45</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr60izW/iKdqXUS9Z31jrCwDOTuubX9nHsUVTGKcUkkMthXeiIxuLRHllidZbLZ3xEV8rQPbnBR7Ifnqrq0+oOOVaU0VbLJwTMdcW8hEKdPp9wKxZZw/E23zGeEIHtT8ISo=" id="ctl00_MainContent_grdepass_ctl45_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl45_lblG1" style="font-size:large;color:blue;">299</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl45_lblDQty">2362.090</span>
+                                    </td><td style="width:10%;">45</td><td style="width:10%;">299</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl46_lblslno">42</span>
+                                    </td><td>SIWAN</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl46$hdnDMO" id="ctl00_MainContent_grdepass_ctl46_hdnDMO" value="36" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl46$hdnMineralId" id="ctl00_MainContent_grdepass_ctl46_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl46$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl46_hdnDealerMineralId" value="48" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl46_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl46_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl46_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl46_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl46_lblLQty">0.000</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl46_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl46_lblD1">1</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr5I7m36plDR7anQ8qWaEuIX7OgqRY9Ca8FZZYY6Lb41JxhPu7T+jw8KUhVDktdYJhsZTqe+1A0tf6a82Jq2+NTq4/CRQZhRUeWO/GGkUdtFjqp1LNrq9y2AFQjI+Z0h1V0=" id="ctl00_MainContent_grdepass_ctl46_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl46_lblG1" style="font-size:large;color:blue;">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl46_lblDQty">14.650</span>
+                                    </td><td style="width:10%;">1</td><td style="width:10%;">1</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl47_lblslno">43</span>
+                                    </td><td>SUPAUL</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl47$hdnDMO" id="ctl00_MainContent_grdepass_ctl47_hdnDMO" value="37" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl47$hdnMineralId" id="ctl00_MainContent_grdepass_ctl47_hdnMineralId" value="0" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl47$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl47_hdnDealerMineralId" value="0" />
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl47_AL1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl47_lblL1">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl47_AM1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl47_lblM1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl47_lblLQty">0.000</span>
+                                    </td><td>--</td><td style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl47_AD1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl47_lblD1">0</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="#" id="ctl00_MainContent_grdepass_ctl47_AG1" disabled="disabled">
+                                            <span id="ctl00_MainContent_grdepass_ctl47_lblG1" style="font-size:large;color:blue;">0</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl47_lblDQty">0.000</span>
+                                    </td><td style="width:10%;">0</td><td style="width:10%;">0</td>
+		</tr><tr align="left">
+			<td>
+                                        <span id="ctl00_MainContent_grdepass_ctl48_lblslno">44</span>
+                                    </td><td>VAISHALI</td><td>SAND</td><td style="width:10%;">
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl48$hdnDMO" id="ctl00_MainContent_grdepass_ctl48_hdnDMO" value="38" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl48$hdnMineralId" id="ctl00_MainContent_grdepass_ctl48_hdnMineralId" value="74" />
+                                        <input type="hidden" name="ctl00$MainContent$grdepass$ctl48$hdnDealerMineralId" id="ctl00_MainContent_grdepass_ctl48_hdnDealerMineralId" value="48" />
+                                        <a id="ctl00_MainContent_grdepass_ctl48_AL1">
+                                            <span id="ctl00_MainContent_grdepass_ctl48_lblL1">1</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?ASHxNlmoFyLwPj81druCRu/xnhomQXgGKFMPWcB8lEkpvAlcDCcWE9UzDfHkLeoLjmfVwqMfXDgsYFK3zaeevmAdO4Ya3h//qaqTySk19B1F6kTuy5cqyFDz7o1+If3pNpUraHmhdX4=" id="ctl00_MainContent_grdepass_ctl48_AM1">
+                                            <span id="ctl00_MainContent_grdepass_ctl48_lblM1" style="font-size:large;color:blue;">36</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl48_lblLQty">605.620</span>
+                                    </td><td>STONE</td><td style="width:10%;">
+                                        <a id="ctl00_MainContent_grdepass_ctl48_AD1">
+                                            <span id="ctl00_MainContent_grdepass_ctl48_lblD1">6</span>
+                                        </a>
+                                    </td><td align="left" style="width:10%;">
+                                        <a href="ePassReportAllConsigner.aspx?WHRmQpcHvr4IC9FRuFcghp1BC1Uc/hh5Nt/74lkG8uk5bP4LtfPTbOLfImAANPgDWXOulh58s5wggurPj1Y4W6ZROKFVfmzdvMGQyb0et/aJ+rcFn5cTEFIQ+ZAOPAAHXTKQHTqSH/s=" id="ctl00_MainContent_grdepass_ctl48_AG1">
+                                            <span id="ctl00_MainContent_grdepass_ctl48_lblG1" style="font-size:large;color:blue;">25</span>
+                                        </a>
+                                    </td><td style="width:10%;">
+                                            <span id="ctl00_MainContent_grdepass_ctl48_lblDQty">215.820</span>
+                                    </td><td style="width:10%;">7</td><td style="width:10%;">61</td>
+		</tr><tr align="right">
+			<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+		</tr>
+	</table>
+</div>
+        </div>
+
+
+
+        <div id="footer">
+
+
+            <div class="footer_top">
+                <br />
+                <br />
+                <div class="row">
+
+                    <div class="col-md-3 col-sm-6 col-xs-12  Footer-box">
+                        <h4 style="font-family: 'Poppins', sans-serif;">National Informatics Centre (NIC)
+                        </h4>
+                        <p class="text" style="margin-top: 10px; font-family: 'Poppins', sans-serif;">
+                            National Informatics Centre (NIC) was established in 1976, and has since emerged
+                                    as a "prime builder" of e-Government / e-Governance applications up to the grassroots
+                                    level as well as a promoter of digital opportunities for sustainable development.
+                                    <a href="http://www.nic.in/" target="_blank" style="color: white; font-style: italic; text-decoration: underline">More Info...</a>
+                        </p>
+                    </div>
+
+                    <div class="col-md-5 col-sm-6 col-xs-12 Footer-box">
+
+
+                        <p style="text-align: left; font-family: 'Poppins', sans-serif;">
+                            <table class="table table-responsive">
+                                <tr style="background-color: #14427d; color: white; text-align: center">
+                                    <th>Help Desk</th>
+                                    <th colspan="3">
+                                        <p style="text-align: left; font-family: 'Poppins', sans-serif;">
+                                            <small>For any query and suggestion mail us on
+                            			&nbsp;&nbsp;&nbsp;<i class="fa fa-envelope" style="color: yellow; font-size: medium; font-weight: bold">&nbsp;khanansofthelp@gmail.com</i>
+                                            </small>
+                                        </p>
+                                    </th>
+                                </tr>
+                                <tr style="background-color: #14427d; color: white;" >
+                                    <th>Serial No</th>
+                                    <th>Name</th>
+                                    <th>Designation</th>
+                                    <th>Mobile</th>
+                                </tr>
+
+                                <tr style="background-color: #14427d; color: white;" >
+                                    <td style="text-align:center;">1</td>
+                                    <td >Avanindra Kumar Lal</td>
+                                    <td >IT Manager (Mines)</td>
+                                    <td>8102218410</td>
+                  
+				  </tr>
+				 <tr style="background-color: #14427d; color: white;" >
+                                    <td style="text-align:center;">2</td>
+                                    <td ></td>
+                                    <td >Helpdesk </td>
+                                    <td>0612-2215360</td>
+                                </tr>
+                                
+                                
+                               
+                            </table>
+                        </p>
+
+
+                    </div>
+                    <div class="col-md-4 col-sm-6 col-xs-12 Footer-box">
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="panel">
+                                    <div class="panel-heading text-left" style="background-color: #14427d; color: white; text-align: center">
+                                        Important Links
+                                    </div>
+                                    <div class="panel-body" style="box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;">
+                                       <img id="ctl00_Image7" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/WB_installation_steps.pdf" style="color: #14427d" target="_blank">>&nbsp;1.Weighbridge installation</a><br />
+                                      
+									
+  <img id="ctl00_Image11" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/UpdateVehicleDetails.aspx" style="color: #14427d" target="_blank">>&nbsp;2. Vehicle Detail Update</a><br />
+                                                                             
+									   <img id="ctl00_Image9" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/Document-for-Vehicle-and-VLTD-Registration.pdf" target="_blank" style="color: #14427d">>&nbsp;3. SOP for Vehicle Location Tracking (VLT) Registration</a><br />
+                                        <img id="ctl00_Image3" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/VehiclePINGeneration.aspx" target="_blank" style="color: #14427d">>&nbsp;4. Vehicle PIN Generation</a><br />
+                                        <img id="ctl00_Image1" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/Vehicle/VehicleOwnerVerification.aspx" target="_blank" style="color: #14427d">>&nbsp;5. Vehicle IMEI Check on VLTD</a><br />
+                                        
+                                                                            
+                                        <div class="row">
+                                            <div class="col-sm-8">
+                                                <img id="ctl00_Image2" src="../../NIC/Images/new.gif" style="border-width:0px;" />
+                                                <a href="../portal/MCVReports/MCVReportWiseStatus.aspx" style="color: #14427d" target="_blank">>&nbsp;5. Vehicle
+                                                Status</a>
+                                            </div>
+                                        </div>
+                                       
+                                        <!--
+                                        <img id="ctl00_Image5" src="../../NIC/Images/new.gif" style="border-width:0px;" /><a href="https://khanansoft.bihar.gov.in/portal/nerp/NerpApplicationView.aspx" target="_blank" style="color: #14427d">>&nbsp;7. NERP Application</a><br />
+                                        -->
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://khanansoft.bihar.gov.in/portal/epassreports/DistrictWiseExcavation.aspx?linkm=21&linkn=379&btn=0&tab=0" target="_blank" style="color: #14427d">>&nbsp;6. Monthly Excavation Report (Settlee)</a><br />
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://khanansoft.bihar.gov.in/portal/ePass/ViewPassDetailsNew.aspx" target="_blank" style="color: #14427d">>&nbsp;7. Verify e-Challan</a>
+                                        
+                                    
+					</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="footer_bottom">
+                <p style="text-align: center;">
+                    Copyright &copy; 2023 <a href="#" style="color: white !important; font-family: 'Poppins', sans-serif;">All Rights Reserved &nbsp; Software Solutions Provided by NIC-Bihar</a>
+                </p>
+            </div>
+        </div>
+
+    
+
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CalendarBehavior, {"cssClass":"MyCalendar","format":"dd-MMM-yyyy","id":"ctl00_MainContent_celdate"}, {"dateSelectionChanged":CheckDateFuture}, null, $get("ctl00_MainContent_txtDate1"));
+});
+//]]>
+</script>
+</form>
+    <script src="NIC/assets/js/bootstrap.min.js" type="text/javascript"></script>
+    <script src="NIC/assets/js/slick.min.js" type="text/javascript"></script>
+    <script src="NIC/SKey.js"></script>
+    <script src="NIC/skey1.js"></script>
+
+    <script>
+        function myFunction() {
+            var x = document.getElementById("myTopnav");
+            if (x.className === "topnav") {
+                x.className += " responsive";
+            } else {
+                x.className = "topnav";
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "@vahan360/scraper-bihar-epass",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src scripts",
+    "dev": "tsc --watch",
+    "smoke": "tsx scripts/smoke.ts",
+    "test:challan-pass": "tsx scripts/challan-pass-fixture.test.ts",
+    "test:mcv-vehicle-status": "tsx scripts/mcv-vehicle-status-fixture.test.ts",
+    "test:http-client": "tsx scripts/http-client.test.ts",
+    "test:date-format": "tsx scripts/date-format.test.ts"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "domhandler": "^5.0.3",
+    "zod": "^3.25.28"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

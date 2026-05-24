@@ -1,0 +1,1071 @@
+<script>alert('Specified argument was out of the range of valid values.
+Parameter name: index');</script>
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><meta charset="utf-8" /><meta name="google-site-verification" content="z1uUG3UVnjoYnYzkiCRedJYpnHhaHDHRrArpkgcWBtI" /><meta name="robots" content="noindex, nofollow" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>
+	खान एवं भूतत्व विभाग, बिहार
+</title><link rel="icon" href="../../NIC/Images/bihar_govt_logo.png" type="image/x-icon" />
+
+
+
+    <meta http-equiv="X-UA-Compatible" content="IE=EDGE,chrome=1" />
+    <meta http-equiv="Page-Enter" content="blendTrans(Duration=0.1)" />
+    <meta http-equiv="Page-Exit" content="blendTrans(Duration=0.1)" />
+    <meta name="keywords" content="Steel &amp; Minew, Jharkhand Mining Corporation, Directorate of Mines" />
+    <meta name="description" content="Department of Steel &amp; Mines" />
+    <title>Department of Mines & Geology, Government of Jharkhand</title>
+    <script src="../../Scripts/jquery-1.7.1.js" type="text/javascript"></script>
+    <script type="text/javascript" src="../../Scripts/loadComponent.js"></script>
+    <script type="text/javascript" src="../../Scripts/Validator.js"></script>
+    <link href="../../Styles/style.css" type="text/css" rel="Stylesheet" />
+    <script type="text/javascript">
+        pageHeader = "Consigner Wise Challan Report"
+        strFirstLink = "ePass"
+        strLastLink = "Challan Reports"
+        indicate = "yes"
+        //        $(document).ready(function () {
+        //            function disableBack() { window.history.forward() }
+        //            window.onload = disableBack();
+        //            window.onpageshow = function (evt) { if (evt.persisted) disableBack() }
+        //        });
+        function checkValidation() {
+            if (!DropDownValidation('ddlDMO', 'DMO')) {
+                return false;
+            }
+            if (!DropDownValidation('ddlPassType', 'source type')) {
+                return false;
+            }
+            //            if (!DropDownValidation('ddlConsigner', 'consigner')) {
+            //                return false;
+            //            }
+            if (!DropDownValidation('ddlFY', 'financial year')) {
+                return false;
+            }
+            if (!DropDownValidation('ddlMonth', 'month')) {
+                return false;
+            }
+            var StartDate = document.getElementById('txtFromDate').value;
+            var EndDate = document.getElementById('txtTodate').value;
+            var eDate = new Date(EndDate);
+            var sDate = new Date(StartDate);
+            if (StartDate != '' && EndDate != '' && sDate > eDate) {
+                alert("FromDate Can not be greater than ToDate.!");
+                return false;
+            }
+        }
+        function CheckDateFuture(sender, args) {
+            if (sender._selectedDate > new Date()) {
+                alert("Selected date can not be a future date!");
+                sender._textbox.set_Value("");
+            }
+        }
+    </script>
+    <style>
+        .viewTable table th
+        {
+            text-align: center;
+        }
+        .legandBox1
+        {
+            margin-right: 10px;
+            margin-bottom: 10px;
+            margin-top: -27px;
+            padding: 5px;
+            border: 1px solid #EEE;
+            float: right;
+            display: inline-block;
+        }
+    </style>
+    <script type="text/javascript">
+        function ShowProgress() {
+            setTimeout(function () {
+                var modal = $('<div />');
+                modal.addClass("modal");
+                $('body').append(modal);
+                var loading = $(".loading");
+                loading.show();
+                var top = Math.max($(window).height() / 2 - loading[0].offsetHeight / 2, 0);
+                var left = Math.max($(window).width() / 2 - loading[0].offsetWidth / 2, 0);
+                loading.css({ top: top, left: left });
+            }, 200);
+        }
+        $('form').live("submit", function () {
+            ShowProgress();
+        });
+        $(document).ready(function () {
+            $("#ddlDMO").change(function () {
+                ShowProgress();
+            });
+            $("#ddlPassType").change(function () {
+                ShowProgress();
+            });
+        });
+    </script>
+    <style type="text/css">
+        .modal
+        {
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #006600;
+            z-index: 99;
+            opacity: 0.2;
+            filter: alpha(opacity=20);
+            -moz-opacity: 0.8;
+            min-height: 100%;
+            width: 100%;
+        }
+        .loading
+        {
+            display: none;
+            position: fixed;
+        }
+    </style>
+
+
+
+
+<!--
+    <script src="NIC/Frontpage/menu/jquery.min.js" type="text/javascript"></script>
+    <script src="NIC/Frontpage/menu/script.js"></script>
+    <link href="../../NIC/Frontpage/menu/style.css" rel="stylesheet" />
+    <script src="NIC/Frontpage/js/menu.js"></script>
+    <link href="../../NIC/Frontpage/assets/css/bootstrap.min.css" rel="stylesheet" /><link href="../../NIC/Frontpage/assets/css/font-awesome.min.css" rel="stylesheet" /><link href="../../NIC/Frontpage/assets/css/style.css" rel="stylesheet" /><link href="../../NIC/Frontpage/css/style.css" rel="stylesheet" /> -->
+
+ <script src="/NIC/Frontpage/menu/jquery.min.js" type="text/javascript"></script>
+    <script src="/NIC/Frontpage/menu/script.js"></script>
+    <link href="/NIC/Frontpage/menu/style.css" rel="stylesheet" />
+    <script src="/NIC/Frontpage/js/menu.js"></script>
+    <link href="/NIC/Frontpage/assets/css/bootstrap.min.css" rel="stylesheet" /><link href="/NIC/Frontpage/assets/css/font-awesome.min.css" rel="stylesheet" /><link href="/NIC/Frontpage/assets/css/style.css" rel="stylesheet" /><link href="/NIC/Frontpage/css/style.css" rel="stylesheet" />
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+    </style>
+
+    <style type="text/css">
+        .lnk {
+            display: inline-block;
+            border-right: 1px solid #333;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 20px 15px;
+            text-transform: uppercase;
+            -webkit-transition: all 0.5s;
+            -o-transition: all 0.5s;
+            transition: all 0.5s;
+        }
+
+        .dropdown-item {
+            color: White;
+        }
+
+        .divMain {
+            padding-left: 50px;
+            padding-right: 50px;
+        }
+    </style>
+
+    <style type="text/css">
+        @media only screen and (max-width: 100%) {
+            .mobileMode {
+                padding-left: 0px;
+                padding-right: 0px;
+            }
+        }
+
+        .marquee {
+            width: 100%;
+            background-color: #14427d;
+            color: yellow;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+            .marquee p {
+                display: inline-block;
+                padding-left: 100%;
+                animation: marquee 30s linear infinite;
+                text-transform: uppercase;
+            }
+
+        @keyframes marquee {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(-100%, 0);
+            }
+        }
+    </style>
+
+<link href="/WebResource.axd?d=hDtH61wJQNuhKEawJpOwqmlGZQvWH-a_eH5STb_-NfjRq9_zQKsDm5uB1jpJxBtXyVU8C_i3m0QcEGJqS8u70LpqiwaJ8L9RMr4qjQTyob1ScIn-zCAkY3f5H3QXDMTM8k1rM1j8A7be3xDhplpB9g2&amp;t=634092602420000000" type="text/css" rel="stylesheet" /></head>
+<body>
+    <form name="aspnetForm" method="post" action="./ePassRptByConsigner.aspx?ASHxNlmoFyLHysPqHK2s1T4%2ftxpc7Pwtu1n606yXG1YxbySfY33C6ccQN1vcVQ0hk++dgYuXXXjRh8VA382LaWSeXMwbBUmUQeo0+9tvGyWjb3anbP10JK8s3LROgZXqPLxFB+2iMkk=" id="aspnetForm">
+<div>
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=VYsWrgIelgOkcJagSCvyG7eTDm3QNSLdkt4dE7BCd3DoAEo4YFfnsCm9r3tEomdp6Wr6Ktev491bY289lAj-lyq5Fh0LSSLd93mpX6UdXFU1&amp;t=638344266336178820" type="text/javascript"></script>
+
+
+<script src="/ScriptResource.axd?d=v9asflimA1s7ipV2en9RPSsuWh-ckQdFQ6fJ06ri-P2bY3gIof0pRsMHOc-F-mYNm3tJT-YDtyqYpyYTXp2JdCvaULu6_ZBDqJOjPSozpyjZlpgmWkzkTejEgZi_mXJm0&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=jnrcVdx2ovS-JQr-8yj4qvTxm_J269yTEtxFozUZTe7amp0TLAyRUk3ww76UTxZON3Ldcv4fcSDcr6KXyV-2nYHVg9xYKS9fszpIQ0B92gDpYf5JUNb8cWP8i_kRLMtwYm7Ngs5Gz9MEWdpTaFkCNQ2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=V6Vz_dyZrxvpOsNMXeOQhYjTD8AkUiEjMZQ75byWpLnZ_Kelr7BwFO4E6RrdsOLXwASWrN94sshpVZ3z8nBwSHDuqzCsS7skNMzjYVJCjghpLB5fCuM7-ZoqJY2gxoOb0&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=8WgY6NxsnnnLHtI4c5PHzBq1mEfTTRAs_H82MgjL9DdUAA5hE8zkdMIdrADtGJHUcvDa2dI0CZ7XFAGadkeYzMojr3kIklvmeoLUSFJycqHA-2KZZ6GRr5wvjVdq5pJG0&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=ZcWhtNNBTOtxX7XKUkmzIHmO2pWgVNQ5pIPJ0RdPCHYLC-CGeMIcXCK63ZIpUwWpWn0ue86fKxZq0Cv782mLOaoyaLiPnRz6j88f-Us6uRHyTp2EPj9JuwZoDUgJcGSza0VWlv4IlPPxe-UaOWxDNw2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=4HowytoYXemnRjIUsMEMctvHRCDbZl2VrHA7dsS9tIRgkcdVLxjlvaR00oUSCIvZ5_PTG4cI030qM921mCzWTImiNDQwAlJm5iZQd0bdueKxoRgoqstVh2xkUvKEglN_4yLx18HlP-SkBAcx41nPwg2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=BpS-f2MpjWU2UGZL4GijVduFoyu3JaOP9IL8j1v4nmF2OSufKQ5mju7BMV95QUpw_ZzYgbdz6yuocTbscqzyPYiefwkDgviNUe34fyepo8FsK1WQfz559mmjqcNU4B6gMVk5ws0z3z0XxBt0rE521A2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=hNYszkaDUpPmfBYsCxDJQ-hwrEJBOE1sZJaxGUmQAFvWXRCyEOZ6o3witOqFGdy0l0ibHQaSZHL-mRaU_z2RyRpgrosmHvrR_q6ZSThSa8AzJ46CQHJujE4e5HW28hBsemexTKWCUPlHwye6l9uuyw2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=J27ioZHlCG3-aC5qBswxT4YMRN-ahbL_a3Rms1Uh79ww_H_bvjIRs5A0k-xkP-9tXFvpBpvKEzTsuSYZUXwwLbvnn-mWorLgSjpQItQrAopx_o_PaWOL5svqskPZuFthVqldA02qjPubo0BKQPAE5A2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=VlkcMASYBmVGKDW4KYaT01_JKu3yM38N9kyVqqRbd5zdKs0DGFeBrcHCwPq4bzzYtjT3Ha4bpE44WbsRrRawRpb4HvGsasMbV8JYfQcmkXrFirCYqsaOy0Zyns81AnC8vZrVGiSqLt8IMs1BPOlQFQ2&amp;t=f2cd5c5" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=lkEuGBUnrmCSiTZf2pJGPpalIWXrOAKluuptV_UOKyCKDKR8bAMcyY1RYeSF1XzbwjsPM9rAGoHHJw227q1TeAymiqt5WqqaYYe_u0KBm3uioHfvpQX3IadQWvhPwl0Dq_7l1sQdzpwDwja44KRFVg2&amp;t=f2cd5c5" type="text/javascript"></script>
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="61C1AF03" />
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+	<input type="hidden" name="__PREVIOUSPAGE" id="__PREVIOUSPAGE" value="W4YtV58Lrb3_k-oMfbqI5DrU9EE42DQAAXnoZSJSUKgu125SNbHgfrNxPgihtwJO3ED2ZgAaeNSnkgHmgM6LK_aSa2T8EK4FhMPkK-VxLQmaS5nF9c2JtfkQngtIYPCzNbunVjHFL2HzXoBJN8i_8Q2" />
+</div>
+
+        <div class="row  divMain mobileMode" style="background-color: #202a3c !important">
+            <div class="col-md-12">
+                <a class="scrollToTop" href="#"><i class="fa fa-angle-up"></i></a>
+                
+                <div class="top-bar" style="background-color: #202a3c; color: White">
+                    <div class="container-fluid" style="padding-right: 0px; padding-left: 20px; text-align: center">
+                        <div class="row">
+                            <div class="col-lg-12" style="text-align: right !important; padding-left: 0px; padding-right: 0px; float: right">
+                                <ul style="margin-left: -45px;">
+                                    <li style="float: right; font-family: 'Poppins', sans-serif"><i class="fa fa-envelope"></i>&nbsp;khanansofthelp@gmail.com
+                                    &nbsp; |
+                                        <i class="fa fa-home" style="color: cyan !important"></i>&nbsp;
+                                        <a href="Default.aspx" style="color: cyan !important; font-family: 'Poppins', sans-serif;">Home Page </a>
+                                        |
+                                        <i class="fa fa-book"></i>&nbsp;
+                                     <a id="ctl00_lnkScreenReader" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$lnkScreenReader&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../ScreenReader.aspx&quot;, false, true))" style="color: White; font-family: 'Poppins', sans-serif;">Screen Reader</a>
+                                        |
+                                        <i class="fa fa-key"></i>&nbsp;
+                                    <a id="ctl00_lnkShortcutkey" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$lnkShortcutkey&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../ShortcutKeys.aspx&quot;, false, true))" style="color: White; font-family: 'Poppins', sans-serif;">Screen Reader</a>
+                                        | 
+                                        <i class="fa fa-text-height"></i>&nbsp;
+                                    Text Size
+                                        : <a href="JavaScript:" class="Aplus" style="color: White; font-family: 'Poppins', sans-serif;">
+                                            A+</a>
+                                        | 
+                                        
+                                        <a href="JavaScript:" class="reset" style="color: White; font-family: 'Poppins', sans-serif;">
+                                            A</a>
+                                        <a href="JavaScript:" class="Aminus" style="color: White; font-family: 'Poppins', sans-serif;">&nbsp; | &nbsp;
+                                        A-</a>&nbsp;
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <img src="../../NIC/Images/Transfer.jpg" id="ctl00_Img1" class="img-responsive" style="width: 100%; height: auto;" />
+
+        <section class="sticky">
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="content">
+                        <ul class="jetmenu blue">
+                            <li class="home">
+                                <a id="ctl00_Linkbutton2" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Linkbutton2&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../Default.aspx&quot;, false, true))">Home</a>
+                            </li>
+                            <li class="home">
+                                <a id="ctl00_Linkbutton3" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Linkbutton3&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../About.aspx&quot;, false, true))">About</a>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                Vehicle</a>
+                                <ul class="dropdown">
+
+                                    <li><a href="https://khanansoft.bihar.gov.in/PersonalVerification.aspx" target="_blank">
+                                        Registration</a></li>
+                                    <li>
+									<a href="https://khanansoft.bihar.gov.in/UpdateVehicleDetails.aspx" target="_blank">
+					<!--<a href="https://khanansoft.bihar.gov.in/VehicleExtDetailUpd1.aspx" target="_blank"> -->
+                                        Vehicle Detail Update</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/VehiclePINGeneration.aspx" target="_blank">
+                                        Vehicle PIN Generation</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/portal/MCVReports/MCVReportWiseStatus.aspx" target="_blank">
+                                        Vehicle Status</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/Vehicle/VehicleOwnerVerification.aspx" target="_blank">
+                                        Vehicle IMEI Check on VLTD</a></li>
+
+                                  
+                                     
+									 
+									  <li><a href="https://khanansoft.bihar.gov.in/VehicleMobileUpdSrvcNew.aspx" target="_blank">
+									  Vehicle Owner Mobile Update</a></li>
+									
+
+
+
+                                </ul>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                K-Licence</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/common/OnlineRegistration.aspx?regid=2" target="_blank">
+                                        Registration</a></li>
+                                    <li><a href="loginPage.aspx" target="_blank">
+                                        Renewal</a></li>
+
+                                </ul>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                Permit</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/common/OnlineRegistration.aspx?regid=10" target="_blank">
+                                        Registration</a></li>
+                                </ul>
+                            </li>
+                           
+
+                              <li class="rpt"><a href="JavaScript:">Reports</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/DashBoardPublicNew.aspx" target="_blank">
+                                        Citizen Dashboard</a></li>
+				    <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/epassreportAllDist.aspx" target="_blank">
+                                        ePass Report</a></li>
+ 				<li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/StockistSourceRpt.aspx"target="_blank">
+     Stockist Source Report</a></li>
+                                
+                                </ul>
+                            </li>
+							 <li class="rpt"><a href="JavaScript:">How To</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/MINES_RETURN_Part1_FIRST_TIME_RETURN_FILLING.pdf" target="_blank">
+                                        File monthly return Part 1</a></li>
+									<li><a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/MINES_RETURN_Part2 _SECOND_TIME_PROCESS.pdf" target="_blank">
+                                        File monthly return Part 2</a></li>
+								</ul>
+							</li>
+							
+							
+							<li class="rpt"><a href="JavaScript:">Grievance</a>
+                                <ul class="dropdown">
+                                     
+									 <li><a href="https://khanansoft.bihar.gov.in/portal/Grievance/GrivanceComplainExternal.aspx" target="_blank">
+                                        Register your Grievance</a></li>
+                                </ul>
+                            </li>
+							
+							
+							
+							
+			<li style="width: 60%;">
+                                <div class="marquee" style="border: none !important">
+                                    
+				  
+      
+	  
+
+                                </div>
+                            </li>
+
+
+
+                            <li class="rpt" style="float: right">
+                                <a href="/loginPage.aspx">  
+                                    <i class="fa fa-sign-in"></i>&nbsp;
+                                        Log In
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="responsive-header">
+                                <div class="marquee" style="border: none !important">
+                                  
+                               
+							   
+
+				</div>
+
+                            
+                    <div class="row col-xs-11" style="padding: 1px">
+
+                    </div>
+                    <div class=" col-xs-1 text-right">
+                        <div class="responsive-logobar menu-button">
+                            <a><i class="fa fa-bars"></i></a>
+                        </div>
+                    </div>
+                    <div class="responsive-menu">
+
+                        <a class="close-menu" title=""><i class="fa fa-remove"></i></a>
+                        <ul class="ints-ul">
+                            <li class="home">
+                                <a id="ctl00_Linkbutton1" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Linkbutton1&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../Default.aspx&quot;, false, true))">Home</a>
+                            </li>
+                            <li class="home">
+                                <a id="ctl00_Linkbutton4" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Linkbutton4&quot;, &quot;&quot;, false, &quot;&quot;, &quot;../../About.aspx&quot;, false, true))">About</a>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                Vehicle</a>
+                                <ul class="dropdown">
+                                   <!-- <li><a href="https://khanansoft.bihar.gov.in/PersonalVerification.aspx" target="_blank">
+                                        Registration</a></li>
+                                    <li><a href="https://khanansoft.bihar.gov.in/UpdateVehicleDetails.aspx" target="_blank">
+                                        Vehicle Fitness Detail Update" /></a></li>
+				-->
+
+ 				 <li><a href="https://khanansoft.bihar.gov.in/PersonalVerification.aspx" target="_blank">
+                                        Registration</a></li>
+                                    <li>
+									<a href="https://khanansoft.bihar.gov.in/UpdateVehicleDetails.aspx" target="_blank">
+					<!--<a href="https://khanansoft.bihar.gov.in/VehicleExtDetailUpd1.aspx" target="_blank"> -->
+                                        Vehicle Detail Update</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/VehiclePINGeneration.aspx" target="_blank">
+                                        Vehicle PIN Generation</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/portal/MCVReports/MCVReportWiseStatus.aspx" target="_blank">
+                                       Vehicle Status</a></li>
+
+                                     <li><a href="https://khanansoft.bihar.gov.in/Vehicle/VehicleOwnerVerification.aspx" target="_blank">
+                                        Vehicle IMEI Check on VLTD</a></li>
+                                     
+									  
+                                     <li><a href="https://khanansoft.bihar.gov.in/VehicleMobileUpdSrvcNew.aspx" target="_blank">
+									  Vehicle Owner Mobile Number Update</a></li>
+									
+										 
+                                         <!--
+                                        <li><a href="../portal/Grievance/GrivanceComplainExternal.aspx" target="_blank">
+										 <li><a href="https://khanansoft.bihar.gov.in/portal/Grievance/GrivanceComplainExternal.aspx" target="_blank">
+                                        Vehicle Owner Mobile Number Update</a></li>
+                                        -->
+
+
+                                </ul>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                K-Licence</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/common/OnlineRegistration.aspx?regid=2" target="_blank">
+                                        Registration</a></li>
+                                    <li><a href="loginPage.aspx" target="_blank">
+                                        Renewal</a></li>
+                                </ul>
+                            </li>
+                            <li class="rpt"><a href="JavaScript:">
+                                Permit</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/common/OnlineRegistration.aspx?regid=10" target="_blank">
+                                        Registration</a></li>
+                                </ul>
+                            </li>
+
+			                <li class="rpt"><a href="JavaScript:">Reports</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/DashBoardPublicNew.aspx" target="_blank">
+                                        Citizen Dashboard</a></li>
+				    <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/epassreportAllDist.aspx" target="_blank">
+                                        ePass Report</a></li>
+					 <li><a href="https://khanansoft.bihar.gov.in/portal/CitizenRpt/StockistSourceRpt.aspx"target="_blank">
+     Stockist Source Report</a></li>
+                                
+                                </ul>
+                            </li>
+                             <li class="rpt"><a href="JavaScript:">How To</a>
+                                <ul class="dropdown">
+                                    <li><a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/MINES_RETURN_Part1_FIRST_TIME_RETURN_FILLING.pdf" target="_blank">
+                                        File monthly return Part 1</a></li>
+									<li><a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/MINES_RETURN_Part2 _SECOND_TIME_PROCESS.pdf" target="_blank">
+                                        File monthly return Part 2</a></li>
+								</ul>
+							</li>
+							
+							
+							<li class="rpt"><a href="JavaScript:">Grievance</a>
+                                <ul class="dropdown">
+                                   
+									 <li><a href="https://khanansoft.bihar.gov.in/portal/Grievance/GrivanceComplainExternal.aspx" target="_blank">
+                                        Register your Grievance</a></li>
+                                </ul>
+                            </li>
+							
+							
+							
+							
+                            <li class="rpt" style="float: right">
+                                <a href="loginPage.aspx"> 
+                                    <i class="fa fa-sign-in"></i>&nbsp;
+                                        Log In
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        
+    <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$MainContent$ScriptManager1', 'aspnetForm', [], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+    <div align="center" class="mandatory">
+                            <span id="ctl00_MainContent_lblMsg" style="font-family:Calibri;font-size:Medium;font-weight:bold;"></span>
+							<br/>
+							<span style="font-size: 16px;color:blue;background-color:white">नोट :-</span ><span style="font-size: 14px;color:yellow;background-color:black"> सूची को अद्यतन रखने हेतु यथासंभव प्रयास  किये गए है | त्रुटि पाए जाने के संबंध में विभाग को सूचित करें | इस डाटा का प्रयोग किसी माननीय  न्यायालय या  किसी अन्य प्राधिकार के  समक्ष वैध  नहीं होगा  |  </span>
+       
+                        </div>
+                        <div class="searchTable">
+                            <table border="0" cellpadding="3" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <b>DMO/<br />
+                                            जिला खनन कार्यालय का नाम</b><span style="color: #ff0000" class="mandatory">&nbsp;*</span>
+                                    </td>
+                                    <td width="5px">
+                                        :
+                                    </td>
+                                    <td>
+                                        <select name="ctl00$MainContent$ddlDMO" onchange="javascript:setTimeout(&#39;__doPostBack(\&#39;ctl00$MainContent$ddlDMO\&#39;,\&#39;\&#39;)&#39;, 0)" id="ctl00_MainContent_ddlDMO" style="width:150px;">
+	<option selected="selected" value="2">ARWAL</option>
+
+</select>
+                                    
+                                        
+                                    
+                                        
+                                    </td>
+                                    
+                                    <td>
+                                        <b>Mineral Name<br />
+                                            खनिज का नाम</b> <span style="color: #ff0000" class="mandatory">&nbsp;*</span>
+                                    </td>
+                                    <td width="5px">
+                                        :
+                                    </td>
+                                    <td>
+                                        <select name="ctl00$MainContent$ddlMineral" id="ctl00_MainContent_ddlMineral" style="width:150px;">
+	<option value="0">-Select-</option>
+	<option value="49">AGATE</option>
+	<option value="39">ANDALUSITE</option>
+	<option value="1">ASBESTOS</option>
+	<option value="40">BALL CLAY</option>
+	<option value="61">BARYTES</option>
+	<option value="2">BAUXITE</option>
+	<option value="28">BENTONITE</option>
+	<option value="56">BRICKS</option>
+	<option value="41">CALCITE</option>
+	<option value="59">CHALK</option>
+	<option value="3">CHINACLAY</option>
+	<option value="4">CHROMITE</option>
+	<option value="5">COAL</option>
+	<option value="71">Copper</option>
+	<option value="62">COPPER LEAD</option>
+	<option value="58">CORUNDUM</option>
+	<option value="57">DIASPORE</option>
+	<option value="42">DIATOMITE POWDER</option>
+	<option value="6">DOLOMITE</option>
+	<option value="7">DUNITE</option>
+	<option value="52">DUNITE OR PYROXENITE</option>
+	<option value="8">FELDSPAR</option>
+	<option value="53">FELSITE</option>
+	<option value="9">FIRECLAY</option>
+	<option value="35">FLUORSPAR</option>
+	<option value="10">GALENA</option>
+	<option value="36">GARNET</option>
+	<option value="12">GRAPHITE</option>
+	<option value="34">GYPSUM</option>
+	<option value="29">ILLUMINITE</option>
+	<option value="13">IRON ORE</option>
+	<option value="72">JASPER</option>
+	<option value="63">KAOLIN</option>
+	<option value="14">KYANITE</option>
+	<option value="45">LATERITE</option>
+	<option value="64">LIMEKANKAR</option>
+	<option value="15">LIMESTONE</option>
+	<option value="16">MAGNESITE</option>
+	<option value="37">MAGNETITE</option>
+	<option value="17">MANGANESE</option>
+	<option value="73">MARBLE</option>
+	<option value="65">MICA</option>
+	<option value="18">NEPHELINE SYENITE</option>
+	<option value="38">NICKEL</option>
+	<option value="66">OCHRE</option>
+	<option value="78">OTHER MINERAL</option>
+	<option value="43">PERLITE</option>
+	<option value="19">PYROPHYLLITE</option>
+	<option value="20">PYROXENITE</option>
+	<option value="21">QUARTZ</option>
+	<option value="22">QUARTZITE</option>
+	<option value="54">RED OUCHER</option>
+	<option value="30">RUTILE</option>
+	<option selected="selected" value="74">SAND</option>
+	<option value="25">SERPENTINITE</option>
+	<option value="67">SHALE</option>
+	<option value="32">SILLIMANITE</option>
+	<option value="68">SLATE</option>
+	<option value="77">SOIL</option>
+	<option value="48">STONE</option>
+	<option value="27">TIN</option>
+	<option value="69">URANIUM</option>
+	<option value="44">VERMICULITE</option>
+	<option value="47">YELLOW OUCHER</option>
+	<option value="31">ZIRCON</option>
+
+</select>
+                                    </td>
+                             
+                                    
+                                    <td align="left">
+                                        
+                                    
+                                        <b>Consigner Name/<br />
+                                            कंसाइनर का नाम</b>
+                                    </td>
+                                    <td width="5px">
+                                        :
+                                    </td>
+                                    <td>
+                                        <select name="ctl00$MainContent$ddlConsigner" id="ctl00_MainContent_ddlConsigner" style="width:250px;">
+	<option selected="selected" value="3806">AMIT KUMAR (AHIYAPUR THREE)- 023358139601</option>
+
+</select>
+                                    </td>
+                                    <div id="ctl00_MainContent_trDate">
+                                        <td>
+                                            <b>Date / तारीख</b>
+                                        </td>
+                                        <td width="5px">
+                                            :
+                                        </td>
+                                        <td width="168px">
+                                            <input name="ctl00$MainContent$txtDate" type="text" value="20-May-2026" id="ctl00_MainContent_txtDate" readonly="readonly" />
+                                            
+                                        
+                                            
+                                          
+                                        </td>
+                                    </div>
+                                    <td>
+                                        <input type="submit" name="ctl00$MainContent$btnshow" value="Show" onclick="return checkValidation();" id="ctl00_MainContent_btnshow" class="button" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+
+     <div align="right">
+                      
+                                        &nbsp;
+                            <a id="ctl00_MainContent_lbtnAll" class="all" href="javascript:__doPostBack(&#39;ctl00$MainContent$lbtnAll&#39;,&#39;&#39;)">View All</a>
+                            &nbsp;&nbsp;<span id="ctl00_MainContent_lblPaging" class="tdDataNormal">Results <b>1</b> - <b>20</b> Of <b>34</b></span>
+                        </div>
+    <br />
+   
+         <div class="row" style="background-color:white !important;color:black !important; padding:20px !important;">
+                            
+                            
+                                <div>
+	<table cellspacing="0" rules="all" border="1" id="ctl00_MainContent_grd" style="width:100%;border-collapse:collapse;">
+		<tr>
+			<th scope="col">
+                                                Sl.No/<br />
+                                                क्रमांक
+                                            </th><th scope="col">Consignee Name/<br/>प्रेषिती का नाम</th><th scope="col">Mineral Name/<br />खनिज का नाम</th><th scope="col">Mineral Category/<br />खनिज श्रेणी</th><th scope="col">
+                                                No. Of Challan/<br />
+                                                चालान की संख्या
+                                                 <p class="bold" style="color:red">Click numbers to view detail</p>
+                                            </th><th scope="col">Dispatch Quantity/<br />डिस्पैच मात्रा</th><th scope="col">Unit/<br />इकाई</th>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl02_lblslno">1</span>
+                                            </td><td>ABHAY CONSTUCTION  RAGHOPUR VAISHALI</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl02$hdfConsignerID" id="ctl00_MainContent_grd_ctl02_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl02$hdfConsigneeName" id="ctl00_MainContent_grd_ctl02_hdfConsigneeName" value="ABHAY CONSTUCTION  RAGHOPUR VAISHALI" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92pC3C2VEBfSVSsdQXsCRLsh981Qn3hIRwgqGu52aIfpA8hJMDzl4H0Sqbav9XPykdj8cc+L96OvKJLAJ7//1mX7TCTGwqdTU7ZtCK0uPnN86aVEew0usLJpagFVGFv7+Ek=" id="ctl00_MainContent_grd_ctl02_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl02_lblPass" style="font-size:large;color:blue;">2</span>
+                                                </a>
+                                            </td><td align="right">78.720</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl03_lblslno">2</span>
+                                            </td><td>ACIL PUNAURADHAM PROJECT</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl03$hdfConsignerID" id="ctl00_MainContent_grd_ctl03_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl03$hdfConsigneeName" id="ctl00_MainContent_grd_ctl03_hdfConsigneeName" value="ACIL PUNAURADHAM PROJECT" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92rNRZRMNzWxWl1RW46xsyVRTmkhBwAw4EeIb/Keorwdbdf3t4Au63SX1sOYlCG2Q1zs9bFXCIsaa6AShkGfAcgOGVG7K+4EZKMkdsvd3yTeBQ==" id="ctl00_MainContent_grd_ctl03_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl03_lblPass" style="font-size:large;color:blue;">8</span>
+                                                </a>
+                                            </td><td align="right">252.750</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl04_lblslno">3</span>
+                                            </td><td>ALOK</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl04$hdfConsignerID" id="ctl00_MainContent_grd_ctl04_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl04$hdfConsigneeName" id="ctl00_MainContent_grd_ctl04_hdfConsigneeName" value="ALOK" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92r2WEuMNfYBjkkQgNiS/IGBBJoxrHEg5uIjYM96y5sHEM24Vw15llSWietKWzhx/XghpVJ4ljyoMc9gMKE5bUvi" id="ctl00_MainContent_grd_ctl04_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl04_lblPass" style="font-size:large;color:blue;">3</span>
+                                                </a>
+                                            </td><td align="right">96.590</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl05_lblslno">4</span>
+                                            </td><td>ALOK KUMAR</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl05$hdfConsignerID" id="ctl00_MainContent_grd_ctl05_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl05$hdfConsigneeName" id="ctl00_MainContent_grd_ctl05_hdfConsigneeName" value="ALOK KUMAR" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92r2WEuMNfYBjp/mu285K4Wr8iO+vzTIfhU4rkgfIlObZ7y1yL7c7gQUjwHF6cIdQRN42DRm3t80irCU/TYXs8Xo6v5LfkErSU8=" id="ctl00_MainContent_grd_ctl05_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl05_lblPass" style="font-size:large;color:blue;">62</span>
+                                                </a>
+                                            </td><td align="right">1947.640</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl06_lblslno">5</span>
+                                            </td><td>AMIT</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl06$hdfConsignerID" id="ctl00_MainContent_grd_ctl06_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl06$hdfConsigneeName" id="ctl00_MainContent_grd_ctl06_hdfConsigneeName" value="AMIT" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92ovAbEGvA3Llmu3n7BaW9yQsTrtL4f/ypYetR/ec65HIK67q/HxIbxIFJb7ZbWkKkwkdLWpetKyiAwj0gHqnBy8" id="ctl00_MainContent_grd_ctl06_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl06_lblPass" style="font-size:large;color:blue;">2</span>
+                                                </a>
+                                            </td><td align="right">65.580</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl07_lblslno">6</span>
+                                            </td><td>AMIT KUMAR </td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl07$hdfConsignerID" id="ctl00_MainContent_grd_ctl07_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl07$hdfConsigneeName" id="ctl00_MainContent_grd_ctl07_hdfConsigneeName" value="AMIT KUMAR " />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92ovAbEGvA3Llhh8Avvhg6mdRoxgRBPSmekWQGFCvN+K+fvupWvLjIMBOud5OdIs5mPihYPQyuE5wW3JIfYDFQKdQikKlIhzBTc=" id="ctl00_MainContent_grd_ctl07_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl07_lblPass" style="font-size:large;color:blue;">3</span>
+                                                </a>
+                                            </td><td align="right">104.060</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl08_lblslno">7</span>
+                                            </td><td>AMIT KUMAR SINGH</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl08$hdfConsignerID" id="ctl00_MainContent_grd_ctl08_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl08$hdfConsigneeName" id="ctl00_MainContent_grd_ctl08_hdfConsigneeName" value="AMIT KUMAR SINGH" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92ovAbEGvA3Llhh8Avvhg6mdWOU2zpMZ5f/kQI/0smkRY5tz3SHP5iVhT24QgYqV5OQZTdclkUbQLJTt0o62Zui3Kt76YSGd2eg=" id="ctl00_MainContent_grd_ctl08_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl08_lblPass" style="font-size:large;color:blue;">14</span>
+                                                </a>
+                                            </td><td align="right">389.510</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl09_lblslno">8</span>
+                                            </td><td>AMIT RANJAN</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl09$hdfConsignerID" id="ctl00_MainContent_grd_ctl09_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl09$hdfConsigneeName" id="ctl00_MainContent_grd_ctl09_hdfConsigneeName" value="AMIT RANJAN" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92ovAbEGvA3LlpCM100Z9i1uWVJzbDGHXrTL9+6rGeUG6L14gGf1w64qTIv47E9JQj2GGVTVj1/grT4b58lOo3fxe7wfMo6JmD8=" id="ctl00_MainContent_grd_ctl09_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl09_lblPass" style="font-size:large;color:blue;">1</span>
+                                                </a>
+                                            </td><td align="right">39.360</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl10_lblslno">9</span>
+                                            </td><td>BIHAR ENTERPRISES</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl10$hdfConsignerID" id="ctl00_MainContent_grd_ctl10_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl10$hdfConsigneeName" id="ctl00_MainContent_grd_ctl10_hdfConsigneeName" value="BIHAR ENTERPRISES" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92rvEa33lR8x+BpTH9erpMC/7lXTDNOtFu/hZfybMWmgGhQLhsr735cpcBOpzETZ1utt8aYgK7Jsd3SOiw8sKHOuoiCCx9TER4k=" id="ctl00_MainContent_grd_ctl10_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl10_lblPass" style="font-size:large;color:blue;">2</span>
+                                                </a>
+                                            </td><td align="right">58.830</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl11_lblslno">10</span>
+                                            </td><td>CEIGALL INDIA LTD KANHAULL BIHTA PATNA</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl11$hdfConsignerID" id="ctl00_MainContent_grd_ctl11_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl11$hdfConsigneeName" id="ctl00_MainContent_grd_ctl11_hdfConsigneeName" value="CEIGALL INDIA LTD KANHAULL BIHTA PATNA" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92rHwJaXARrup9vdtCmE6gMxcT9PadGNpKjGOTF4p7XcQVK76geCniO3SLQWzrhBHs37qGF/4VXjSiOBNVy6R66P0wVgYUWD0LYHDDQGK2lcwFi3P5kAsXh2r7tigqhI+6U=" id="ctl00_MainContent_grd_ctl11_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl11_lblPass" style="font-size:large;color:blue;">1</span>
+                                                </a>
+                                            </td><td align="right">39.690</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl12_lblslno">11</span>
+                                            </td><td>DIPANSHU PRAMOTER AND BUILDER PVT LTD</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl12$hdfConsignerID" id="ctl00_MainContent_grd_ctl12_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl12$hdfConsigneeName" id="ctl00_MainContent_grd_ctl12_hdfConsigneeName" value="DIPANSHU PRAMOTER AND BUILDER PVT LTD" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92qS2omQeZmUJePG6aaMEpf6EsMbujnwuCT/D0L2YVOU7a9wrZrfPPmpL9HoZSEA8bRPkkYBb5nvldQNS8vP6fQbwMq0cQukMDzznsZQkx1Bv8Iv8zGhmmHJSezwZWMGYWw=" id="ctl00_MainContent_grd_ctl12_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl12_lblPass" style="font-size:large;color:blue;">1</span>
+                                                </a>
+                                            </td><td align="right">24.520</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl13_lblslno">12</span>
+                                            </td><td>DIPANSHU PROMOTER AND BUILDER PVT LTD </td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl13$hdfConsignerID" id="ctl00_MainContent_grd_ctl13_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl13$hdfConsigneeName" id="ctl00_MainContent_grd_ctl13_hdfConsigneeName" value="DIPANSHU PROMOTER AND BUILDER PVT LTD " />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92qS2omQeZmUJePG6aaMEpf6pShNNZ/ktOz+qXJj4M3BVTT39PH8KxScOcmzWQ9CsvXMIUZn+tIhGwChZ2Ai2hvY0KMw0Q4qXQCjdb7bd2sUUMRB9StvG87FJwGFuUiuEl0=" id="ctl00_MainContent_grd_ctl13_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl13_lblPass" style="font-size:large;color:blue;">1</span>
+                                                </a>
+                                            </td><td align="right">24.920</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl14_lblslno">13</span>
+                                            </td><td>KD COMPANY </td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl14$hdfConsignerID" id="ctl00_MainContent_grd_ctl14_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl14$hdfConsigneeName" id="ctl00_MainContent_grd_ctl14_hdfConsigneeName" value="KD COMPANY " />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92rkueDt/UstGyoBgtKSXQe7b7VQgGLwBNpiRe7TRZTkCunn/gmOV2ZSIViul9Qi5oVxHRzGBes6KjfZDkj292+iK/K1J2QmD/4=" id="ctl00_MainContent_grd_ctl14_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl14_lblPass" style="font-size:large;color:blue;">13</span>
+                                                </a>
+                                            </td><td align="right">388.780</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl15_lblslno">14</span>
+                                            </td><td>LALAN SINGH</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl15$hdfConsignerID" id="ctl00_MainContent_grd_ctl15_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl15$hdfConsigneeName" id="ctl00_MainContent_grd_ctl15_hdfConsigneeName" value="LALAN SINGH" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92oTYYnyRWpB49AMqni8nCPYw5n5ljXLfJqXO7JyjuYMeCWeIfTEyqB+nn0t6n+Rqq8zGieb3VIe8qO9RWyzeg63zW3Vou8naAk=" id="ctl00_MainContent_grd_ctl15_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl15_lblPass" style="font-size:large;color:blue;">2</span>
+                                                </a>
+                                            </td><td align="right">58.820</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl16_lblslno">15</span>
+                                            </td><td>MAA URMILA TRADERS</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl16$hdfConsignerID" id="ctl00_MainContent_grd_ctl16_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl16$hdfConsigneeName" id="ctl00_MainContent_grd_ctl16_hdfConsigneeName" value="MAA URMILA TRADERS" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92rJ6mWsEkJxqNwUbRVdFjOk5hCS9t+yX3fw09ZI8vH9HF8wRFnYMu/fBAkp68BnwcYtYHkIXZUXV3lTJ/cEYuDwEhgY0ETOAzYvOrADf9sJXw==" id="ctl00_MainContent_grd_ctl16_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl16_lblPass" style="font-size:large;color:blue;">1</span>
+                                                </a>
+                                            </td><td align="right">24.320</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl17_lblslno">16</span>
+                                            </td><td>MAA VAISHNAVI ENGICON PVT LTD</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl17$hdfConsignerID" id="ctl00_MainContent_grd_ctl17_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl17$hdfConsigneeName" id="ctl00_MainContent_grd_ctl17_hdfConsigneeName" value="MAA VAISHNAVI ENGICON PVT LTD" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92rJ6mWsEkJxqM2P2cCqz72ojmXNJ1FN38Ut/UksVVVQhRz4Lqxv0T9GL0Vl2JG1DPatfAHcOFHccCljFyd/g3NaNJ2Jmn3iU2vOIXakAu26NBMtDcGYKsUg" id="ctl00_MainContent_grd_ctl17_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl17_lblPass" style="font-size:large;color:blue;">2</span>
+                                                </a>
+                                            </td><td align="right">78.890</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl18_lblslno">17</span>
+                                            </td><td>MAA VINDHYAWASINI ENTERPRISES </td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl18$hdfConsignerID" id="ctl00_MainContent_grd_ctl18_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl18$hdfConsigneeName" id="ctl00_MainContent_grd_ctl18_hdfConsigneeName" value="MAA VINDHYAWASINI ENTERPRISES " />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92rJ6mWsEkJxqKi/FPhS97vpBrD59MV3N/H/1n+GgCMccNAireEv/Kia/SDSH0fReq5EDKOhqs1ZSaoTlluXG2SNXFst/f5kpaBnosOW4MBwWMC872KzAxMH" id="ctl00_MainContent_grd_ctl18_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl18_lblPass" style="font-size:large;color:blue;">5</span>
+                                                </a>
+                                            </td><td align="right">136.950</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl19_lblslno">18</span>
+                                            </td><td>MAHENDRA KUMAR</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl19$hdfConsignerID" id="ctl00_MainContent_grd_ctl19_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl19$hdfConsigneeName" id="ctl00_MainContent_grd_ctl19_hdfConsigneeName" value="MAHENDRA KUMAR" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92rNrjUyVSmnEDBbqLZU9AbGOzT0ghG+bAvqjWQDpXWRVRcBdb8O8QiS9+pmXNhIY1CMZlGzTRZX4DNEhcSTWaYYpl81FbVWOao=" id="ctl00_MainContent_grd_ctl19_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl19_lblPass" style="font-size:large;color:blue;">1</span>
+                                                </a>
+                                            </td><td align="right">24.430</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl20_lblslno">19</span>
+                                            </td><td>MS DAYANAND PRASAD SINGA AND COMPANY</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl20$hdfConsignerID" id="ctl00_MainContent_grd_ctl20_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl20$hdfConsigneeName" id="ctl00_MainContent_grd_ctl20_hdfConsigneeName" value="MS DAYANAND PRASAD SINGA AND COMPANY" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92qqnQ2cAzKMjM/iD+9QW6g240m6SCtu5YYteZyhgSeMmgem2BJQDcG/Ds4+YFt5V09EUqN3XcY6ABVfPDLXkEMb5TqWEBcEx3vdsp4kl3taTOPu6wtZHrxwGFgsqdyfOoA=" id="ctl00_MainContent_grd_ctl20_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl20_lblPass" style="font-size:large;color:blue;">1</span>
+                                                </a>
+                                            </td><td align="right">40.610</td><td>MT</td>
+		</tr><tr>
+			<td>
+                                                <span id="ctl00_MainContent_grd_ctl21_lblslno">20</span>
+                                            </td><td>MS PRASAD CONSTRUCTION COMPANY</td><td>SAND (YELLOW SAND (BALU GHAT)-No Size)</td><td>MINOR</td><td>
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl21$hdfConsignerID" id="ctl00_MainContent_grd_ctl21_hdfConsignerID" value="3806" />
+                                                <input type="hidden" name="ctl00$MainContent$grd$ctl21$hdfConsigneeName" id="ctl00_MainContent_grd_ctl21_hdfConsigneeName" value="MS PRASAD CONSTRUCTION COMPANY" />
+                                                <a href="ePassRptChallansDetail.aspx?ASHxNlmoFyLHysPqHK2s1Q5RYVaVfRooRsRHCOSiZGLw2OvUzoXYnRLtaMw8mygi5I2FylQnf1vswnkB46Ywlfnhoz2Np8i3zCFggVDG92qqnQ2cAzKMjHE+xK0FRW831walXc+IqdW5tP9MCjlBYkiHly8YDzXYp2EGvaly04jGbnYpqazjJC4oL5ydr6WgAaSxhNU9bAgbYXgr1fN611vFPV2OS6QB" id="ctl00_MainContent_grd_ctl21_Apass">
+                                                    <span id="ctl00_MainContent_grd_ctl21_lblPass" style="font-size:large;color:blue;">1</span>
+                                                </a>
+                                            </td><td align="right">24.450</td><td>MT</td>
+		</tr><tr align="right">
+			<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td style="font-weight:bold;">126</td><td style="font-weight:bold;">3899.420</td><td>&nbsp;</td>
+		</tr><tr class="paging">
+			<td colspan="10"><table border="0">
+				<tr>
+					<td><span>1</span></td><td><a href="javascript:__doPostBack(&#39;ctl00$MainContent$grd&#39;,&#39;Page$2&#39;)">2</a></td>
+				</tr>
+			</table></td>
+		</tr>
+	</table>
+</div>
+                           
+                        </div>
+
+
+
+
+        <div id="footer">
+
+
+            <div class="footer_top">
+                <br />
+                <br />
+                <div class="row">
+
+                    <div class="col-md-3 col-sm-6 col-xs-12  Footer-box">
+                        <h4 style="font-family: 'Poppins', sans-serif;">National Informatics Centre (NIC)
+                        </h4>
+                        <p class="text" style="margin-top: 10px; font-family: 'Poppins', sans-serif;">
+                            National Informatics Centre (NIC) was established in 1976, and has since emerged
+                                    as a "prime builder" of e-Government / e-Governance applications up to the grassroots
+                                    level as well as a promoter of digital opportunities for sustainable development.
+                                    <a href="http://www.nic.in/" target="_blank" style="color: white; font-style: italic; text-decoration: underline">More Info...</a>
+                        </p>
+                    </div>
+
+                    <div class="col-md-5 col-sm-6 col-xs-12 Footer-box">
+
+
+                        <p style="text-align: left; font-family: 'Poppins', sans-serif;">
+                            <table class="table table-responsive">
+                                <tr style="background-color: #14427d; color: white; text-align: center">
+                                    <th>Help Desk</th>
+                                    <th colspan="3">
+                                        <p style="text-align: left; font-family: 'Poppins', sans-serif;">
+                                            <small>For any query and suggestion mail us on
+                            			&nbsp;&nbsp;&nbsp;<i class="fa fa-envelope" style="color: yellow; font-size: medium; font-weight: bold">&nbsp;khanansofthelp@gmail.com</i>
+                                            </small>
+                                        </p>
+                                    </th>
+                                </tr>
+                                <tr style="background-color: #14427d; color: white;" >
+                                    <th>Serial No</th>
+                                    <th>Name</th>
+                                    <th>Designation</th>
+                                    <th>Mobile</th>
+                                </tr>
+
+                                <tr style="background-color: #14427d; color: white;" >
+                                    <td style="text-align:center;">1</td>
+                                    <td >Avanindra Kumar Lal</td>
+                                    <td >IT Manager (Mines)</td>
+                                    <td>8102218410</td>
+                  
+				  </tr>
+				 <tr style="background-color: #14427d; color: white;" >
+                                    <td style="text-align:center;">2</td>
+                                    <td ></td>
+                                    <td >Helpdesk </td>
+                                    <td>0612-2215360</td>
+                                </tr>
+                                
+                                
+                               
+                            </table>
+                        </p>
+
+
+                    </div>
+                    <div class="col-md-4 col-sm-6 col-xs-12 Footer-box">
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="panel">
+                                    <div class="panel-heading text-left" style="background-color: #14427d; color: white; text-align: center">
+                                        Important Links
+                                    </div>
+                                    <div class="panel-body" style="box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;">
+                                       <img id="ctl00_Image7" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/WB_installation_steps.pdf" style="color: #14427d" target="_blank">>&nbsp;1.Weighbridge installation</a><br />
+                                      
+									
+  <img id="ctl00_Image11" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/UpdateVehicleDetails.aspx" style="color: #14427d" target="_blank">>&nbsp;2. Vehicle Detail Update</a><br />
+                                                                             
+									   <img id="ctl00_Image9" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/Documents/CommonDoc/Document-for-Vehicle-and-VLTD-Registration.pdf" target="_blank" style="color: #14427d">>&nbsp;3. SOP for Vehicle Location Tracking (VLT) Registration</a><br />
+                                        <img id="ctl00_Image3" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/VehiclePINGeneration.aspx" target="_blank" style="color: #14427d">>&nbsp;4. Vehicle PIN Generation</a><br />
+                                        <img id="ctl00_Image1" src="../../NIC/Images/new.gif" style="border-width:0px;" />&nbsp;<a href="https://khanansoft.bihar.gov.in/Vehicle/VehicleOwnerVerification.aspx" target="_blank" style="color: #14427d">>&nbsp;5. Vehicle IMEI Check on VLTD</a><br />
+                                        
+                                                                            
+                                        <div class="row">
+                                            <div class="col-sm-8">
+                                                <img id="ctl00_Image2" src="../../NIC/Images/new.gif" style="border-width:0px;" />
+                                                <a href="../portal/MCVReports/MCVReportWiseStatus.aspx" style="color: #14427d" target="_blank">>&nbsp;5. Vehicle
+                                                Status</a>
+                                            </div>
+                                        </div>
+                                       
+                                        <!--
+                                        <img id="ctl00_Image5" src="../../NIC/Images/new.gif" style="border-width:0px;" /><a href="https://khanansoft.bihar.gov.in/portal/nerp/NerpApplicationView.aspx" target="_blank" style="color: #14427d">>&nbsp;7. NERP Application</a><br />
+                                        -->
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://khanansoft.bihar.gov.in/portal/epassreports/DistrictWiseExcavation.aspx?linkm=21&linkn=379&btn=0&tab=0" target="_blank" style="color: #14427d">>&nbsp;6. Monthly Excavation Report (Settlee)</a><br />
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://khanansoft.bihar.gov.in/portal/ePass/ViewPassDetailsNew.aspx" target="_blank" style="color: #14427d">>&nbsp;7. Verify e-Challan</a>
+                                        
+                                    
+					</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="footer_bottom">
+                <p style="text-align: center;">
+                    Copyright &copy; 2023 <a href="#" style="color: white !important; font-family: 'Poppins', sans-serif;">All Rights Reserved &nbsp; Software Solutions Provided by NIC-Bihar</a>
+                </p>
+            </div>
+        </div>
+
+    
+
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CalendarBehavior, {"cssClass":"MyCalendar","format":"dd-MMM-yyyy","id":"ctl00_MainContent_celdate"}, {"dateSelectionChanged":CheckDateFuture}, null, $get("ctl00_MainContent_txtDate"));
+});
+//]]>
+</script>
+</form>
+    <script src="NIC/assets/js/bootstrap.min.js" type="text/javascript"></script>
+    <script src="NIC/assets/js/slick.min.js" type="text/javascript"></script>
+    <script src="NIC/SKey.js"></script>
+    <script src="NIC/skey1.js"></script>
+
+    <script>
+        function myFunction() {
+            var x = document.getElementById("myTopnav");
+            if (x.className === "topnav") {
+                x.className += " responsive";
+            } else {
+                x.className = "topnav";
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    profiles: ['observability']
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    profiles: ['observability']
+    ports:
+      - '3003:3000'
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+
+  loki:
+    image: grafana/loki:3.0.0
+    profiles: ['observability']
+    ports:
+      - '3100:3100'
+    command: -config.file=/etc/loki/local-config.yaml

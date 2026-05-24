@@ -1,0 +1,65 @@
+name: Docker Publish
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - app: web
+            dockerfile: apps/web/Dockerfile
+            image: vahan360-web
+            needs_api_url: true
+          - app: api-express
+            dockerfile: apps/api-express/Dockerfile
+            image: vahan360-api-express
+            needs_api_url: false
+          - app: worker
+            dockerfile: apps/worker/Dockerfile
+            image: vahan360-worker
+            needs_api_url: false
+          - app: api-nest
+            dockerfile: apps/api-nest/Dockerfile
+            image: vahan360-api-nest
+            needs_api_url: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            ${{ matrix.needs_api_url && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || 'https://vahan360.example.com/api') || '' }}

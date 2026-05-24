@@ -1,0 +1,40 @@
+# Docker Desktop Kubernetes — local staging (no Ingress controller required).
+global:
+  # IfNotPresent: use images built with `docker build` while Kubernetes is running (Docker Desktop shares them with kind).
+  imagePullPolicy: IfNotPresent
+
+apiExpress:
+  replicaCount: 1
+  image: vahan360-api-express:latest
+
+web:
+  replicaCount: 1
+  image: vahan360-web:latest
+
+worker:
+  replicaCount: 1
+  image: vahan360-worker:latest
+  browserPoolStub: true
+
+ingress:
+  enabled: false
+
+networkPolicy:
+  enabled: false
+
+hpa:
+  enabled: false
+
+migrate:
+  enabled: false
+
+monitoring:
+  serviceMonitor:
+    enabled: false
+
+secrets:
+  existingSecret: ""
+  jwtSecret: local-dev-jwt-secret
+  # Postgres/Redis from: docker compose up -d postgres redis
+  databaseUrl: postgresql://vahan360:vahan360@host.docker.internal:5434/vahan360
+  redisUrl: redis://host.docker.internal:6379

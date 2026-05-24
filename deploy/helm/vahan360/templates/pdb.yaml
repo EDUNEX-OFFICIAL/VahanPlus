@@ -1,0 +1,33 @@
+{{- if .Values.pdb.enabled }}
+{{- if .Values.apiExpress.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "vahan360.fullname" . }}-api-express
+  labels:
+    {{- include "vahan360.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-express
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: api-express
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+{{- end }}
+{{- if .Values.web.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "vahan360.fullname" . }}-web
+  labels:
+    {{- include "vahan360.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: web
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+{{- end }}

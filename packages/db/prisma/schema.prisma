@@ -1,0 +1,262 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["ingest", "processed", "system"]
+}
+
+enum JobStatus {
+  pending
+  active
+  completed
+  failed
+
+  @@schema("ingest")
+}
+
+enum ScrapeType {
+  vehicle
+  khanan
+  health
+  bihar_epass
+  bihar_epass_consigner
+  bihar_epass_challan
+  bihar_epass_challan_pass
+  bihar_mcv_vehicle_status
+
+  @@schema("ingest")
+}
+
+enum OperatorType {
+  lessee
+  dealer
+
+  @@schema("processed")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@schema("system")
+}
+
+/// Singleton scraper control plane (id = "default")
+model KhananScraperConfig {
+  id                   String   @id @default("default")
+  autoFanout           Boolean  @default(true)
+  skipChallan          Boolean  @default(false)
+  skipChallanPass      Boolean  @default(false)
+  skipVehicleStatus    Boolean  @default(false)
+  workerConcurrency    Int      @default(4)
+  rateLimitMax         Int      @default(2)
+  rateLimitDurationMs  Int      @default(1000)
+  postDelayMs          Int      @default(1000)
+  fanoutStaggerMs      Int      @default(0)
+  fetchTimeoutMs       Int      @default(30000)
+  fetchRetries         Int      @default(3)
+  storeRawCapture      Boolean  @default(false)
+  maxConsignerJobs     Int?
+  districtReportUrl    String   @default("https://khanansoft.bihar.gov.in/portal/CitizenRpt/epassreportAllDist.aspx")
+  districtRowLimit     Int      @default(44)
+  scheduleCron             String?
+  scheduleTimezone         String   @default("Asia/Kolkata")
+  defaultDistrictDate      String?
+  scheduleReportDateMode   String   @default("yesterday")
+  configVersion            Int      @default(1)
+  updatedAt            DateTime @updatedAt
+
+  @@schema("system")
+}
+
+model ScrapeJob {
+  id        String     @id @default(cuid())
+  type      ScrapeType
+  target    String
+  status    JobStatus  @default(pending)
+  bullJobId String?
+  error     String?
+  result    Json?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  captures  RawCapture[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@schema("ingest")
+}
+
+model RawCapture {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       ScrapeJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+  @@schema("ingest")
+}
+
+model VehicleRecord {
+  id        String   @id @default(cuid())
+  vrn       String
+  data      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([vrn])
+  @@schema("processed")
+}
+
+model KhananRecord {
+  id        String   @id @default(cuid())
+  reference String
+  data      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reference])
+  @@schema("processed")
+}
+
+model EpassSnapshot {
+  id                String             @id @default(cuid())
+  reportDate        String
+  reportGeneratedOn String
+  sourceUrl         String
+  scrapedAt         DateTime
+  jobId             String?
+  rows              EpassDistrictRow[]
+  createdAt         DateTime           @default(now())
+
+  @@unique([reportDate, scrapedAt])
+  @@index([reportDate])
+  @@schema("processed")
+}
+
+model EpassDistrictRow {
+  id                  String        @id @default(cuid())
+  snapshotId          String
+  snapshot            EpassSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  slNo                Int
+  dmoName             String
+  dmoId               String?
+  lesseeMineral       String?
+  lesseeUsers         Int
+  lesseePasses        Int
+  lesseeDispatchedQty Decimal       @db.Decimal(18, 3)
+  dealerMineral       String?
+  dealerUsers         Int
+  dealerPasses        Int
+  dealerDispatchedQty Decimal       @db.Decimal(18, 3)
+  totalUsers          Int
+  totalPasses         Int
+  lesseeMineralId     String?
+  dealerMineralId     String?
+  lesseePassDetailUrl String?
+  dealerPassDetailUrl String?
+  createdAt           DateTime           @default(now())
+  consigners          EpassConsignerRow[]
+
+  @@unique([snapshotId, slNo])
+  @@index([dmoName])
+  @@schema("processed")
+}
+
+model EpassConsignerRow {
+  id               String            @id @default(cuid())
+  districtRowId    String
+  districtRow      EpassDistrictRow  @relation(fields: [districtRowId], references: [id], onDelete: Cascade)
+  snapshotId       String
+  operatorType     OperatorType
+  slNo             Int
+  consignerName    String
+  mineral          String?
+  mineralType      String?
+  challanCount     Int
+  challanDetailUrl String?
+  leaseId          String?
+  mineralId        String?
+  scrapedAt        DateTime          @default(now())
+  challans         EpassChallanRow[]
+
+  @@unique([districtRowId, operatorType, slNo])
+  @@index([snapshotId])
+  @@index([consignerName])
+  @@schema("processed")
+}
+
+model EpassChallanRow {
+  id               String           @id @default(cuid())
+  consignerRowId   String
+  consignerRow     EpassConsignerRow @relation(fields: [consignerRowId], references: [id], onDelete: Cascade)
+  slNo             Int
+  consigneeName    String
+  mineral          String?
+  mineralCategory  String?
+  challanCount     Int
+  dispatchedQty    Decimal          @db.Decimal(18, 3)
+  unit             String?
+  detailUrl        String?
+  scrapedAt        DateTime         @default(now())
+  passes           EpassChallanPassRow[]
+
+  @@unique([consignerRowId, slNo])
+  @@index([consigneeName])
+  @@schema("processed")
+}
+
+model EpassChallanPassRow {
+  id               String          @id @default(cuid())
+  challanRowId     String
+  challanRow       EpassChallanRow @relation(fields: [challanRowId], references: [id], onDelete: Cascade)
+  slNo             Int
+  consigneeName    String
+  challanNo        String
+  portalPassId     String?
+  mineral          String?
+  mineralCategory  String?
+  vehicleRegNo     String?
+  destination      String?
+  transportedDate  String?
+  quantity         Decimal         @db.Decimal(18, 3)
+  unit             String?
+  checkStatus      String?
+  portalChallanUrl String?
+  scrapedAt        DateTime        @default(now())
+
+  @@unique([challanRowId, slNo])
+  @@index([challanNo])
+  @@index([vehicleRegNo])
+  @@schema("processed")
+}
+
+model EpassVehicleStatusRow {
+  id              String   @id @default(cuid())
+  vehicleRegNo    String   @unique
+  ksRegNo         String?
+  vehicleClass    String?
+  rcFitUpTo       String?
+  rcTaxUpTo       String?
+  insuranceUpTo   String?
+  puccUpTo        String?
+  imeiNo          String?
+  esimValidity    String?
+  grossWeightMt   Decimal? @db.Decimal(18, 7)
+  unladenWeightMt Decimal? @db.Decimal(18, 7)
+  found           Boolean  @default(true)
+  scrapedAt       DateTime
+  jobId           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([ksRegNo])
+  @@schema("processed")
+}

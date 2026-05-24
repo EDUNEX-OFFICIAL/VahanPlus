@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: api-express
+    static_configs:
+      - targets: ['api-express:3001']
+    metrics_path: /metrics

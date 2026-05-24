@@ -1,0 +1,45 @@
+global:
+  imagePullPolicy: Always
+  imageRegistry: ghcr.io/your-org
+
+apiExpress:
+  replicaCount: 2
+  image: vahan360-api-express:latest
+
+web:
+  replicaCount: 2
+  image: vahan360-web:latest
+
+worker:
+  replicaCount: 1
+  image: vahan360-worker:latest
+  browserPoolStub: false
+
+postgresql:
+  host: your-rds-hostname.region.rds.amazonaws.com
+  port: 5432
+
+redis:
+  host: your-elasticache-hostname.cache.amazonaws.com
+  port: 6379
+
+hpa:
+  enabled: true
+
+networkPolicy:
+  enabled: true
+
+ingress:
+  enabled: true
+  host: vahan360.example.com
+  className: nginx
+  tls:
+    enabled: true
+    secretName: vahan360-tls
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+
+secrets:
+  existingSecret: vahan360-app-secrets

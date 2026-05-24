@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install
+
+      - name: Generate Prisma client
+        run: pnpm --filter @vahan360/db exec prisma generate
+
+      - name: Validate Prisma schema
+        run: pnpm db:validate
+
+      - name: Lint and build
+        run: pnpm turbo run lint build
+
+      - name: Test api-express
+        run: pnpm --filter @vahan360/api-express test
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      - name: Helm lint
+        run: helm lint deploy/helm/vahan360
+
+      - name: Helm template (staging)
+        run: helm template vahan360 deploy/helm/vahan360 -f deploy/helm/vahan360/values-staging.yaml > /dev/null
+
+      - name: Helm template (prod)
+        run: helm template vahan360 deploy/helm/vahan360 -f deploy/helm/vahan360/values-prod.yaml --set secrets.existingSecret=vahan360-app-secrets > /dev/null

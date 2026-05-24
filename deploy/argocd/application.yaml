@@ -1,0 +1,30 @@
+# Production Argo CD Application — set spec.source.repoURL to your Git remote before sync.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vahan360
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/vahan360.git
+    targetRevision: main
+    path: deploy/helm/vahan360
+    helm:
+      valueFiles:
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vahan360
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    # Production: enable manual sync or approval workflow instead of full automation.
+    automated:
+      prune: true
+      selfHeal: true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

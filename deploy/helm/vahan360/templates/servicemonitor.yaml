@@ -1,0 +1,18 @@
+{{- if and .Values.monitoring.serviceMonitor.enabled .Values.apiExpress.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "vahan360.fullname" . }}-api-express
+  labels:
+    {{- include "vahan360.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-express
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: api-express
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: http
+      path: {{ .Values.monitoring.serviceMonitor.path }}
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+{{- end }}

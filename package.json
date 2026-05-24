@@ -1,0 +1,61 @@
+{
+  "name": "vahan360",
+  "private": true,
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=@vahan360/web --filter=@vahan360/api-express --filter=@vahan360/worker",
+    "dev:setup": "pnpm bootstrap",
+    "dev:all": "turbo run dev",
+    "dev:k8s": "echo Use: docker compose up -d postgres redis && kubectl port-forward -n vahan360 svc/vahan360-vahan360-web 3000:3000",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "db:generate": "node packages/db/scripts/with-root-env.js generate",
+    "db:migrate": "node packages/db/scripts/with-root-env.js migrate dev",
+    "db:deploy": "node packages/db/scripts/with-root-env.js migrate deploy",
+    "db:validate": "node packages/db/scripts/with-root-env.js validate",
+    "db:seed": "node packages/db/scripts/with-root-env.js db seed",
+    "db:verify-admin": "node packages/db/scripts/verify-admin-login.js",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "bootstrap": "pnpm --filter @vahan360/contracts build && pnpm --filter @vahan360/scraper-bihar-epass build && pnpm --filter @vahan360/scraper-core build && pnpm --filter @vahan360/khanan-config build && pnpm --filter @vahan360/epass-orchestrator build && pnpm --filter @vahan360/browser-pool build && pnpm db:generate && pnpm --filter @vahan360/db build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "eslint": "^9.28.0",
+    "globals": "^16.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "msgpackr-extract",
+      "prisma",
+      "protobufjs",
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

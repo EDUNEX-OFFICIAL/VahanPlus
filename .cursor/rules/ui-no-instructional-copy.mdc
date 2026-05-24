@@ -1,0 +1,47 @@
+---
+description: Dashboard UI — no instructional or dev-guidance copy
+globs: apps/web/**/*
+alwaysApply: false
+---
+
+# No instructional UI copy
+
+When editing `apps/web` user-facing pages and Khanan components:
+
+## Do not add
+
+- Page subtitles or paragraphs explaining what the page does
+- Dev/ops hints: docker, pnpm, worker, scrape scripts, API paths (`POST /epass/...`)
+- Multi-sentence navigation hints ("Open from District", "Choose a consigner above")
+- Placeholder text like "Content coming soon"
+
+## Empty states
+
+One short, non-technical line only, for example:
+
+- `No data available`
+- `No consigners found`
+- `No consignee lines found`
+- `No challan lines found`
+
+No instructions on how to fix or populate data.
+
+## Error states
+
+- Short title: `Unable to load data` (or similar)
+- Optional plain error message from the API
+- `Retry` button only — no setup commands
+
+## Allowed
+
+- Table column headers and filter labels
+- Report metadata values (report date, scraped at, row counts)
+- Pagination counts (`Showing 1–50 of 279`)
+- Status badges (`pending`, `partial`) on data cells
+- Functional navigation links without explanatory prose
+
+## EpassReportMetaBar
+
+- Metadata fields only (report date, portal generated, scraped at, rows)
+- No `subtitle` prop for page descriptions
+- No-data: single line `No data available` — no scrape how-to text

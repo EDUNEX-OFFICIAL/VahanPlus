@@ -1,0 +1,170 @@
+@import 'tailwindcss';
+@import '../styles/tokens.css';
+
+@theme {
+  --color-surface-deep: var(--surface-deep);
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-border-default: var(--border-default);
+  --color-brand: var(--brand-blue);
+  --color-accent: var(--accent-indigo);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) var(--surface-deep);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--surface-deep);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 9999px;
+  border: 2px solid var(--surface-deep);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--surface-deep);
+}
+
+html {
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--surface-deep);
+  color: var(--text-secondary);
+}
+
+::selection {
+  background: rgb(59 130 246 / 0.3);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(24px, -16px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s ease forwards;
+}
+
+.animate-slide-right {
+  animation: slide-right 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.animate-blob-drift {
+  animation: blob-drift 12s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2.4s ease-in-out infinite;
+}
+
+/* Optional alias — global * rules above apply to all scrollable areas */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+/* Native <dialog> — Tailwind preflight removes default centering */
+.chalaan-detail-dialog {
+  position: fixed;
+  inset: unset;
+  left: 50%;
+  top: 50%;
+  margin: 0;
+  max-height: min(90vh, 720px);
+  width: min(calc(100vw - 2rem), 32rem);
+  transform: translate(-50%, -50%);
+  border: none;
+  padding: 0;
+}
+
+.chalaan-detail-dialog::backdrop {
+  background: rgb(0 0 0 / 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.chalaan-detail-dialog[open] {
+  animation: chalaan-dialog-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes chalaan-dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 12px)) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}

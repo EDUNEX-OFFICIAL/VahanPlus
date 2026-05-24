@@ -1,0 +1,26 @@
+{
+  "name": "@vahan360/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "build": "node -e \"console.log('worker: no build step')\"",
+    "lint": "eslint src",
+    "backfill:challan-passes": "node scripts/trigger-challan-pass-backfill.mjs",
+    "backfill:vehicle-status": "node scripts/trigger-vehicle-status-backfill.mjs",
+    "backfill:vehicle-status:100": "node scripts/trigger-vehicle-status-backfill.mjs --limit 100"
+  },
+  "dependencies": {
+    "@vahan360/browser-pool": "workspace:*",
+    "@vahan360/contracts": "workspace:*",
+    "@vahan360/epass-orchestrator": "workspace:*",
+    "@vahan360/khanan-config": "workspace:*",
+    "@vahan360/db": "workspace:*",
+    "@vahan360/scraper-core": "workspace:*",
+    "bullmq": "^5.52.2",
+    "ioredis": "^5.6.1",
+    "playwright": "^1.52.0"
+  }
+}

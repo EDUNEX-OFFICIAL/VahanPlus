@@ -1,0 +1,15 @@
+{
+  "name": "@vahan360/khanan-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('khanan-config: no build step')\"",
+    "lint": "eslint src"
+  },
+  "dependencies": {}
+}

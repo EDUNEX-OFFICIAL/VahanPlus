@@ -1,0 +1,29 @@
+global:
+  imagePullPolicy: IfNotPresent
+
+apiExpress:
+  replicaCount: 1
+  image: vahan360-api-express:latest
+
+web:
+  replicaCount: 1
+  image: vahan360-web:latest
+
+worker:
+  replicaCount: 1
+  image: vahan360-worker:latest
+
+ingress:
+  enabled: true
+  host: vahan360.staging.local
+  className: nginx
+  tls:
+    enabled: false
+
+monitoring:
+  serviceMonitor:
+    enabled: false
+
+# Staging uses in-cluster or dev secrets from values.yaml defaults.
+secrets:
+  existingSecret: ""

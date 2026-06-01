@@ -10,7 +10,8 @@ import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { ChalaanEpassFilters } from '@/components/khanan/ChalaanEpassFilters';
 import { ChalaanTable } from '@/components/khanan/ChalaanTable';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
-import { getToken } from '@/lib/auth';
+import { EpassBrowsePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
+import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import { parseChalaanSortDir, parseChalaanSortKey } from '@/lib/epass-chalaan-view';
 import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import {
@@ -117,9 +118,7 @@ function ChalaanPageContent() {
   } = useQuery({
     queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
     queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchEpassSnapshots(token);
+      return fetchEpassSnapshots();
     },
     staleTime: SNAPSHOTS_STALE_MS,
   });
@@ -169,10 +168,8 @@ function ChalaanPageContent() {
     }
 
     const bootstrap = async () => {
-      const token = getToken();
-      if (!token) return;
       try {
-        const latest = await fetchLatestEpass(token);
+        const latest = await fetchLatestEpass();
         if (latest.snapshot) {
           updateParams({
             snapshotId: latest.snapshot.id,
@@ -214,9 +211,8 @@ function ChalaanPageContent() {
   const { data: districtRowsData } = useQuery({
     queryKey: ['epass', 'snapshot-rows', snapshotId, 'chalaan-filters'],
     queryFn: () => {
-      const token = getToken();
-      if (!token || !snapshotId) throw new Error('Not authenticated');
-      return fetchSnapshotDistrictRows(token, snapshotId);
+      if (!snapshotId) throw new Error('Snapshot required');
+      return fetchSnapshotDistrictRows(snapshotId);
     },
     enabled: Boolean(snapshotId),
   });
@@ -239,15 +235,17 @@ function ChalaanPageContent() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['epass', 'chalaan-pass-list', listParams],
     queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchChalaanPassList(token, listParams);
+      return fetchChalaanPassList(listParams);
     },
     enabled: Boolean(snapshotId) && !noSnapshotsInRange,
   });
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);
   const total = data?.total ?? 0;
+
+  const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
+  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, noSnapshotsInRange);
+  const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && isLoading);
 
   const handleClearFilters = useCallback(() => {
     updateParams({
@@ -272,74 +270,61 @@ function ChalaanPageContent() {
     });
   }, [updateParams, appliedFilters.reportDate, snapshotId]);
 
+  if (snapshotsError || isError) {
+    return (
+      <PageStack>
+        <Card className="border-red-500/30">
+          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
+          <Button
+            className="mt-4"
+            variant="secondary"
+            onClick={() => {
+              void refetchSnapshots();
+              void refetch();
+            }}
+          >
+            Retry
+          </Button>
+        </Card>
+      </PageStack>
+    );
+  }
+
+  if (pageLoading) {
+    return <EpassBrowsePageLoading />;
+  }
+
   return (
     <PageStack>
       <EpassReportMetaBar snapshot={snapshot} />
 
-      {snapshotsError ? (
-        <Card className="border-red-500/30">
-          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-          <Button className="mt-4" variant="secondary" onClick={() => refetchSnapshots()}>
-            Retry
-          </Button>
-        </Card>
-      ) : (
-        <ChalaanEpassFilters
-          snapshots={snapshotsData?.items ?? []}
-          minerals={minerals}
-          districts={districts}
-          values={{ ...appliedFilters, consignerRowId: '' }}
-          onApply={handleApplyFilters}
-          onClear={handleClearFilters}
-        />
-      )}
+      <ChalaanEpassFilters
+        snapshots={snapshotsData?.items ?? []}
+        minerals={minerals}
+        districts={districts}
+        values={{ ...appliedFilters, consignerRowId: '' }}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+      />
 
       {noSnapshotsInRange ? (
         <Card>
           <p className="text-sm text-text-secondary">No data available</p>
         </Card>
-      ) : null}
-
-      {isLoading ? (
-        <Card className="animate-pulse p-12">
-          <div className="h-48 rounded bg-surface-deep" />
-        </Card>
-      ) : null}
-
-      {isError ? (
-        <Card className="border-red-500/30">
-          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-          <Button className="mt-4" variant="secondary" onClick={() => refetch()}>
-            Retry
-          </Button>
-        </Card>
-      ) : null}
-
-      {!isLoading && !isError && data ? (
+      ) : data ? (
         <>
-          {data.items.length === 0 ? (
-            <Card>
-              <p className="text-sm text-text-secondary">No challan lines found</p>
-            </Card>
-          ) : (
-            <>
-              <ChalaanTable
-                rows={data.items}
-                sortKey={sortKey}
-                sortDir={sortDir}
-                onSort={handleSort}
-              />
-              <ResponsivePagination
-                total={total}
-                offset={offset}
-                pageSize={pageSize}
-                onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
-                onPageSizeChange={(nextSize) =>
-                  updateParams({ limit: String(nextSize), offset: '0' })
-                }
-              />
-            </>
-          )}
+          <ChalaanTable rows={data.items} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+          {data.items.length > 0 ? (
+            <ResponsivePagination
+              total={total}
+              offset={offset}
+              pageSize={pageSize}
+              onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
+              onPageSizeChange={(nextSize) =>
+                updateParams({ limit: String(nextSize), offset: '0' })
+              }
+            />
+          ) : null}
         </>
       ) : null}
     </PageStack>
@@ -348,13 +333,7 @@ function ChalaanPageContent() {
 
 export default function ChalaanPage() {
   return (
-    <Suspense
-      fallback={
-        <Card className="animate-pulse p-12">
-          <div className="h-8 w-64 rounded bg-surface-deep" />
-        </Card>
-      }
-    >
+    <Suspense fallback={<EpassBrowsePageSkeleton />}>
       <ChalaanPageContent />
     </Suspense>
   );

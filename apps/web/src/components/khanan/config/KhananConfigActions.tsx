@@ -5,10 +5,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { ScraperConfigActionError } from '@/lib/scraper-config';
-import {
-  countIsoDaysInclusive,
-  defaultDistrictDateInput,
-} from '@/lib/scraper-config-default-date';
+import { countIsoDaysInclusive, defaultDistrictDateInput } from '@/lib/scraper-config-default-date';
+import { resolveRunStatus } from '@/components/khanan/config/KhananConfigStatusBar';
 import type { ScraperConfigStatus } from '@/lib/scraper-config-types';
 
 const LARGE_RANGE_CONFIRM_THRESHOLD = 90;
@@ -19,8 +17,7 @@ interface Props {
   scheduleTimezone: string;
   onRunDistrict: (date: string) => Promise<string>;
   onRunDistrictRange: (from: string, to: string, confirmLargeRange: boolean) => Promise<string>;
-  onPause: () => Promise<void>;
-  onResume: () => Promise<void>;
+  onStop: () => Promise<string>;
   busy?: boolean;
 }
 
@@ -30,8 +27,7 @@ export function KhananConfigActions({
   scheduleTimezone,
   onRunDistrict,
   onRunDistrictRange,
-  onPause,
-  onResume,
+  onStop,
   busy,
 }: Props) {
   const [reportDate, setReportDate] = useState('');
@@ -96,6 +92,8 @@ export function KhananConfigActions({
 
   const snap = status.latestSnapshot;
   const snapLabel = snap?.reportDate ?? '—';
+  const runState = resolveRunStatus(status).state;
+  const showQueueControls = runState !== 'ready';
 
   return (
     <Card>
@@ -156,38 +154,28 @@ export function KhananConfigActions({
             onChange={(e) => setRangeTo(e.target.value)}
           />
         </label>
-        <Button variant="secondary" disabled={busy || !rangeFrom || !rangeTo} onClick={() => runRange()}>
+        <Button
+          variant="secondary"
+          disabled={busy || !rangeFrom || !rangeTo}
+          onClick={() => runRange()}
+        >
           Run range
         </Button>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-700/50 pt-4">
-        {status.queue.isPaused ? (
+      {showQueueControls ? (
+        <div className="mt-4 border-t border-slate-700/50 pt-4">
           <Button
-            variant="success"
-            disabled={busy}
-            onClick={() => run(async () => { await onResume(); return 'Resumed'; })}
-          >
-            Resume
-          </Button>
-        ) : (
-          <Button
-            variant="warning"
+            variant="destructive"
             disabled={busy}
             onClick={() =>
-              run(
-                async () => {
-                  await onPause();
-                  return 'Paused';
-                },
-                'Pause queue?',
-              )
+              run(() => onStop(), 'Stop scraping? All queued and running jobs will be cancelled.')
             }
           >
-            Pause
+            Stop
           </Button>
-        )}
-      </div>
+        </div>
+      ) : null}
     </Card>
   );
 }

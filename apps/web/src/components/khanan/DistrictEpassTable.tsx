@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatInt, formatQty } from '@/lib/epass-aggregate';
@@ -107,11 +108,7 @@ export function DistrictEpassTable({
   linkSearchParams,
 }: DistrictEpassTableProps) {
   if (rows.length === 0) {
-    return (
-      <Card>
-        <p className="text-sm text-text-secondary">No data available</p>
-      </Card>
-    );
+    return <EmptyStateCard message="No data available" />;
   }
 
   return (

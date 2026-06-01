@@ -4,6 +4,11 @@ import jwt from 'jsonwebtoken';
 import { getPrisma } from '@vahanplus/db';
 import { config } from '../config.js';
 import { requireAuth } from '../middleware/auth.js';
+import {
+  getClearSessionCookieOptions,
+  getSessionCookieOptions,
+  SESSION_COOKIE_NAME,
+} from '../session.js';
 
 const router = express.Router();
 
@@ -24,10 +29,16 @@ router.post('/login', async (req, res) => {
     expiresIn: '8h',
   });
 
+  res.cookie(SESSION_COOKIE_NAME, token, getSessionCookieOptions());
+
   res.json({
-    token,
     user: { id: user.id, username: user.username },
   });
+});
+
+router.post('/logout', (_req, res) => {
+  res.clearCookie(SESSION_COOKIE_NAME, getClearSessionCookieOptions());
+  res.status(204).send();
 });
 
 router.get('/me', requireAuth, (req, res) => {

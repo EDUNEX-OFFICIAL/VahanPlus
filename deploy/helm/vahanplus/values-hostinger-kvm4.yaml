@@ -16,6 +16,8 @@ global:
 apiExpress:
   replicaCount: 1
   image: vahanplus-api-express:latest
+  # Browser calls /api on the public host; must match ingress host (HTTPS).
+  corsOrigins: https://exp.vahan360.info
   resources:
     requests:
       cpu: 200m

@@ -1,12 +1,14 @@
-import { apiFetch } from '@/lib/api';
+import { apiFetch, clearSession } from '@/lib/api';
 import type {
   ActionResult,
+  ClearDataResult,
   KhananScraperConfigPatch,
   ScraperConfigResponse,
   ScraperJobListItem,
+  ScraperLiveResponse,
 } from '@/lib/scraper-config-types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export class ScraperConfigActionError extends Error {
   requiresConfirm?: boolean;
@@ -22,45 +24,40 @@ export class ScraperConfigActionError extends Error {
 
 export const SCRAPER_CONFIG_QUERY_KEY = ['epass', 'scraper-config'] as const;
 export const SCRAPER_JOBS_QUERY_KEY = ['epass', 'scraper-config', 'jobs'] as const;
+export const SCRAPER_LIVE_QUERY_KEY = ['epass', 'scraper-config', 'live'] as const;
 
-export function fetchScraperConfig(token: string) {
-  return apiFetch<ScraperConfigResponse>('/epass/scraper-config', { token });
+export function fetchScraperConfig() {
+  return apiFetch<ScraperConfigResponse>('/epass/scraper-config');
 }
 
-export function patchScraperConfig(token: string, body: KhananScraperConfigPatch) {
+export function patchScraperConfig(body: KhananScraperConfigPatch) {
   return apiFetch<ScraperConfigResponse>('/epass/scraper-config', {
-    token,
     method: 'PATCH',
     body: JSON.stringify(body),
   });
 }
 
-export function fetchScraperJobs(token: string, limit = 25) {
-  return apiFetch<{ items: ScraperJobListItem[] }>(
-    `/epass/scraper-config/jobs?limit=${limit}`,
-    { token },
-  );
+export function fetchScraperJobs(limit = 25) {
+  return apiFetch<{ items: ScraperJobListItem[] }>(`/epass/scraper-config/jobs?limit=${limit}`);
 }
 
-export function runDistrictScrape(token: string, date?: string) {
+export function runDistrictScrape(date?: string) {
   return apiFetch<ActionResult>('/epass/scraper-config/actions/run-district', {
-    token,
     method: 'POST',
     body: JSON.stringify(date ? { date } : {}),
   });
 }
 
 export async function runDistrictRange(
-  token: string,
   from: string,
   to: string,
   confirmLargeRange?: boolean,
 ): Promise<ActionResult> {
   const res = await fetch(`${API_URL}/epass/scraper-config/actions/run-district-range`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ from, to, confirmLargeRange: confirmLargeRange ?? false }),
   });
@@ -70,6 +67,13 @@ export async function runDistrictRange(
     dayCount?: number;
   };
   if (!res.ok) {
+    if (res.status === 401) {
+      await clearSession();
+      if (typeof window !== 'undefined') {
+        window.location.replace('/login?session=expired');
+      }
+      throw new Error('Session expired');
+    }
     throw new ScraperConfigActionError(body.error || 'Failed', {
       requiresConfirm: body.requiresConfirm,
       dayCount: body.dayCount,
@@ -78,40 +82,40 @@ export async function runDistrictRange(
   return body;
 }
 
-export function fanoutConsigners(token: string, snapshotId?: string) {
+export function fanoutConsigners(snapshotId?: string) {
   return apiFetch<ActionResult>('/epass/scraper-config/actions/fanout-consigners', {
-    token,
     method: 'POST',
     body: JSON.stringify(snapshotId ? { snapshotId } : {}),
   });
 }
 
-export function fanoutPasses(token: string, snapshotId?: string, missingOnly = false) {
+export function fanoutPasses(snapshotId?: string, missingOnly = false) {
   return apiFetch<ActionResult>('/epass/scraper-config/actions/fanout-passes', {
-    token,
     method: 'POST',
     body: JSON.stringify({ snapshotId, missingOnly }),
   });
 }
 
-export function backfillVehicleStatus(token: string, limit: number) {
+export function backfillVehicleStatus(limit: number) {
   return apiFetch<ActionResult>('/epass/scraper-config/actions/backfill-vehicle-status', {
-    token,
     method: 'POST',
     body: JSON.stringify({ limit }),
   });
 }
 
-export function pauseQueue(token: string) {
-  return apiFetch<ActionResult>('/epass/scraper-config/actions/pause-queue', {
-    token,
+export function stopScraping() {
+  return apiFetch<ActionResult>('/epass/scraper-config/actions/stop-scraping', {
     method: 'POST',
   });
 }
 
-export function resumeQueue(token: string) {
-  return apiFetch<ActionResult>('/epass/scraper-config/actions/resume-queue', {
-    token,
+export function fetchScraperLive() {
+  return apiFetch<ScraperLiveResponse>('/epass/scraper-config/live');
+}
+
+export function clearAllData(confirmPhrase: string) {
+  return apiFetch<ClearDataResult>('/epass/scraper-config/actions/clear-data', {
     method: 'POST',
+    body: JSON.stringify({ confirmPhrase }),
   });
 }

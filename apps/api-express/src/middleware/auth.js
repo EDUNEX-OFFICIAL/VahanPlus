@@ -1,12 +1,12 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
+import { getTokenFromRequest } from '../session.js';
 
 export function requireAuth(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
+  const token = getTokenFromRequest(req);
+  if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  const token = header.slice(7);
   try {
     req.user = jwt.verify(token, config.jwtSecret);
     next();

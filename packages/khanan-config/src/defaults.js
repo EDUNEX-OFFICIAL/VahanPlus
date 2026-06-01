@@ -26,6 +26,7 @@ export function envDefaults() {
     scheduleTimezone: process.env.BIHAR_EPASS_SCHEDULE_TZ || 'Asia/Kolkata',
     defaultDistrictDate: process.env.BIHAR_EPASS_DEFAULT_DISTRICT_DATE || null,
     scheduleReportDateMode: process.env.BIHAR_EPASS_SCHEDULE_DATE_MODE || 'yesterday',
+    allowDataWipe: false,
     configVersion: 1,
   };
 }
@@ -78,9 +79,7 @@ export function getSpeedPreset(name) {
  */
 export function detectSpeedPreset(config) {
   for (const [name, preset] of Object.entries(SPEED_PRESETS)) {
-    const match = Object.entries(preset).every(
-      ([key, value]) => config[key] === value,
-    );
+    const match = Object.entries(preset).every(([key, value]) => config[key] === value);
     if (match) return /** @type {SpeedPresetName} */ (name);
   }
   return 'custom';

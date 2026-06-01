@@ -1,9 +1,9 @@
 'use client';
 
-import { FormEvent, Suspense, useState } from 'react';
+import { FormEvent, Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { login } from '@/lib/api';
-import { setToken } from '@/lib/auth';
+import { clearSession, fetchSessionUser, login } from '@/lib/api';
+import { safeNextPath } from '@/lib/safe-next-path';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Button } from '@/components/ui/Button';
@@ -24,9 +24,29 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionExpired = searchParams.get('session') === 'expired';
-  const nextPath = searchParams.get('next') || '/';
+  const nextPath = safeNextPath(searchParams.get('next'));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await fetchSessionUser({ redirectOnUnauthenticated: false });
+        if (!cancelled) {
+          router.replace(nextPath);
+        }
+      } catch {
+        await clearSession();
+      } finally {
+        if (!cancelled) setCheckingSession(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, nextPath]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -36,14 +56,21 @@ function LoginForm() {
     const username = String(form.get('username') || '').trim();
     const password = String(form.get('password') || '');
     try {
-      const res = await login(username, password);
-      setToken(res.token);
-      router.push(nextPath.startsWith('/') ? nextPath : '/');
+      await login(username, password);
+      router.push(nextPath);
     } catch (err) {
       setError(loginErrorMessage(err));
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="relative flex min-h-screen items-center justify-center p-6">
+        <AmbientBlobs />
+      </div>
+    );
   }
 
   return (

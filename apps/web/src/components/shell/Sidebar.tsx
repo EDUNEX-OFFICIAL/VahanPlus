@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { useState } from 'react';
-import { clearToken } from '@/lib/auth';
+import { logout } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { quickNavItems } from '@/lib/nav-config';
 import { cn } from '@/lib/utils';
@@ -44,9 +44,9 @@ export function Sidebar({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  function logout() {
-    clearToken();
-    router.push('/login');
+  async function onLogout() {
+    await logout();
+    router.replace('/login');
   }
 
   return (
@@ -92,7 +92,7 @@ export function Sidebar({
           <Button
             variant="destructive"
             className={cn('w-full gap-2', desktopCollapsed && 'px-0')}
-            onClick={logout}
+            onClick={onLogout}
           >
             <LogOut className="h-4 w-4" aria-hidden />
             {!desktopCollapsed ? 'Logout' : <span className="sr-only">Logout</span>}
@@ -168,7 +168,7 @@ export function Sidebar({
               </div>
               <SidebarNav onNavigate={() => setMobileOpen(false)} />
               <div className="border-t border-border-default/70 p-4">
-                <Button variant="destructive" className="w-full gap-2" onClick={logout}>
+                <Button variant="destructive" className="w-full gap-2" onClick={onLogout}>
                   <LogOut className="h-4 w-4" aria-hidden />
                   Logout
                 </Button>

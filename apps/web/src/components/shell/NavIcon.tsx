@@ -9,6 +9,7 @@ import {
   Settings2,
   Shield,
   Truck,
+  Upload,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ const icons = {
   vehicle: Truck,
   status: CircleGauge,
   config: Settings2,
+  import: Upload,
 } satisfies Record<NavIcon, LucideIcon>;
 
 export function NavIconView({ icon, className }: { icon?: NavIcon; className?: string }) {

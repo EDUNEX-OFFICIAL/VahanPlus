@@ -1,20 +1,25 @@
-import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
+import { Card } from '@/components/ui/Card';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatInt, formatQty } from '@/lib/epass-aggregate';
-import type { MineralAggregateRow } from '@/lib/epass-types';
+import { operatorShowsDealer, operatorShowsLessee } from '@/lib/epass-mineral-view';
+import type { MineralAggregateRow, OperatorTypeFilter } from '@/lib/epass-types';
 
 interface MineralSummaryTableProps {
   minerals: MineralAggregateRow[];
+  operatorFilter?: OperatorTypeFilter;
 }
 
-export function MineralSummaryTable({ minerals }: MineralSummaryTableProps) {
+export function MineralSummaryTable({
+  minerals,
+  operatorFilter = 'all',
+}: MineralSummaryTableProps) {
+  const showLessee = operatorShowsLessee(operatorFilter);
+  const showDealer = operatorShowsDealer(operatorFilter);
+
   if (minerals.length === 0) {
-    return (
-      <Card>
-        <p className="text-sm text-text-secondary">No data available</p>
-      </Card>
-    );
+    return <EmptyStateCard message="No mineral rows found" />;
   }
 
   const footer = minerals.reduce(
@@ -50,23 +55,31 @@ export function MineralSummaryTable({ minerals }: MineralSummaryTableProps) {
             meta={<Chip tone="indigo">{formatInt(row.totalPasses)} total passes</Chip>}
           >
             <div className="grid gap-2">
-              <div className="grid grid-cols-3 gap-2">
-                <DataField label="Lessee users" value={formatInt(row.lessee.users)} />
-                <DataField label="Passes" value={formatInt(row.lessee.passes)} />
-                <DataField label="Qty" value={formatQty(row.lessee.dispatchedQty)} />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <DataField label="Dealer users" value={formatInt(row.dealer.users)} />
-                <DataField label="Passes" value={formatInt(row.dealer.passes)} />
-                <DataField label="Qty" value={formatQty(row.dealer.dispatchedQty)} />
-              </div>
+              {showLessee ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <DataField label="Lessee users" value={formatInt(row.lessee.users)} />
+                  <DataField label="Passes" value={formatInt(row.lessee.passes)} />
+                  <DataField label="Qty" value={formatQty(row.lessee.dispatchedQty)} />
+                </div>
+              ) : null}
+              {showDealer ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <DataField label="Dealer users" value={formatInt(row.dealer.users)} />
+                  <DataField label="Passes" value={formatInt(row.dealer.passes)} />
+                  <DataField label="Qty" value={formatQty(row.dealer.dispatchedQty)} />
+                </div>
+              ) : null}
             </div>
           </MobileDataCard>
         ))}
         <MobileDataCard eyebrow="Total" title="All minerals">
           <div className="grid grid-cols-2 gap-2">
-            <DataField label="Lessee passes" value={formatInt(footer.lesseePasses)} />
-            <DataField label="Dealer passes" value={formatInt(footer.dealerPasses)} />
+            {showLessee ? (
+              <DataField label="Lessee passes" value={formatInt(footer.lesseePasses)} />
+            ) : null}
+            {showDealer ? (
+              <DataField label="Dealer passes" value={formatInt(footer.dealerPasses)} />
+            ) : null}
             <DataField
               className="col-span-2"
               label="Total passes"
@@ -83,29 +96,41 @@ export function MineralSummaryTable({ minerals }: MineralSummaryTableProps) {
                 <th className="px-4 py-3 font-semibold" rowSpan={2}>
                   Mineral
                 </th>
-                <th
-                  className="border-l border-border-default px-4 py-2 text-center font-semibold text-indigo-300"
-                  colSpan={3}
-                >
-                  Operator (Lessee)
-                </th>
-                <th
-                  className="border-l border-border-default px-4 py-2 text-center font-semibold text-emerald-300"
-                  colSpan={3}
-                >
-                  Operator (Dealer)
-                </th>
+                {showLessee ? (
+                  <th
+                    className="border-l border-border-default px-4 py-2 text-center font-semibold text-indigo-300"
+                    colSpan={3}
+                  >
+                    Operator (Lessee)
+                  </th>
+                ) : null}
+                {showDealer ? (
+                  <th
+                    className="border-l border-border-default px-4 py-2 text-center font-semibold text-emerald-300"
+                    colSpan={3}
+                  >
+                    Operator (Dealer)
+                  </th>
+                ) : null}
                 <th className="border-l border-border-default px-4 py-3 font-semibold" rowSpan={2}>
                   Total passes
                 </th>
               </tr>
               <tr className="border-b border-border-default text-[10px] uppercase tracking-wider text-text-secondary">
-                <th className="border-l border-border-default px-3 py-2">Users</th>
-                <th className="px-3 py-2">Passes</th>
-                <th className="px-3 py-2">Qty</th>
-                <th className="border-l border-border-default px-3 py-2">Users</th>
-                <th className="px-3 py-2">Passes</th>
-                <th className="px-3 py-2">Qty</th>
+                {showLessee ? (
+                  <>
+                    <th className="border-l border-border-default px-3 py-2">Users</th>
+                    <th className="px-3 py-2">Passes</th>
+                    <th className="px-3 py-2">Qty</th>
+                  </>
+                ) : null}
+                {showDealer ? (
+                  <>
+                    <th className="border-l border-border-default px-3 py-2">Users</th>
+                    <th className="px-3 py-2">Passes</th>
+                    <th className="px-3 py-2">Qty</th>
+                  </>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -115,20 +140,32 @@ export function MineralSummaryTable({ minerals }: MineralSummaryTableProps) {
                   className="border-b border-border-default/60 hover:bg-indigo-500/5"
                 >
                   <td className="px-4 py-3 font-semibold text-white">{row.mineral}</td>
-                  <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
-                    {formatInt(row.lessee.users)}
-                  </td>
-                  <td className="px-3 py-3 tabular-nums font-medium text-indigo-300">
-                    {formatInt(row.lessee.passes)}
-                  </td>
-                  <td className="px-3 py-3 tabular-nums">{formatQty(row.lessee.dispatchedQty)}</td>
-                  <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
-                    {formatInt(row.dealer.users)}
-                  </td>
-                  <td className="px-3 py-3 tabular-nums font-medium text-emerald-300">
-                    {formatInt(row.dealer.passes)}
-                  </td>
-                  <td className="px-3 py-3 tabular-nums">{formatQty(row.dealer.dispatchedQty)}</td>
+                  {showLessee ? (
+                    <>
+                      <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
+                        {formatInt(row.lessee.users)}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums font-medium text-indigo-300">
+                        {formatInt(row.lessee.passes)}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums">
+                        {formatQty(row.lessee.dispatchedQty)}
+                      </td>
+                    </>
+                  ) : null}
+                  {showDealer ? (
+                    <>
+                      <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
+                        {formatInt(row.dealer.users)}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums font-medium text-emerald-300">
+                        {formatInt(row.dealer.passes)}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums">
+                        {formatQty(row.dealer.dispatchedQty)}
+                      </td>
+                    </>
+                  ) : null}
                   <td className="border-l border-border-default/40 px-3 py-3 tabular-nums font-semibold text-white">
                     {formatInt(row.totalPasses)}
                   </td>
@@ -138,20 +175,28 @@ export function MineralSummaryTable({ minerals }: MineralSummaryTableProps) {
             <tfoot>
               <tr className="bg-surface-deep/80 font-semibold text-white">
                 <td className="px-4 py-3">All minerals</td>
-                <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
-                  {formatInt(footer.lesseeUsers)}
-                </td>
-                <td className="px-3 py-3 tabular-nums text-indigo-300">
-                  {formatInt(footer.lesseePasses)}
-                </td>
-                <td className="px-3 py-3 tabular-nums">{formatQty(footer.lesseeQty)}</td>
-                <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
-                  {formatInt(footer.dealerUsers)}
-                </td>
-                <td className="px-3 py-3 tabular-nums text-emerald-300">
-                  {formatInt(footer.dealerPasses)}
-                </td>
-                <td className="px-3 py-3 tabular-nums">{formatQty(footer.dealerQty)}</td>
+                {showLessee ? (
+                  <>
+                    <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
+                      {formatInt(footer.lesseeUsers)}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums text-indigo-300">
+                      {formatInt(footer.lesseePasses)}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums">{formatQty(footer.lesseeQty)}</td>
+                  </>
+                ) : null}
+                {showDealer ? (
+                  <>
+                    <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
+                      {formatInt(footer.dealerUsers)}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums text-emerald-300">
+                      {formatInt(footer.dealerPasses)}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums">{formatQty(footer.dealerQty)}</td>
+                  </>
+                ) : null}
                 <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
                   {formatInt(footer.totalPasses)}
                 </td>

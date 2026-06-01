@@ -150,12 +150,7 @@ export interface SnapshotDistrictRowsResponse {
   rows: EpassDistrictRowDto[];
 }
 
-export type DistrictSortKey =
-  | 'district'
-  | 'totalUsers'
-  | 'mineral'
-  | 'passes'
-  | 'quantity';
+export type DistrictSortKey = 'district' | 'totalUsers' | 'mineral' | 'passes' | 'quantity';
 
 export type DistrictSortDir = 'asc' | 'desc';
 
@@ -307,6 +302,7 @@ export interface EpassChalaanListItemDto extends EpassChallanRowDto {
 
 export interface EpassChalaanPassListItemDto extends EpassChallanPassDto {
   consignerRowId: string;
+  consignerName: string;
   operatorType: OperatorType;
   /** @deprecated Use operatorType */
   role?: OperatorType;
@@ -442,4 +438,59 @@ export interface VehicleStatusScrapeMissingResponse {
   enqueued: number;
   skipped?: boolean;
   skippedExisting?: number;
+}
+
+export interface VehicleDataListItemDto {
+  vehicleRegNo: string;
+  passCount: number;
+  totalQuantity: number | null;
+  quantityByUnit: Record<string, number>;
+  minerals: string[];
+  dmoNames: string[];
+  consignerNames: string[];
+  destinations: string[];
+  lastTransportedDate: string | null;
+  lastScrapedAt: string | null;
+  hasVehicleStatus: boolean;
+}
+
+export interface VehicleDataListResponse {
+  snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
+  total: number;
+  limit: number;
+  offset: number;
+  items: VehicleDataListItemDto[];
+}
+
+export interface VehicleDataDetailResponse {
+  vehicleRegNo: string;
+  snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
+  summary: VehicleDataListItemDto | null;
+  passes: EpassChalaanPassListItemDto[];
+  vehicleStatus: EpassVehicleStatusListItemDto | null;
+}
+
+export type VehicleDataSortKey = 'vehicle' | 'passes' | 'qty' | 'lastDate';
+
+export type VehicleDataSortDir = 'asc' | 'desc';
+
+export interface VehicleDataListParams {
+  snapshotId?: string;
+  operator?: OperatorType;
+  district?: string;
+  dmo?: string;
+  mineral?: string;
+  consigner?: string;
+  consignee?: string;
+  hideZeroPasses?: boolean;
+  q?: string;
+  sort?: VehicleDataSortKey;
+  dir?: VehicleDataSortDir;
+  limit?: number;
+  offset?: number;
+}
+
+export interface VehicleDataFilterValues {
+  epass: EpassBrowseFilterValues;
+  vehicleSearch: string;
 }

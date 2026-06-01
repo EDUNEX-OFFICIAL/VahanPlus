@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChalaanDetailDialog } from '@/components/khanan/ChalaanDetailDialog';
 import { Card } from '@/components/ui/Card';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatQty } from '@/lib/epass-aggregate';
@@ -82,11 +83,7 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
   }, []);
 
   if (rows.length === 0) {
-    return (
-      <Card>
-        <p className="text-sm text-text-secondary">No challan lines found</p>
-      </Card>
-    );
+    return <EmptyStateCard message="No challan lines found" />;
   }
 
   function SortHeader({

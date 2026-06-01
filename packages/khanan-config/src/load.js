@@ -27,6 +27,7 @@ function rowToConfig(row) {
     scheduleTimezone: row.scheduleTimezone,
     defaultDistrictDate: row.defaultDistrictDate,
     scheduleReportDateMode: row.scheduleReportDateMode ?? 'yesterday',
+    allowDataWipe: row.allowDataWipe ?? false,
     configVersion: row.configVersion,
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -82,7 +83,6 @@ export function httpMetadataOverrides(config) {
 export function rateLimiterFromConfig(config) {
   return {
     max: Number(config.rateLimitMax) > 0 ? Number(config.rateLimitMax) : 2,
-    duration:
-      Number(config.rateLimitDurationMs) > 0 ? Number(config.rateLimitDurationMs) : 1000,
+    duration: Number(config.rateLimitDurationMs) > 0 ? Number(config.rateLimitDurationMs) : 1000,
   };
 }

@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import type {
@@ -45,11 +47,7 @@ export function VehicleStatusTable({
   const sortable = Boolean(onSort);
 
   if (rows.length === 0) {
-    return (
-      <Card>
-        <p className="text-sm text-text-secondary">No vehicle status records found</p>
-      </Card>
-    );
+    return <EmptyStateCard message="No vehicle status records found" />;
   }
 
   function SortHeader({
@@ -85,7 +83,14 @@ export function VehicleStatusTable({
           <MobileDataCard
             key={row.id}
             eyebrow={row.ksRegNo ?? 'KS NA'}
-            title={row.vehicleRegNo}
+            title={
+              <Link
+                href={`/khanan/vehicle-data?q=${encodeURIComponent(row.vehicleRegNo)}`}
+                className="hover:text-indigo-200 hover:underline"
+              >
+                {row.vehicleRegNo}
+              </Link>
+            }
             subtitle={row.vehicleClass ?? 'Vehicle class NA'}
             meta={
               <>
@@ -134,7 +139,14 @@ export function VehicleStatusTable({
                   <td className="px-4 py-2.5 font-mono text-sm text-indigo-200">
                     {row.ksRegNo ?? '—'}
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-sm text-white">{row.vehicleRegNo}</td>
+                  <td className="px-4 py-2.5 font-mono text-sm text-white">
+                    <Link
+                      href={`/khanan/vehicle-data?q=${encodeURIComponent(row.vehicleRegNo)}`}
+                      className="hover:text-indigo-200 hover:underline"
+                    >
+                      {row.vehicleRegNo}
+                    </Link>
+                  </td>
                   <td className="px-4 py-2.5 text-white">{row.vehicleClass ?? '—'}</td>
                   <td className="px-4 py-2.5 text-text-secondary">{row.rcFitUpTo ?? '—'}</td>
                   <td className="px-4 py-2.5 text-text-secondary">{row.rcTaxUpTo ?? '—'}</td>

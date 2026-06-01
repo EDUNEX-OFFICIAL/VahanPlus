@@ -54,6 +54,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "vahanplus.secretName" . }}
                   key: jwtSecret
+            {{- if .Values.apiExpress.corsOrigins }}
+            - name: CORS_ORIGINS
+              value: {{ .Values.apiExpress.corsOrigins | quote }}
+            {{- end }}
             {{- if .Values.otel.endpoint }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.otel.endpoint | quote }}

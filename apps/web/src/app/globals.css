@@ -136,6 +136,16 @@ textarea {
   animation: shimmer 2s linear infinite;
 }
 
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-deep) 0%,
+    var(--surface-elevated) 45%,
+    var(--surface-deep) 90%
+  );
+  background-size: 200% 100%;
+}
+
 .animate-blob-drift {
   animation: blob-drift 12s ease-in-out infinite;
 }

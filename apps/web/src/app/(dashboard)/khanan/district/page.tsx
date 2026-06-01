@@ -8,19 +8,18 @@ import { Card } from '@/components/ui/Card';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
   DistrictEpassFilters,
-  type DistrictDateMode,
   type DistrictFilterValues,
 } from '@/components/khanan/DistrictEpassFilters';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { DistrictEpassTable } from '@/components/khanan/DistrictEpassTable';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
-import { getToken } from '@/lib/auth';
+import { EpassBrowsePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
+import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import {
   aggregateDistrictRowsByDmo,
   applyDistrictFilters,
   collectDistricts,
   collectMinerals,
-  parseDistrictsParam,
-  serializeDistricts,
   sortDistrictRows,
 } from '@/lib/epass-district-view';
 import {
@@ -35,72 +34,20 @@ import {
   snapshotsForDateMode,
 } from '@/lib/epass-report-date';
 import type { DistrictSortDir, DistrictSortKey } from '@/lib/epass-types';
-import { parseOperatorParam } from '@/lib/operator';
+import {
+  districtFiltersFromParams,
+  districtParamsFromFilters,
+  parseDistrictSortKey,
+} from '@/lib/epass-district-filter-params';
 
 const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
-
-function parseSortKey(value: string | null): DistrictSortKey | null {
-  const keys: DistrictSortKey[] = ['district', 'totalUsers', 'mineral', 'passes', 'quantity'];
-  return keys.includes(value as DistrictSortKey) ? (value as DistrictSortKey) : null;
-}
-
-function parseMineralsParam(value: string | null): string[] {
-  if (!value?.trim()) return [];
-  return value
-    .split(',')
-    .map((m) => m.trim())
-    .filter(Boolean);
-}
-
-function serializeMinerals(minerals: string[]): string | null {
-  if (minerals.length === 0) return null;
-  return minerals.join(',');
-}
-
-function parseDateMode(value: string | null): DistrictDateMode {
-  return value === 'range' ? 'range' : 'specific';
-}
-
-function filtersFromParams(searchParams: URLSearchParams): DistrictFilterValues {
-  return {
-    operator: parseOperatorParam(searchParams.get('operator'), searchParams.get('role')),
-    minerals: parseMineralsParam(searchParams.get('mineral')),
-    dateMode: parseDateMode(searchParams.get('dateMode')),
-    dateFrom: searchParams.get('dateFrom') ?? '',
-    dateTo: searchParams.get('dateTo') ?? '',
-    reportDate: searchParams.get('reportDate') ?? '',
-    snapshotId: searchParams.get('snapshotId') ?? '',
-    districts: parseDistrictsParam(searchParams.get('district')),
-    hideZeroPasses: searchParams.get('hideZeroPasses') === '1',
-  };
-}
-
-function paramsFromFilters(
-  filters: DistrictFilterValues,
-  sortKey: DistrictSortKey | null,
-  sortDir: DistrictSortDir,
-): Record<string, string | null> {
-  return {
-    snapshotId: filters.snapshotId || null,
-    operator: filters.operator === 'all' ? null : filters.operator,
-    mineral: serializeMinerals(filters.minerals),
-    dateMode: filters.dateMode === 'specific' ? null : filters.dateMode,
-    dateFrom: filters.dateFrom || null,
-    dateTo: filters.dateTo || null,
-    reportDate: filters.reportDate || null,
-    district: serializeDistricts(filters.districts),
-    hideZeroPasses: filters.hideZeroPasses ? '1' : null,
-    sort: sortKey,
-    dir: sortKey ? sortDir : null,
-  };
-}
 
 function DistrictPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const appliedFilters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
-  const sortKey = parseSortKey(searchParams.get('sort'));
+  const appliedFilters = useMemo(() => districtFiltersFromParams(searchParams), [searchParams]);
+  const sortKey = parseDistrictSortKey(searchParams.get('sort'));
   const sortDir: DistrictSortDir = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
 
   const updateParams = useCallback(
@@ -123,9 +70,7 @@ function DistrictPageContent() {
   } = useQuery({
     queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
     queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchEpassSnapshots(token);
+      return fetchEpassSnapshots();
     },
     staleTime: SNAPSHOTS_STALE_MS,
   });
@@ -161,9 +106,8 @@ function DistrictPageContent() {
   } = useQuery({
     queryKey: ['epass', 'snapshot-rows', snapshotId],
     queryFn: () => {
-      const token = getToken();
-      if (!token || !snapshotId) throw new Error('Not authenticated');
-      return fetchSnapshotDistrictRows(token, snapshotId);
+      if (!snapshotId) throw new Error('Snapshot required');
+      return fetchSnapshotDistrictRows(snapshotId);
     },
     enabled: Boolean(snapshotId),
   });
@@ -190,10 +134,8 @@ function DistrictPageContent() {
     }
 
     const bootstrap = async () => {
-      const token = getToken();
-      if (!token) return;
       try {
-        const latest = await fetchLatestEpass(token);
+        const latest = await fetchLatestEpass();
         if (latest.snapshot) {
           updateParams({
             snapshotId: latest.snapshot.id,
@@ -259,7 +201,7 @@ function DistrictPageContent() {
 
   const handleApplyFilters = useCallback(
     (next: DistrictFilterValues) => {
-      const patch = paramsFromFilters(next, sortKey, sortDir);
+      const patch = districtParamsFromFilters(next, sortKey, sortDir);
       updateParams(patch);
     },
     [sortKey, sortDir, updateParams],
@@ -297,7 +239,9 @@ function DistrictPageContent() {
     [sortKey, sortDir, updateParams],
   );
 
-  const isLoading = snapshotsLoading || (Boolean(snapshotId) && rowsLoading);
+  const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
+  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, noSnapshotsInRange);
+  const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && rowsLoading);
   const isError = snapshotsError || rowsError;
   const refetch = () => {
     void refetchSnapshots();
@@ -315,18 +259,17 @@ function DistrictPageContent() {
     );
   }
 
+  if (pageLoading) {
+    return <EpassBrowsePageLoading />;
+  }
+
   return (
     <PageStack>
-      {isLoading ? (
-        <Card className="animate-pulse">
-          <div className="h-4 w-32 rounded bg-surface-deep" />
-          <div className="mt-4 h-6 w-64 rounded bg-surface-deep" />
-        </Card>
-      ) : snapshotId && rowsData?.snapshot ? (
+      {snapshotId && rowsData?.snapshot ? (
         <EpassReportMetaBar snapshot={rowsData.snapshot} />
       ) : null}
 
-      {!snapshotsLoading && snapshotsData ? (
+      {snapshotsData ? (
         <DistrictEpassFilters
           snapshots={snapshotsData.items}
           minerals={minerals}
@@ -338,16 +281,7 @@ function DistrictPageContent() {
       ) : null}
 
       {noSnapshotsInRange ? (
-        <Card>
-          <p className="text-sm text-text-secondary">
-            No reports found for the selected date range. Adjust the range or switch to a specific
-            report date.
-          </p>
-        </Card>
-      ) : isLoading ? (
-        <Card className="animate-pulse p-12">
-          <div className="h-48 rounded bg-surface-deep" />
-        </Card>
+        <EmptyStateCard message="No data available" />
       ) : (
         <>
           <DistrictEpassTable
@@ -371,15 +305,7 @@ function DistrictPageContent() {
 
 export default function DistrictPage() {
   return (
-    <Suspense
-      fallback={
-        <PageStack>
-          <Card className="animate-pulse p-12">
-            <div className="h-48 rounded bg-surface-deep" />
-          </Card>
-        </PageStack>
-      }
-    >
+    <Suspense fallback={<EpassBrowsePageSkeleton />}>
       <DistrictPageContent />
     </Suspense>
   );

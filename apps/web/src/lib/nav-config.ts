@@ -25,7 +25,8 @@ export type NavIcon =
   | 'chalaan'
   | 'vehicle'
   | 'status'
-  | 'config';
+  | 'config'
+  | 'import';
 
 export const navItems: NavItem[] = [
   { type: 'link', label: 'Dashboard', href: '/', icon: 'dashboard' },
@@ -42,6 +43,7 @@ export const navItems: NavItem[] = [
       { label: 'Chalaan', href: '/khanan/chalaan', icon: 'chalaan' },
       { label: 'Vehicle Data', href: '/khanan/vehicle-data', icon: 'vehicle' },
       { label: 'Vehicle Status', href: '/khanan/vehicle-status', icon: 'status' },
+      { label: 'Import Data', href: '/khanan/import', icon: 'import' },
       { label: 'Khanan Config', href: '/khanan/config', icon: 'config' },
     ],
   },

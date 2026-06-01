@@ -68,6 +68,7 @@ export function ChalaanDetailDialog({ row, open, onClose }: ChalaanDetailDialogP
       <div className="grid gap-3 sm:grid-cols-2">
         <DetailField label="Sl" value={String(row.slNo)} />
         <DetailField label="Consignee" value={row.consigneeName} wide />
+        <DetailField label="Consigner" value={row.consignerName ?? '—'} wide />
         <DetailField label="Challan no" value={row.challanNo} wide />
         <DetailField label="Mineral" value={row.mineral ?? '—'} wide />
         <DetailField label="Category" value={row.mineralCategory ?? '—'} />

@@ -10,7 +10,7 @@ import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { VehicleStatusFilters } from '@/components/khanan/VehicleStatusFilters';
 import { VehicleStatusMetaBar } from '@/components/khanan/VehicleStatusMetaBar';
 import { VehicleStatusTable } from '@/components/khanan/VehicleStatusTable';
-import { getToken } from '@/lib/auth';
+import { VehicleStatusPageLoading, VehicleStatusPageSkeleton } from '@/components/khanan/skeletons';
 import {
   parseVehicleStatusFilters,
   serializeVehicleStatusFoundFilter,
@@ -72,9 +72,7 @@ function VehicleStatusPageContent() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [...VEHICLE_STATUS_QUERY_KEY, listParams],
     queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchVehicleStatusList(token, listParams);
+      return fetchVehicleStatusList(listParams);
     },
   });
 
@@ -127,32 +125,10 @@ function VehicleStatusPageContent() {
   const total = data?.total ?? 0;
   const activeSortKey = searchParams.get('sort') ? sortKey : null;
 
-  return (
-    <PageStack>
-      <h1 className="text-2xl font-semibold text-white sm:text-3xl">Vehicle Status</h1>
-
-      {isLoading ? (
-        <Card className="animate-pulse">
-          <div className="h-4 w-32 rounded bg-surface-deep" />
-          <div className="mt-4 h-6 w-64 rounded bg-surface-deep" />
-        </Card>
-      ) : (
-        <VehicleStatusMetaBar stats={data?.stats ?? null} />
-      )}
-
-      <VehicleStatusFilters
-        values={appliedFilters}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-      />
-
-      {isLoading ? (
-        <Card className="animate-pulse p-12">
-          <div className="h-48 rounded bg-surface-deep" />
-        </Card>
-      ) : null}
-
-      {isError ? (
+  if (isError) {
+    return (
+      <PageStack>
+        <h1 className="text-2xl font-semibold text-white sm:text-3xl">Vehicle Status</h1>
         <Card className="border-red-500/30">
           <p className="text-sm font-semibold text-red-400">Unable to load data</p>
           {error instanceof Error && error.message ? (
@@ -162,33 +138,55 @@ function VehicleStatusPageContent() {
             Retry
           </Button>
         </Card>
-      ) : null}
+      </PageStack>
+    );
+  }
 
-      {!isLoading && !isError && data ? (
+  if (isLoading) {
+    return (
+      <PageStack>
+        <h1 className="text-2xl font-semibold text-white sm:text-3xl">Vehicle Status</h1>
+        <VehicleStatusFilters
+          values={appliedFilters}
+          onApply={handleApplyFilters}
+          onClear={handleClearFilters}
+        />
+        <VehicleStatusPageLoading />
+      </PageStack>
+    );
+  }
+
+  return (
+    <PageStack>
+      <h1 className="text-2xl font-semibold text-white sm:text-3xl">Vehicle Status</h1>
+
+      <VehicleStatusMetaBar stats={data?.stats ?? null} />
+
+      <VehicleStatusFilters
+        values={appliedFilters}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+      />
+
+      {data ? (
         <>
-          {data.items.length === 0 ? (
-            <Card>
-              <p className="text-sm text-text-secondary">No vehicle status records found</p>
-            </Card>
-          ) : (
-            <>
-              <VehicleStatusTable
-                rows={data.items}
-                sortKey={activeSortKey}
-                sortDir={sortDir}
-                onSort={handleSort}
-              />
-              <ResponsivePagination
-                total={total}
-                offset={offset}
-                pageSize={pageSize}
-                onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
-                onPageSizeChange={(nextSize) =>
-                  updateParams({ limit: String(nextSize), offset: '0' })
-                }
-              />
-            </>
-          )}
+          <VehicleStatusTable
+            rows={data.items}
+            sortKey={activeSortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
+          {data.items.length > 0 ? (
+            <ResponsivePagination
+              total={total}
+              offset={offset}
+              pageSize={pageSize}
+              onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
+              onPageSizeChange={(nextSize) =>
+                updateParams({ limit: String(nextSize), offset: '0' })
+              }
+            />
+          ) : null}
         </>
       ) : null}
     </PageStack>
@@ -197,13 +195,7 @@ function VehicleStatusPageContent() {
 
 export default function VehicleStatusPage() {
   return (
-    <Suspense
-      fallback={
-        <Card className="animate-pulse p-12">
-          <div className="h-8 w-64 rounded bg-surface-deep" />
-        </Card>
-      }
-    >
+    <Suspense fallback={<VehicleStatusPageSkeleton />}>
       <VehicleStatusPageContent />
     </Suspense>
   );

@@ -70,6 +70,7 @@ model KhananScraperConfig {
   scheduleTimezone         String   @default("Asia/Kolkata")
   defaultDistrictDate      String?
   scheduleReportDateMode   String   @default("yesterday")
+  allowDataWipe            Boolean  @default(false)
   configVersion            Int      @default(1)
   updatedAt            DateTime @updatedAt
 

@@ -72,8 +72,12 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api
     environment:
-      NEXT_PUBLIC_API_URL: http://api-express:3001
+      NEXT_PUBLIC_API_URL: /api
+      API_ORIGIN: http://api-express:3001
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
     ports:
       - '3000:3000'
     depends_on:

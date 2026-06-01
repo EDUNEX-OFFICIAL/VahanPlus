@@ -56,9 +56,14 @@ export interface AuthUser {
 }
 
 export interface LoginResponse {
-  token: string;
   user: AuthUser;
 }
+
+/** HttpOnly session cookie set by api-express on login; read by Next.js middleware. */
+export const SESSION_COOKIE_NAME = 'vahanplus_session';
+
+/** Matches JWT `expiresIn` on api-express login (8h). */
+export const SESSION_MAX_AGE_SEC = 8 * 60 * 60;
 
 export const SpeedPresetSchema = z.enum(['safe', 'balanced', 'fast']);
 
@@ -87,6 +92,7 @@ export const KhananScraperConfigPatchSchema = z
       .nullable()
       .optional(),
     scheduleReportDateMode: z.enum(['yesterday', 'today', 'none']).optional(),
+    allowDataWipe: z.boolean().optional(),
     speedPreset: SpeedPresetSchema.optional(),
   })
   .strict();

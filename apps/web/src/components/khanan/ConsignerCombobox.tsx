@@ -25,6 +25,9 @@ interface ConsignerComboboxProps {
   onChange: (id: string) => void;
   loading?: boolean;
   disabled?: boolean;
+  /** Highlights picker when consigners exist but none is selected yet. */
+  awaitingSelection?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const fieldClass =
@@ -36,6 +39,8 @@ export function ConsignerCombobox({
   onChange,
   loading = false,
   disabled = false,
+  awaitingSelection = false,
+  onOpenChange,
 }: ConsignerComboboxProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -61,6 +66,10 @@ export function ConsignerCombobox({
   }, [query, filtered.length]);
 
   useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
+
+  useEffect(() => {
     if (!open) return;
     function onDocClick(e: MouseEvent) {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
@@ -72,6 +81,13 @@ export function ConsignerCombobox({
   }, [open]);
 
   const displayValue = open ? query : selected ? formatConsignerOption(selected) : '';
+
+  const showAwaitingHint = awaitingSelection && !value && !loading && options.length > 0;
+  const inputPlaceholder = loading
+    ? 'Loading consigners…'
+    : showAwaitingHint
+      ? 'Select consigner…'
+      : 'Search or select consigner…';
 
   const selectOption = useCallback(
     (o: ConsignerOptionDto) => {
@@ -114,10 +130,17 @@ export function ConsignerCombobox({
   }
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className={`relative ${open ? 'z-[60]' : ''}`}>
       <label className="block space-y-2" htmlFor={`${listId}-input`}>
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">
-          Consigner
+        <span className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">
+            Consigner
+          </span>
+          {showAwaitingHint ? (
+            <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-indigo-200">
+              {options.length} available
+            </span>
+          ) : null}
         </span>
         <div className="relative">
           <input
@@ -130,7 +153,7 @@ export function ConsignerCombobox({
             aria-autocomplete="list"
             autoComplete="off"
             disabled={disabled || loading}
-            placeholder={loading ? 'Loading consigners…' : 'Search or select consigner…'}
+            placeholder={inputPlaceholder}
             value={displayValue}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -138,7 +161,7 @@ export function ConsignerCombobox({
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
-            className={`${fieldClass} truncate`}
+            className={`${fieldClass} truncate ${showAwaitingHint ? 'border-indigo-500/50 ring-1 ring-indigo-500/20' : ''}`}
           />
           {value && !loading && !disabled ? (
             <button
@@ -162,7 +185,7 @@ export function ConsignerCombobox({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border-default bg-surface-primary py-1 shadow-xl"
+          className="absolute z-[70] mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border-default bg-surface-primary py-1 shadow-2xl"
         >
           {filtered.length === 0 ? (
             <li className="px-3 py-2 text-sm text-text-secondary">No matching consigners</li>

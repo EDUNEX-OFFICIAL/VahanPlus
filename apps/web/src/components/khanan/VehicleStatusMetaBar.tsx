@@ -1,20 +1,23 @@
 'use client';
 
+import { VehicleStatusMetaBarSkeleton } from '@/components/khanan/skeletons/VehicleStatusMetaBarSkeleton';
 import { Card } from '@/components/ui/Card';
 import type { VehicleStatusStatsDto } from '@/lib/epass-types';
 
 interface VehicleStatusMetaBarProps {
   stats: VehicleStatusStatsDto | null;
+  isLoading?: boolean;
 }
 
-export function VehicleStatusMetaBar({ stats }: VehicleStatusMetaBarProps) {
+export function VehicleStatusMetaBar({ stats, isLoading = false }: VehicleStatusMetaBarProps) {
+  if (isLoading) {
+    return <VehicleStatusMetaBarSkeleton />;
+  }
+
   if (!stats || stats.total === 0) {
     return (
       <Card className="border-amber-500/30 bg-amber-500/5">
-        <p className="text-sm text-text-secondary">
-          No vehicle status data yet. Vehicle status is filled automatically when challan pass
-          lines are scraped (worker must be running).
-        </p>
+        <p className="text-sm text-text-secondary">No data available</p>
       </Card>
     );
   }

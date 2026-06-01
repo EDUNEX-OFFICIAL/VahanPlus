@@ -1,32 +1,48 @@
-import { clearToken } from '@/lib/auth';
+import { safeNextPath } from '@/lib/safe-next-path';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+type ApiFetchOptions = RequestInit & {
+  /** When false, 401 does not clear session or navigate (e.g. login page probe). Default true. */
+  redirectOnUnauthenticated?: boolean;
+};
 
 function redirectToLogin() {
   if (typeof window === 'undefined') return;
-  clearToken();
-  const next = `${window.location.pathname}${window.location.search}`;
+  const next = safeNextPath(`${window.location.pathname}${window.location.search}`);
   const params = new URLSearchParams({ session: 'expired' });
-  if (next && next !== '/login') params.set('next', next);
+  if (next !== '/') params.set('next', next);
   window.location.replace(`/login?${params}`);
 }
 
-export async function apiFetch<T>(
-  path: string,
-  options?: RequestInit & { token?: string },
-): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(options?.headers || {}),
-  };
-  if (options?.token) {
-    (headers as Record<string, string>)['Authorization'] = `Bearer ${options.token}`;
+export async function clearSession(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch {
+    // Best-effort cookie clear
   }
+}
+
+export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Promise<T> {
+  const { redirectOnUnauthenticated = true, ...fetchOptions } = options ?? {};
+  const hasBody = fetchOptions.body != null;
+  const method = (fetchOptions.method ?? 'GET').toUpperCase();
+
+  const headers: HeadersInit = {
+    ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+    ...(fetchOptions.headers || {}),
+  };
 
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {
-      ...options,
+      ...fetchOptions,
+      method,
+      credentials: 'include',
       headers,
     });
   } catch {
@@ -36,24 +52,36 @@ export async function apiFetch<T>(
   }
 
   if (!res.ok) {
+    if (res.status === 401 && path !== '/auth/login') {
+      if (redirectOnUnauthenticated) {
+        await clearSession();
+        redirectToLogin();
+      }
+      throw new Error('Session expired');
+    }
     const body = await res.json().catch(() => ({}));
     const msg =
       (body as { message?: string }).message ||
       (body as { error?: string }).error ||
       `Request failed (${res.status})`;
-    if (res.status === 401 && options?.token) {
-      redirectToLogin();
-      throw new Error('Session expired');
-    }
     throw new Error(msg);
+  }
+
+  if (res.status === 204) {
+    return undefined as T;
   }
 
   return res.json() as Promise<T>;
 }
 
 export async function login(username: string, password: string) {
-  return apiFetch<{ token: string; user: { id: string; username: string } }>('/auth/login', {
+  return apiFetch<{ user: { id: string; username: string } }>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
+    redirectOnUnauthenticated: false,
   });
+}
+
+export async function fetchSessionUser(options?: { redirectOnUnauthenticated?: boolean }) {
+  return apiFetch<{ user: { id: string; username: string } }>('/auth/me', options);
 }

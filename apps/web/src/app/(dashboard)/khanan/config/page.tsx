@@ -1,28 +1,31 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { KhananConfigActions } from '@/components/khanan/config/KhananConfigActions';
 import { KhananConfigAdvanced } from '@/components/khanan/config/KhananConfigAdvanced';
-import { KhananConfigJobsTable } from '@/components/khanan/config/KhananConfigJobsTable';
+import { KhananConfigDangerZone } from '@/components/khanan/config/KhananConfigDangerZone';
+import { KhananConfigLiveScrape } from '@/components/khanan/config/KhananConfigLiveScrape';
 import { KhananConfigPipeline } from '@/components/khanan/config/KhananConfigPipeline';
 import { KhananConfigSpeed } from '@/components/khanan/config/KhananConfigSpeed';
-import { KhananConfigStatusBar } from '@/components/khanan/config/KhananConfigStatusBar';
-import { getToken } from '@/lib/auth';
+import {
+  KhananConfigStatusBar,
+  scrapeQueueInProgress,
+} from '@/components/khanan/config/KhananConfigStatusBar';
 import type { KhananScraperConfig, KhananScraperConfigPatch } from '@/lib/scraper-config-types';
 import {
   SCRAPER_CONFIG_QUERY_KEY,
-  SCRAPER_JOBS_QUERY_KEY,
+  SCRAPER_LIVE_QUERY_KEY,
+  clearAllData,
   fetchScraperConfig,
-  fetchScraperJobs,
+  fetchScraperLive,
   patchScraperConfig,
-  pauseQueue,
-  resumeQueue,
   runDistrictRange,
   runDistrictScrape,
+  stopScraping,
 } from '@/lib/scraper-config';
 
 const SPEED_FIELDS = new Set([
@@ -48,22 +51,20 @@ export default function KhananConfigPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: SCRAPER_CONFIG_QUERY_KEY,
-    queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchScraperConfig(token);
-    },
+    queryFn: () => fetchScraperConfig(),
     refetchInterval: 10_000,
   });
 
-  const { data: jobsData, isLoading: jobsLoading } = useQuery({
-    queryKey: SCRAPER_JOBS_QUERY_KEY,
-    queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchScraperJobs(token);
-    },
-    refetchInterval: 10_000,
+  const scrapeActive = useMemo(() => {
+    if (!data?.status) return false;
+    return scrapeQueueInProgress(data.status) > 0;
+  }, [data?.status]);
+
+  const { data: liveData, isLoading: liveLoading } = useQuery({
+    queryKey: SCRAPER_LIVE_QUERY_KEY,
+    queryFn: () => fetchScraperLive(),
+    enabled: Boolean(data) && scrapeActive,
+    refetchInterval: scrapeActive ? 4_000 : false,
   });
 
   useEffect(() => {
@@ -97,11 +98,7 @@ export default function KhananConfigPage() {
   }, [justSaved]);
 
   const saveMutation = useMutation({
-    mutationFn: async (patch: KhananScraperConfigPatch) => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return patchScraperConfig(token, patch);
-    },
+    mutationFn: async (patch: KhananScraperConfigPatch) => patchScraperConfig(patch),
     onSuccess: (res) => {
       setSaveError(null);
       setJustSaved(true);
@@ -148,21 +145,18 @@ export default function KhananConfigPage() {
       scheduleTimezone: draft.scheduleTimezone,
       defaultDistrictDate: draft.defaultDistrictDate,
       scheduleReportDateMode: draft.scheduleReportDateMode,
+      allowDataWipe: draft.allowDataWipe,
     };
     if (draftPreset) body.speedPreset = draftPreset;
     saveMutation.mutate(body);
   };
 
-  const tokenAction = async (
-    fn: (token: string) => Promise<{ message?: string; enqueued?: number }>,
-  ) => {
-    const token = getToken();
-    if (!token) throw new Error('Not authenticated');
+  const runAction = async (fn: () => Promise<{ message?: string; enqueued?: number }>) => {
     setActionBusy(true);
     try {
-      const res = await fn(token);
+      const res = await fn();
       await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: SCRAPER_JOBS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: SCRAPER_LIVE_QUERY_KEY });
       if (res.enqueued != null) {
         return res.enqueued === 0 ? 'Nothing to queue' : `Queued ${res.enqueued} jobs`;
       }
@@ -185,7 +179,7 @@ export default function KhananConfigPage() {
   if (isError) {
     return (
       <Card className="border-red-500/30">
-        <p className="text-sm text-red-400">Load failed</p>
+        <p className="text-sm font-semibold text-red-400">Unable to load data</p>
         <Button className="mt-4" variant="secondary" onClick={() => refetch()}>
           Retry
         </Button>
@@ -209,32 +203,11 @@ export default function KhananConfigPage() {
         defaultDistrictDate={draft.defaultDistrictDate}
         scheduleTimezone={draft.scheduleTimezone}
         busy={controlsBusy}
-        onRunDistrict={(date) => tokenAction((t) => runDistrictScrape(t, date))}
+        onRunDistrict={(date) => runAction(() => runDistrictScrape(date))}
         onRunDistrictRange={(from, to, confirmLargeRange) =>
-          tokenAction((t) => runDistrictRange(t, from, to, confirmLargeRange))
+          runAction(() => runDistrictRange(from, to, confirmLargeRange))
         }
-        onPause={async () => {
-          const token = getToken();
-          if (!token) throw new Error('Not authenticated');
-          setActionBusy(true);
-          try {
-            await pauseQueue(token);
-            await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
-          } finally {
-            setActionBusy(false);
-          }
-        }}
-        onResume={async () => {
-          const token = getToken();
-          if (!token) throw new Error('Not authenticated');
-          setActionBusy(true);
-          try {
-            await resumeQueue(token);
-            await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
-          } finally {
-            setActionBusy(false);
-          }
-        }}
+        onStop={() => runAction(() => stopScraping())}
       />
 
       <KhananConfigSpeed
@@ -274,7 +247,40 @@ export default function KhananConfigPage() {
         </Card>
       ) : null}
 
-      <KhananConfigJobsTable jobs={jobsData?.items ?? []} loading={jobsLoading} />
+      <KhananConfigLiveScrape
+        status={data.status}
+        scrapeActive={scrapeActive}
+        live={liveData}
+        loading={liveLoading}
+      />
+
+      <KhananConfigDangerZone
+        allowDataWipe={draft.allowDataWipe}
+        busy={controlsBusy}
+        onAllowDataWipeChange={async (enabled) => {
+          setActionBusy(true);
+          try {
+            const res = await patchScraperConfig({ allowDataWipe: enabled });
+            setDraft(res.config);
+            queryClient.setQueryData(SCRAPER_CONFIG_QUERY_KEY, res);
+          } finally {
+            setActionBusy(false);
+          }
+        }}
+        onClear={async () => {
+          setActionBusy(true);
+          try {
+            const result = await clearAllData('DELETE ALL DATA');
+            await queryClient.invalidateQueries({ queryKey: ['epass'] });
+            await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
+            await queryClient.invalidateQueries({ queryKey: SCRAPER_LIVE_QUERY_KEY });
+            const d = result.deleted;
+            return `Cleared ${d.snapshots} snapshots, ${d.scrapeJobs} jobs, ${d.rawCaptures} captures, ${d.vehicleStatus} vehicle status, ${d.vehicleRecords} vehicle records, ${d.khananRecords} Khanan records.`;
+          } finally {
+            setActionBusy(false);
+          }
+        }}
+      />
     </PageStack>
   );
 }

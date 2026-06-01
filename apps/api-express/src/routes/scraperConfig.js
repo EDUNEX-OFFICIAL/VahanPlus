@@ -1,7 +1,5 @@
 import express from 'express';
-import {
-  KhananScraperConfigPatchSchema,
-} from '@vahanplus/contracts';
+import { KhananScraperConfigPatchSchema } from '@vahanplus/contracts';
 import { getPrisma } from '@vahanplus/db';
 import {
   CONFIG_ID,
@@ -9,7 +7,6 @@ import {
   detectSpeedPreset,
   getSpeedPreset,
   loadKhananConfig,
-  scheduleReportDateIso,
 } from '@vahanplus/khanan-config';
 import { eachIsoDayInclusive, isoToPortalDate, parseIsoDate } from '@vahanplus/scraper-bihar-epass';
 import {
@@ -18,6 +15,7 @@ import {
   enqueueMissingVehicleStatusFromPasses,
 } from '@vahanplus/epass-orchestrator';
 import { requireAuth } from '../middleware/auth.js';
+import { obliterateScrapeQueue, stopScrapeQueue } from '../queues/queueMaintenance.js';
 import { getScrapeQueue } from '../queues/scrapeQueue.js';
 import { enqueueScrapeJob } from '../services/enqueueScrape.js';
 import { syncEpassSchedule } from '../scheduler/epassSchedule.js';
@@ -63,6 +61,129 @@ function mapConfigResponse(cfg) {
   };
 }
 
+/**
+ * @param {import('@vahanplus/db').PrismaClient} prisma
+ * @param {Array<{ id: string; reportDate: string; scrapedAt: Date; _count: { rows: number } }>} snapshots
+ */
+async function buildSnapshotLiveRows(prisma, snapshots) {
+  if (!snapshots.length) return [];
+
+  const snapshotIds = snapshots.map((s) => s.id);
+  const consignerGroups =
+    snapshotIds.length > 0
+      ? await prisma.epassConsignerRow.groupBy({
+          by: ['snapshotId'],
+          where: { snapshotId: { in: snapshotIds } },
+          _count: { _all: true },
+        })
+      : [];
+
+  const consignerBySnapshot = Object.fromEntries(
+    consignerGroups.map((g) => [g.snapshotId, g._count._all]),
+  );
+
+  const challanGroups =
+    snapshotIds.length > 0
+      ? await prisma.epassChallanRow.groupBy({
+          by: ['consignerRowId'],
+          where: { consignerRow: { snapshotId: { in: snapshotIds } } },
+          _count: { _all: true },
+        })
+      : [];
+
+  const consignerSnapshotMap = new Map();
+  if (snapshotIds.length > 0) {
+    const consigners = await prisma.epassConsignerRow.findMany({
+      where: { snapshotId: { in: snapshotIds } },
+      select: { id: true, snapshotId: true },
+    });
+    for (const c of consigners) {
+      consignerSnapshotMap.set(c.id, c.snapshotId);
+    }
+  }
+
+  const challanBySnapshot = {};
+  for (const g of challanGroups) {
+    const snapId = consignerSnapshotMap.get(g.consignerRowId);
+    if (!snapId) continue;
+    challanBySnapshot[snapId] = (challanBySnapshot[snapId] ?? 0) + g._count._all;
+  }
+
+  const passGroups =
+    snapshotIds.length > 0
+      ? await prisma.epassChallanPassRow.groupBy({
+          by: ['challanRowId'],
+          where: {
+            challanRow: { consignerRow: { snapshotId: { in: snapshotIds } } },
+          },
+          _count: { _all: true },
+        })
+      : [];
+
+  const challanConsignerMap = new Map();
+  if (snapshotIds.length > 0) {
+    const challans = await prisma.epassChallanRow.findMany({
+      where: { consignerRow: { snapshotId: { in: snapshotIds } } },
+      select: { id: true, consignerRowId: true },
+    });
+    for (const ch of challans) {
+      challanConsignerMap.set(ch.id, ch.consignerRowId);
+    }
+  }
+
+  const passBySnapshot = {};
+  for (const g of passGroups) {
+    const consignerId = challanConsignerMap.get(g.challanRowId);
+    const snapId = consignerId ? consignerSnapshotMap.get(consignerId) : null;
+    if (!snapId) continue;
+    passBySnapshot[snapId] = (passBySnapshot[snapId] ?? 0) + g._count._all;
+  }
+
+  const reportDateGroups = new Map();
+  for (const s of snapshots) {
+    const list = reportDateGroups.get(s.reportDate) ?? [];
+    list.push(s);
+    reportDateGroups.set(s.reportDate, list);
+  }
+
+  return snapshots.map((s) => ({
+    id: s.id,
+    reportDate: s.reportDate,
+    scrapedAt: s.scrapedAt.toISOString(),
+    districtRows: s._count.rows,
+    consignerRows: consignerBySnapshot[s.id] ?? 0,
+    challanRows: challanBySnapshot[s.id] ?? 0,
+    passRows: passBySnapshot[s.id] ?? 0,
+    snapshotCountForDate: reportDateGroups.get(s.reportDate)?.length ?? 1,
+  }));
+}
+
+/**
+ * @param {import('@vahanplus/db').PrismaClient} prisma
+ * @param {string} snapshotId
+ */
+async function snapshotRowCounts(prisma, snapshotId) {
+  const snap = await prisma.epassSnapshot.findUnique({
+    where: { id: snapshotId },
+    select: {
+      id: true,
+      reportDate: true,
+      scrapedAt: true,
+      _count: { select: { rows: true } },
+    },
+  });
+  if (!snap) return null;
+  const rows = await buildSnapshotLiveRows(prisma, [snap]);
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    districtRows: row.districtRows,
+    consignerRows: row.consignerRows,
+    challanRows: row.challanRows,
+    passRows: row.passRows,
+  };
+}
+
 async function buildStatus(prisma) {
   const queue = getScrapeQueue();
   const [counts, isPaused, jobGroups, latestSnapshot] = await Promise.all([
@@ -78,20 +199,25 @@ async function buildStatus(prisma) {
     }),
   ]);
 
-  const scrapeJobsByStatus = Object.fromEntries(
-    jobGroups.map((g) => [g.status, g._count._all]),
-  );
+  const scrapeJobsByStatus = Object.fromEntries(jobGroups.map((g) => [g.status, g._count._all]));
+
+  const latestSnapshotDto = latestSnapshot
+    ? {
+        id: latestSnapshot.id,
+        reportDate: latestSnapshot.reportDate,
+        scrapedAt: latestSnapshot.scrapedAt.toISOString(),
+      }
+    : null;
+
+  const latestSnapshotStats = latestSnapshot
+    ? await snapshotRowCounts(prisma, latestSnapshot.id)
+    : null;
 
   return {
     queue: { ...counts, isPaused },
     scrapeJobsByStatus,
-    latestSnapshot: latestSnapshot
-      ? {
-          id: latestSnapshot.id,
-          reportDate: latestSnapshot.reportDate,
-          scrapedAt: latestSnapshot.scrapedAt.toISOString(),
-        }
-      : null,
+    latestSnapshot: latestSnapshotDto,
+    latestSnapshotStats,
   };
 }
 
@@ -101,7 +227,10 @@ router.get('/', async (_req, res) => {
   const status = await buildStatus(prisma);
   res.json({
     config: mapConfigResponse(cfg),
-    status,
+    status: {
+      ...status,
+      allowDataWipe: isDataWipeAllowed(cfg),
+    },
   });
 });
 
@@ -138,7 +267,10 @@ router.patch('/', async (req, res) => {
 
   res.json({
     config: mapConfigResponse(cfg),
-    status,
+    status: {
+      ...status,
+      allowDataWipe: isDataWipeAllowed(cfg),
+    },
     configVersion: updated.configVersion,
   });
 });
@@ -320,6 +452,113 @@ router.post('/actions/resume-queue', async (_req, res) => {
   const queue = getScrapeQueue();
   await queue.resume();
   res.json({ paused: false, message: 'Queue resumed.' });
+});
+
+/**
+ * @param {import('@vahanplus/db').PrismaClient} prisma
+ */
+async function stopScrapingQueue(prisma) {
+  const queue = getScrapeQueue();
+  const { removedFromQueue } = await stopScrapeQueue(queue);
+  const cancelled = await prisma.scrapeJob.updateMany({
+    where: { status: { in: ['pending', 'active'] } },
+    data: { status: 'failed', error: 'Stopped by operator' },
+  });
+  return {
+    removedFromQueue,
+    cancelledJobs: cancelled.count,
+    message: `Stopped. Cleared ${removedFromQueue} queue job(s); cancelled ${cancelled.count} scrape job(s). Use Run scrapper to start again.`,
+  };
+}
+
+router.post('/actions/stop-scraping', async (_req, res) => {
+  const prisma = getPrisma();
+  const result = await stopScrapingQueue(prisma);
+  res.json(result);
+});
+
+router.get('/live', async (_req, res) => {
+  const prisma = getPrisma();
+  const queue = getScrapeQueue();
+  const status = await buildStatus(prisma);
+
+  const snapshots = await prisma.epassSnapshot.findMany({
+    orderBy: [{ reportDate: 'desc' }, { scrapedAt: 'desc' }],
+    take: 8,
+    select: {
+      id: true,
+      reportDate: true,
+      scrapedAt: true,
+      _count: { select: { rows: true } },
+    },
+  });
+
+  const activeBullJobs = await queue.getJobs(['active'], 0, 20);
+  const activeJobs = activeBullJobs.map((job) => ({
+    id: job.id,
+    type: job.data?.type ?? 'unknown',
+    target: job.data?.target ?? '',
+    progress: job.progress,
+    data: job.data?.metadata ?? job.data ?? null,
+  }));
+
+  const snapshotRows = await buildSnapshotLiveRows(prisma, snapshots);
+
+  res.json({
+    queue: status.queue,
+    scrapeJobsByStatus: status.scrapeJobsByStatus,
+    snapshots: snapshotRows,
+    activeJobs,
+  });
+});
+
+const CLEAR_DATA_PHRASE = 'DELETE ALL DATA';
+
+/**
+ * @param {Record<string, unknown>} cfg
+ */
+function isDataWipeAllowed(cfg) {
+  if (process.env.ALLOW_DATA_WIPE === 'false') return false;
+  return Boolean(cfg?.allowDataWipe);
+}
+
+router.post('/actions/clear-data', async (req, res) => {
+  const prisma = getPrisma();
+  const cfg = await loadKhananConfig(prisma);
+
+  if (!isDataWipeAllowed(cfg)) {
+    return res.status(403).json({
+      error: 'Data wipe disabled. Enable "Allow clear all data" in Khanan Config.',
+    });
+  }
+
+  if (req.body?.confirmPhrase !== CLEAR_DATA_PHRASE) {
+    return res.status(400).json({
+      error: `Confirmation required. Send confirmPhrase: "${CLEAR_DATA_PHRASE}"`,
+    });
+  }
+
+  const queue = getScrapeQueue();
+  await obliterateScrapeQueue(queue);
+
+  const deleted = await prisma.$transaction(async (tx) => {
+    const vehicleStatus = await tx.epassVehicleStatusRow.deleteMany();
+    const snapshots = await tx.epassSnapshot.deleteMany();
+    const rawCaptures = await tx.rawCapture.deleteMany();
+    const scrapeJobs = await tx.scrapeJob.deleteMany();
+    const vehicleRecords = await tx.vehicleRecord.deleteMany();
+    const khananRecords = await tx.khananRecord.deleteMany();
+    return {
+      vehicleStatus: vehicleStatus.count,
+      snapshots: snapshots.count,
+      rawCaptures: rawCaptures.count,
+      scrapeJobs: scrapeJobs.count,
+      vehicleRecords: vehicleRecords.count,
+      khananRecords: khananRecords.count,
+    };
+  });
+
+  res.json({ deleted, message: 'All scraped data cleared.' });
 });
 
 export default router;

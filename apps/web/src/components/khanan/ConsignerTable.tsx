@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatInt } from '@/lib/epass-aggregate';
@@ -63,11 +64,7 @@ export function ConsignerTable({
   const sortable = Boolean(onSort);
 
   if (rows.length === 0) {
-    return (
-      <Card>
-        <p className="text-sm text-text-secondary">No consigners found</p>
-      </Card>
-    );
+    return <EmptyStateCard message="No consigners found" />;
   }
 
   function SortHeader({

@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { ConsigneeEpassFilters } from '@/components/khanan/ConsigneeEpassFilters';
 import { ConsignerCombobox } from '@/components/khanan/ConsignerCombobox';
 import { ConsigneeTable } from '@/components/khanan/ConsigneeTable';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
-import { getToken } from '@/lib/auth';
+import { ConsigneePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
+import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import { formatOperatorType } from '@/lib/operator';
 import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import { applyConsigneeFilters, sortConsigneeRows } from '@/lib/epass-consignee-view';
@@ -62,6 +64,7 @@ function ConsigneePageContent() {
 
   const [sortKey, setSortKey] = useState<ConsigneeSortKey | null>(null);
   const [sortDir, setSortDir] = useState<ConsigneeSortDir>('asc');
+  const [consignerListOpen, setConsignerListOpen] = useState(false);
 
   const updateParams = useCallback(
     (patch: Record<string, string | null>) => {
@@ -93,9 +96,7 @@ function ConsigneePageContent() {
   } = useQuery({
     queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
     queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchEpassSnapshots(token);
+      return fetchEpassSnapshots();
     },
     staleTime: SNAPSHOTS_STALE_MS,
   });
@@ -135,10 +136,8 @@ function ConsigneePageContent() {
     }
 
     const bootstrap = async () => {
-      const token = getToken();
-      if (!token) return;
       try {
-        const latest = await fetchLatestEpass(token);
+        const latest = await fetchLatestEpass();
         if (latest.snapshot) {
           updateParams({
             snapshotId: latest.snapshot.id,
@@ -187,23 +186,16 @@ function ConsigneePageContent() {
 
   const optionsQuery = useQuery({
     queryKey: ['epass', 'consigner-options', resolvedSnapshotId, appliedFilters],
-    queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchConsignerOptions(
-        token,
-        toConsignerOptionsQueryParams(appliedFilters, resolvedSnapshotId),
-      );
-    },
+    queryFn: () =>
+      fetchConsignerOptions(toConsignerOptionsQueryParams(appliedFilters, resolvedSnapshotId)),
     enabled: Boolean(resolvedSnapshotId) && !noSnapshotsInRange,
   });
 
   const { data: districtRowsData } = useQuery({
     queryKey: ['epass', 'snapshot-rows', resolvedSnapshotId, 'consignee-filters'],
     queryFn: () => {
-      const token = getToken();
-      if (!token || !resolvedSnapshotId) throw new Error('Not authenticated');
-      return fetchSnapshotDistrictRows(token, resolvedSnapshotId);
+      if (!resolvedSnapshotId) throw new Error('Snapshot required');
+      return fetchSnapshotDistrictRows(resolvedSnapshotId);
     },
     enabled: Boolean(resolvedSnapshotId),
   });
@@ -222,13 +214,8 @@ function ConsigneePageContent() {
     queryKey: ['epass', 'challans', consignerRowId, appliedFilters],
     enabled: Boolean(consignerRowId) && !noSnapshotsInRange,
     queryFn: () => {
-      const token = getToken();
-      if (!token || !consignerRowId) throw new Error('Not authenticated');
-      return fetchConsignerChallans(
-        token,
-        consignerRowId,
-        toConsignerChallansQueryParams(appliedFilters),
-      );
+      if (!consignerRowId) throw new Error('Consigner required');
+      return fetchConsignerChallans(consignerRowId, toConsignerChallansQueryParams(appliedFilters));
     },
   });
 
@@ -273,7 +260,7 @@ function ConsigneePageContent() {
     });
   }, [snapshotsData, updateParams]);
 
-  // Clear consigner only when it no longer matches filtered options (no auto-select)
+  // Clear consigner when it no longer matches filtered options
   useEffect(() => {
     if (noSnapshotsInRange || optionsQuery.isFetching || !optionsQuery.data || !consignerRowId) {
       return;
@@ -288,6 +275,28 @@ function ConsigneePageContent() {
     optionsQuery.isFetching,
     noSnapshotsInRange,
     consignerRowId,
+    appliedFilters,
+    updateParams,
+  ]);
+
+  // Single consigner in scope — select automatically
+  useEffect(() => {
+    if (noSnapshotsInRange || consignerRowId || optionsQuery.isLoading || !optionsQuery.data) {
+      return;
+    }
+    if (optionsQuery.data.items.length === 1) {
+      updateParams(
+        serializeEpassFilterParams({
+          ...appliedFilters,
+          consignerRowId: optionsQuery.data.items[0].id,
+        }),
+      );
+    }
+  }, [
+    noSnapshotsInRange,
+    consignerRowId,
+    optionsQuery.isLoading,
+    optionsQuery.data,
     appliedFilters,
     updateParams,
   ]);
@@ -326,20 +335,57 @@ function ConsigneePageContent() {
     return snap ? snapshotFromListItem(snap) : null;
   }, [resolvedSnapshotId, snapshotsData?.items]);
 
-  const isLoadingAll = snapshotsLoading || (Boolean(resolvedSnapshotId) && optionsQuery.isLoading);
+  const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
+  const snapshotResolving = isSnapshotResolving(
+    snapshotsLoaded,
+    resolvedSnapshotId,
+    noSnapshotsInRange,
+  );
+  const pageLoading =
+    snapshotsLoading ||
+    snapshotResolving ||
+    (!noSnapshotsInRange && !consignerRowId && optionsQuery.isLoading) ||
+    (Boolean(consignerRowId) && challansQuery.isLoading);
+
+  const consignerOptionCount = optionsQuery.data?.items.length ?? 0;
+  const awaitingConsignerSelection =
+    !noSnapshotsInRange && !consignerRowId && consignerOptionCount > 0 && !optionsQuery.isLoading;
+
+  if (snapshotsError || optionsQuery.isError || challansQuery.isError) {
+    return (
+      <PageStack>
+        <Card className="border-red-500/30">
+          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
+          <Button
+            className="mt-4"
+            variant="secondary"
+            onClick={() => {
+              void refetchSnapshots();
+              void optionsQuery.refetch();
+              void challansQuery.refetch();
+            }}
+          >
+            Retry
+          </Button>
+        </Card>
+      </PageStack>
+    );
+  }
+
+  if (pageLoading) {
+    return (
+      <ConsigneePageLoading
+        showConsignerPicker={!noSnapshotsInRange}
+        showTable={Boolean(consignerRowId)}
+      />
+    );
+  }
 
   return (
     <PageStack>
-      {isLoadingAll ? (
-        <Card className="animate-pulse">
-          <div className="h-4 w-32 rounded bg-surface-deep" />
-          <div className="mt-4 h-6 w-64 rounded bg-surface-deep" />
-        </Card>
-      ) : metaSnapshot ? (
-        <EpassReportMetaBar snapshot={metaSnapshot} />
-      ) : null}
+      {metaSnapshot ? <EpassReportMetaBar snapshot={metaSnapshot} /> : null}
 
-      {!snapshotsLoading && snapshotsData ? (
+      {snapshotsData ? (
         <ConsigneeEpassFilters
           snapshots={snapshotsData.items}
           minerals={minerals}
@@ -351,71 +397,34 @@ function ConsigneePageContent() {
       ) : null}
 
       {noSnapshotsInRange ? (
-        <Card>
-          <p className="text-sm text-text-secondary">No data available</p>
-        </Card>
+        <EmptyStateCard message="No data available" />
       ) : (
-        <Card className="p-4">
+        <Card
+          className={[
+            'relative overflow-visible p-4',
+            consignerListOpen ? 'z-50' : 'z-10',
+            awaitingConsignerSelection ? 'border-indigo-500/40 bg-indigo-500/[0.04]' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           <ConsignerCombobox
             options={optionsQuery.data?.items ?? []}
             value={consignerRowId}
             onChange={handleConsignerChange}
-            loading={optionsQuery.isLoading}
+            loading={false}
+            awaitingSelection={awaitingConsignerSelection}
+            onOpenChange={setConsignerListOpen}
           />
         </Card>
       )}
 
-      {snapshotsError || optionsQuery.isError ? (
-        <Card className="border-red-500/30">
-          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-          <Button
-            className="mt-4"
-            variant="secondary"
-            onClick={() => {
-              void refetchSnapshots();
-              void optionsQuery.refetch();
-            }}
-          >
-            Retry
-          </Button>
-        </Card>
-      ) : null}
-
-      {!noSnapshotsInRange &&
-      !consignerRowId &&
-      (optionsQuery.data?.items.length ?? 0) === 0 &&
-      !optionsQuery.isLoading ? (
-        <Card>
-          <p className="text-sm text-text-secondary">No consigners found</p>
-        </Card>
-      ) : null}
-
-      {!noSnapshotsInRange &&
-      !consignerRowId &&
-      (optionsQuery.data?.items.length ?? 0) > 0 &&
-      !optionsQuery.isLoading ? (
-        <Card>
-          <p className="text-sm text-text-secondary">No data available</p>
-        </Card>
+      {!noSnapshotsInRange && !consignerRowId && (optionsQuery.data?.items.length ?? 0) === 0 ? (
+        <EmptyStateCard message="No consigners found" />
       ) : null}
 
       {consignerRowId ? (
         <>
-          {challansQuery.isLoading ? (
-            <Card className="animate-pulse p-12">
-              <div className="h-48 rounded bg-surface-deep" />
-            </Card>
-          ) : null}
-
-          {challansQuery.isError ? (
-            <Card className="border-red-500/30">
-              <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-              <Button className="mt-4" variant="secondary" onClick={() => challansQuery.refetch()}>
-                Retry
-              </Button>
-            </Card>
-          ) : null}
-
           {challansQuery.data ? (
             <>
               <h2 className="text-xl font-semibold text-white">
@@ -471,13 +480,7 @@ function ConsigneePageContent() {
 
 export default function ConsigneePage() {
   return (
-    <Suspense
-      fallback={
-        <Card className="animate-pulse p-12">
-          <div className="h-8 w-64 rounded bg-surface-deep" />
-        </Card>
-      }
-    >
+    <Suspense fallback={<EpassBrowsePageSkeleton showConsignerPicker />}>
       <ConsigneePageContent />
     </Suspense>
   );

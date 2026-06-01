@@ -36,6 +36,14 @@ spec:
           {{- end }}
           ports:
             - containerPort: {{ .Values.web.port }}
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "vahanplus.secretName" . }}
+                  key: jwtSecret
+            - name: API_ORIGIN
+              value: http://{{ include "vahanplus.fullname" . }}-api-express:{{ .Values.apiExpress.port }}
           resources:
             {{- toYaml .Values.web.resources | nindent 12 }}
           livenessProbe:

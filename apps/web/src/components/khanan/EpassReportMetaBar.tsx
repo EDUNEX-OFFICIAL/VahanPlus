@@ -1,11 +1,17 @@
+import { EpassReportMetaBarSkeleton } from '@/components/khanan/skeletons/EpassReportMetaBarSkeleton';
 import { Card } from '@/components/ui/Card';
 import type { EpassSnapshotDto } from '@/lib/epass-types';
 
 interface EpassReportMetaBarProps {
   snapshot: EpassSnapshotDto | null;
+  isLoading?: boolean;
 }
 
-export function EpassReportMetaBar({ snapshot }: EpassReportMetaBarProps) {
+export function EpassReportMetaBar({ snapshot, isLoading = false }: EpassReportMetaBarProps) {
+  if (isLoading) {
+    return <EpassReportMetaBarSkeleton />;
+  }
+
   if (!snapshot) {
     return (
       <Card className="border-amber-500/30 bg-amber-500/5">

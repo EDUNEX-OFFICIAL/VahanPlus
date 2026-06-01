@@ -2,6 +2,7 @@ import type {
   EpassDistrictRowDto,
   MineralAggregateRow,
   MineralRoleStats,
+  OperatorTypeFilter,
 } from '@/lib/epass-types';
 
 function emptyStats(): MineralRoleStats {
@@ -14,7 +15,10 @@ function addStats(target: MineralRoleStats, row: MineralRoleStats) {
   target.dispatchedQty += row.dispatchedQty;
 }
 
-export function aggregateMinerals(rows: EpassDistrictRowDto[]): MineralAggregateRow[] {
+export function aggregateMinerals(
+  rows: EpassDistrictRowDto[],
+  operator: OperatorTypeFilter = 'all',
+): MineralAggregateRow[] {
   const map = new Map<string, MineralAggregateRow>();
 
   function getOrCreate(mineral: string): MineralAggregateRow {
@@ -32,7 +36,7 @@ export function aggregateMinerals(rows: EpassDistrictRowDto[]): MineralAggregate
   }
 
   for (const row of rows) {
-    if (row.lesseeMineral) {
+    if (operator !== 'dealer' && row.lesseeMineral) {
       const entry = getOrCreate(row.lesseeMineral);
       addStats(entry.lessee, {
         users: row.lesseeUsers,
@@ -41,7 +45,7 @@ export function aggregateMinerals(rows: EpassDistrictRowDto[]): MineralAggregate
       });
       entry.totalPasses += row.lesseePasses;
     }
-    if (row.dealerMineral) {
+    if (operator !== 'lessee' && row.dealerMineral) {
       const entry = getOrCreate(row.dealerMineral);
       addStats(entry.dealer, {
         users: row.dealerUsers,

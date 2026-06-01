@@ -2,15 +2,17 @@
  * Loads repo root .env, then runs Prisma CLI from packages/db.
  * Usage: node scripts/with-root-env.js migrate deploy
  */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { readFileSync, existsSync } = require('node:fs');
 const { resolve } = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const dbRoot = resolve(__dirname, '..');
 const repoRoot = resolve(dbRoot, '../..');
-const envPath = resolve(repoRoot, '.env');
 
-if (existsSync(envPath)) {
+/** @param {string} envPath */
+function loadEnvFile(envPath) {
+  if (!existsSync(envPath)) return;
   const text = readFileSync(envPath, 'utf8');
   for (const line of text.split(/\r?\n/)) {
     const trimmed = line.trim();
@@ -28,6 +30,10 @@ if (existsSync(envPath)) {
     if (!(key in process.env)) process.env[key] = value;
   }
 }
+
+// Root .env (local dev), then VPS deploy/env/hostinger.env (Hostinger k3s)
+loadEnvFile(resolve(repoRoot, '.env'));
+loadEnvFile(resolve(repoRoot, 'deploy/env/hostinger.env'));
 
 const args = process.argv.slice(2);
 if (args.length === 0) {

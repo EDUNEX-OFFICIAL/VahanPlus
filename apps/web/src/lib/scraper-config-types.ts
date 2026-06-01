@@ -21,6 +21,7 @@ export interface KhananScraperConfig {
   scheduleTimezone: string;
   defaultDistrictDate: string | null;
   scheduleReportDateMode: 'yesterday' | 'today' | 'none';
+  allowDataWipe: boolean;
   configVersion: number;
   updatedAt: string;
   speedPreset: SpeedPreset;
@@ -42,6 +43,14 @@ export interface ScraperConfigStatus {
     reportDate: string;
     scrapedAt: string;
   } | null;
+  latestSnapshotStats: {
+    districtRows: number;
+    consignerRows: number;
+    challanRows: number;
+    passRows: number;
+  } | null;
+  /** True when Khanan Config "Allow clear all data" is enabled */
+  allowDataWipe: boolean;
 }
 
 export interface ScraperConfigResponse {
@@ -76,6 +85,8 @@ export interface ActionResult {
   eligible?: number;
   limit?: number;
   paused?: boolean;
+  removedFromQueue?: number;
+  cancelledPending?: number;
   snapshotId?: string;
   date?: string | null;
   from?: string;
@@ -83,4 +94,42 @@ export interface ActionResult {
   dayCount?: number;
   requiresConfirm?: boolean;
   error?: string;
+}
+
+export interface LiveSnapshotRow {
+  id: string;
+  reportDate: string;
+  scrapedAt: string;
+  districtRows: number;
+  consignerRows: number;
+  challanRows: number;
+  passRows: number;
+  snapshotCountForDate: number;
+}
+
+export interface LiveActiveJob {
+  id: string;
+  type: string;
+  target: string;
+  progress?: number;
+  data?: unknown;
+}
+
+export interface ScraperLiveResponse {
+  queue: ScraperConfigStatus['queue'];
+  scrapeJobsByStatus: Record<string, number>;
+  snapshots: LiveSnapshotRow[];
+  activeJobs: LiveActiveJob[];
+}
+
+export interface ClearDataResult {
+  deleted: {
+    vehicleStatus: number;
+    snapshots: number;
+    rawCaptures: number;
+    scrapeJobs: number;
+    vehicleRecords: number;
+    khananRecords: number;
+  };
+  message?: string;
 }

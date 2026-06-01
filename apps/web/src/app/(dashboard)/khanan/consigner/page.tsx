@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
@@ -15,7 +16,8 @@ import {
 import { ConsignerGroupedView } from '@/components/khanan/ConsignerGroupedView';
 import { ConsignerTable } from '@/components/khanan/ConsignerTable';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
-import { getToken } from '@/lib/auth';
+import { EpassBrowsePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
+import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import {
   collectDistricts,
   collectMinerals,
@@ -212,9 +214,7 @@ function ConsignerDrillDown({
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['epass', 'consigners', districtRowId, operatorType],
     queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchDistrictConsigners(token, districtRowId, operatorType);
+      return fetchDistrictConsigners(districtRowId, operatorType);
     },
   });
 
@@ -289,9 +289,7 @@ function ConsignerBrowse() {
   } = useQuery({
     queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
     queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not authenticated');
-      return fetchEpassSnapshots(token);
+      return fetchEpassSnapshots();
     },
     staleTime: SNAPSHOTS_STALE_MS,
   });
@@ -341,10 +339,8 @@ function ConsignerBrowse() {
     }
 
     const bootstrap = async () => {
-      const token = getToken();
-      if (!token) return;
       try {
-        const latest = await fetchLatestEpass(token);
+        const latest = await fetchLatestEpass();
         if (latest.snapshot) {
           updateParams({
             snapshotId: latest.snapshot.id,
@@ -386,9 +382,8 @@ function ConsignerBrowse() {
   const { data: districtRowsData } = useQuery({
     queryKey: ['epass', 'snapshot-rows', snapshotId, 'minerals'],
     queryFn: () => {
-      const token = getToken();
-      if (!token || !snapshotId) throw new Error('Not authenticated');
-      return fetchSnapshotDistrictRows(token, snapshotId);
+      if (!snapshotId) throw new Error('Snapshot required');
+      return fetchSnapshotDistrictRows(snapshotId);
     },
     enabled: Boolean(snapshotId),
   });
@@ -420,9 +415,7 @@ function ConsignerBrowse() {
       pageSize,
     ],
     queryFn: () => {
-      const token = getToken();
-      if (!token) throw new Error('Not signed in');
-      return fetchConsignerList(token, {
+      return fetchConsignerList({
         snapshotId: snapshotId || undefined,
         operator: roleFilter,
         district: serializeDistricts(appliedFilters.districts) ?? undefined,
@@ -472,7 +465,9 @@ function ConsignerBrowse() {
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);
   const total = data?.total ?? 0;
-  const isLoadingAll = snapshotsLoading || (Boolean(snapshotId) && isLoading);
+  const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
+  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, noSnapshotsInRange);
+  const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && isLoading);
   const isErrorAll = snapshotsError || isError;
 
   const refetchAll = () => {
@@ -494,18 +489,15 @@ function ConsignerBrowse() {
     );
   }
 
+  if (pageLoading) {
+    return <EpassBrowsePageLoading wrapPageStack={false} />;
+  }
+
   return (
     <>
-      {isLoadingAll ? (
-        <Card className="animate-pulse">
-          <div className="h-4 w-32 rounded bg-surface-deep" />
-          <div className="mt-4 h-6 w-64 rounded bg-surface-deep" />
-        </Card>
-      ) : snapshotId && snapshot ? (
-        <EpassReportMetaBar snapshot={snapshot} />
-      ) : null}
+      {snapshotId && snapshot ? <EpassReportMetaBar snapshot={snapshot} /> : null}
 
-      {!snapshotsLoading && snapshotsData ? (
+      {snapshotsData ? (
         <ConsignerEpassFilters
           snapshots={snapshotsData.items}
           minerals={minerals}
@@ -516,22 +508,9 @@ function ConsignerBrowse() {
         />
       ) : null}
 
-      {noSnapshotsInRange ? (
-        <Card>
-          <p className="text-sm text-text-secondary">
-            No reports found for the selected date range. Adjust the range or switch to a specific
-            report date.
-          </p>
-        </Card>
-      ) : null}
+      {noSnapshotsInRange ? <EmptyStateCard message="No data available" /> : null}
 
-      {isLoadingAll ? (
-        <Card className="animate-pulse p-12">
-          <div className="h-48 rounded bg-surface-deep" />
-        </Card>
-      ) : null}
-
-      {!noSnapshotsInRange && !isLoadingAll && !isError && data && snapshotId ? (
+      {!noSnapshotsInRange && data && snapshotId ? (
         <>
           {data.items.length === 0 ? (
             <Card>
@@ -599,13 +578,7 @@ function ConsignerPageContent() {
 
 export default function ConsignerPage() {
   return (
-    <Suspense
-      fallback={
-        <Card className="animate-pulse p-12">
-          <div className="h-8 w-64 rounded bg-surface-deep" />
-        </Card>
-      }
-    >
+    <Suspense fallback={<EpassBrowsePageSkeleton />}>
       <ConsignerPageContent />
     </Suspense>
   );

@@ -1,14 +1,9 @@
-const TOKEN_KEY = 'vahanplus_token';
+import { clearSession } from '@/lib/api';
 
-export function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY);
+export async function logout(): Promise<void> {
+  try {
+    await clearSession();
+  } catch {
+    // Still navigate away if API is unreachable
+  }
 }

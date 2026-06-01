@@ -4,6 +4,9 @@ import type {
   ChalaanListResponse,
   ChalaanPassListResponse,
   ChalaanPassesResponse,
+  VehicleDataDetailResponse,
+  VehicleDataListParams,
+  VehicleDataListResponse,
   VehicleStatusListParams,
   VehicleStatusListResponse,
   VehicleStatusScrapeMissingResponse,
@@ -23,29 +26,22 @@ import type {
 export const EPASS_LATEST_QUERY_KEY = ['epass', 'latest'] as const;
 export const EPASS_SNAPSHOTS_QUERY_KEY = ['epass', 'snapshots'] as const;
 
-export function fetchLatestEpass(token: string) {
-  return apiFetch<LatestEpassResponse>('/epass/latest', { token });
+export function fetchLatestEpass() {
+  return apiFetch<LatestEpassResponse>('/epass/latest');
 }
 
-export function fetchEpassSnapshots(token: string, limit = 100) {
-  return apiFetch<EpassSnapshotListResponse>(`/epass/snapshots?limit=${limit}`, { token });
+export function fetchEpassSnapshots(limit = 100) {
+  return apiFetch<EpassSnapshotListResponse>(`/epass/snapshots?limit=${limit}`);
 }
 
-export function fetchSnapshotDistrictRows(token: string, snapshotId: string) {
-  return apiFetch<SnapshotDistrictRowsResponse>(`/epass/snapshots/${snapshotId}/rows`, {
-    token,
-  });
+export function fetchSnapshotDistrictRows(snapshotId: string) {
+  return apiFetch<SnapshotDistrictRowsResponse>(`/epass/snapshots/${snapshotId}/rows`);
 }
 
-export function fetchDistrictConsigners(
-  token: string,
-  districtRowId: string,
-  operatorType: OperatorType,
-) {
+export function fetchDistrictConsigners(districtRowId: string, operatorType: OperatorType) {
   const q = new URLSearchParams({ operator: operatorType });
   return apiFetch<DistrictConsignersResponse>(
     `/epass/district-rows/${districtRowId}/consigners?${q}`,
-    { token },
   );
 }
 
@@ -67,7 +63,6 @@ function appendBrowseQuery(q: URLSearchParams, params: EpassBrowseQueryParams) {
 }
 
 export function fetchConsignerChallans(
-  token: string,
   consignerRowId: string,
   params: ConsignerChallansParams = {},
 ) {
@@ -76,11 +71,10 @@ export function fetchConsignerChallans(
   const qs = q.toString();
   return apiFetch<ConsignerChallansResponse>(
     `/epass/consigners/${consignerRowId}/challans${qs ? `?${qs}` : ''}`,
-    { token },
   );
 }
 
-export function fetchConsignerList(token: string, params: ConsignerListParams = {}) {
+export function fetchConsignerList(params: ConsignerListParams = {}) {
   const q = new URLSearchParams();
   if (params.snapshotId) q.set('snapshotId', params.snapshotId);
   const operator = params.operator ?? params.role;
@@ -95,19 +89,17 @@ export function fetchConsignerList(token: string, params: ConsignerListParams = 
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
   const qs = q.toString();
-  return apiFetch<ConsignerListResponse>(`/epass/consigners${qs ? `?${qs}` : ''}`, { token });
+  return apiFetch<ConsignerListResponse>(`/epass/consigners${qs ? `?${qs}` : ''}`);
 }
 
-export function fetchConsignerOptions(token: string, params: ConsignerOptionsParams = {}) {
+export function fetchConsignerOptions(params: ConsignerOptionsParams = {}) {
   const q = new URLSearchParams();
   appendBrowseQuery(q, params as EpassBrowseQueryParams);
   const qs = q.toString();
-  return apiFetch<ConsignerOptionsResponse>(`/epass/consigners/options${qs ? `?${qs}` : ''}`, {
-    token,
-  });
+  return apiFetch<ConsignerOptionsResponse>(`/epass/consigners/options${qs ? `?${qs}` : ''}`);
 }
 
-export function fetchChalaanList(token: string, params: ChalaanListParams = {}) {
+export function fetchChalaanList(params: ChalaanListParams = {}) {
   const q = new URLSearchParams();
   if (params.snapshotId) q.set('snapshotId', params.snapshotId);
   if (params.operator) q.set('operator', params.operator);
@@ -122,10 +114,10 @@ export function fetchChalaanList(token: string, params: ChalaanListParams = {}) 
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
   const qs = q.toString();
-  return apiFetch<ChalaanListResponse>(`/epass/chalaans${qs ? `?${qs}` : ''}`, { token });
+  return apiFetch<ChalaanListResponse>(`/epass/chalaans${qs ? `?${qs}` : ''}`);
 }
 
-export function fetchChalaanPassList(token: string, params: ChalaanListParams = {}) {
+export function fetchChalaanPassList(params: ChalaanListParams = {}) {
   const q = new URLSearchParams();
   if (params.snapshotId) q.set('snapshotId', params.snapshotId);
   if (params.operator) q.set('operator', params.operator);
@@ -140,14 +132,64 @@ export function fetchChalaanPassList(token: string, params: ChalaanListParams = 
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
   const qs = q.toString();
-  return apiFetch<ChalaanPassListResponse>(`/epass/chalaan-passes${qs ? `?${qs}` : ''}`, { token });
+  return apiFetch<ChalaanPassListResponse>(`/epass/chalaan-passes${qs ? `?${qs}` : ''}`);
 }
 
-export function fetchChalaanPasses(token: string, challanRowId: string) {
-  return apiFetch<ChalaanPassesResponse>(`/epass/chalaans/${challanRowId}/passes`, { token });
+export function fetchChalaanPasses(challanRowId: string) {
+  return apiFetch<ChalaanPassesResponse>(`/epass/chalaans/${challanRowId}/passes`);
 }
 
-export function fetchVehicleStatusList(token: string, params: VehicleStatusListParams = {}) {
+type EpassPassBrowseQueryParams = {
+  snapshotId?: string;
+  operator?: ChalaanListParams['operator'];
+  district?: string;
+  dmo?: string;
+  mineral?: string;
+  consigner?: string;
+  consignee?: string;
+  hideZeroPasses?: boolean;
+  q?: string;
+  sort?: string;
+  dir?: string;
+  limit?: number;
+  offset?: number;
+};
+
+function appendChalaanBrowseQuery(q: URLSearchParams, params: EpassPassBrowseQueryParams) {
+  if (params.snapshotId) q.set('snapshotId', params.snapshotId);
+  if (params.operator) q.set('operator', params.operator);
+  const district = params.district ?? params.dmo;
+  if (district) q.set('district', district);
+  if (params.mineral) q.set('mineral', params.mineral);
+  if (params.consigner) q.set('consigner', params.consigner);
+  if (params.consignee) q.set('consignee', params.consignee);
+  if (params.hideZeroPasses) q.set('hideZeroPasses', '1');
+  if (params.q) q.set('q', params.q);
+  if (params.sort) q.set('sort', params.sort);
+  if (params.dir) q.set('dir', params.dir);
+  if (params.limit != null) q.set('limit', String(params.limit));
+  if (params.offset != null) q.set('offset', String(params.offset));
+}
+
+export function fetchVehicleDataList(params: VehicleDataListParams = {}) {
+  const q = new URLSearchParams();
+  appendChalaanBrowseQuery(q, params);
+  const qs = q.toString();
+  return apiFetch<VehicleDataListResponse>(`/epass/vehicle-data${qs ? `?${qs}` : ''}`);
+}
+
+export function fetchVehicleDataDetail(
+  vehicleRegNo: string,
+  params: Omit<VehicleDataListParams, 'limit' | 'offset' | 'sort' | 'dir'> = {},
+) {
+  const q = new URLSearchParams();
+  appendChalaanBrowseQuery(q, params);
+  const encoded = encodeURIComponent(vehicleRegNo);
+  const qs = q.toString();
+  return apiFetch<VehicleDataDetailResponse>(`/epass/vehicle-data/${encoded}${qs ? `?${qs}` : ''}`);
+}
+
+export function fetchVehicleStatusList(params: VehicleStatusListParams = {}) {
   const q = new URLSearchParams();
   if (params.q) q.set('q', params.q);
   if (params.found === true) q.set('found', '1');
@@ -157,15 +199,12 @@ export function fetchVehicleStatusList(token: string, params: VehicleStatusListP
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
   const qs = q.toString();
-  return apiFetch<VehicleStatusListResponse>(`/epass/vehicle-status${qs ? `?${qs}` : ''}`, {
-    token,
-  });
+  return apiFetch<VehicleStatusListResponse>(`/epass/vehicle-status${qs ? `?${qs}` : ''}`);
 }
 
-export function scrapeMissingVehicleStatus(token: string, limit = 100) {
+export function scrapeMissingVehicleStatus(limit = 100) {
   const q = limit > 0 ? `?limit=${limit}` : '';
   return apiFetch<VehicleStatusScrapeMissingResponse>(`/epass/vehicle-status/scrape-missing${q}`, {
-    token,
     method: 'POST',
   });
 }

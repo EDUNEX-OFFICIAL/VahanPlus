@@ -555,12 +555,134 @@ function buildChalaanPassOrderBy(query) {
   }
 }
 
+function normalizeVehicleRegNo(raw) {
+  if (raw == null) return null;
+  const normalized = String(raw).trim().replace(/\s+/g, '').toUpperCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function buildVehicleDataPassWhere(snapshotId, query) {
+  const where = buildChalaanPassWhere(snapshotId, query);
+  const and = [...(where.AND ?? [])];
+  and.push({ vehicleRegNo: { not: null } });
+  const q = typeof query.q === 'string' ? query.q.trim() : '';
+  if (q) {
+    and.push({ vehicleRegNo: { contains: q, mode: 'insensitive' } });
+  }
+  if (and.length > 0) where.AND = and;
+  return where;
+}
+
+const CHALAAN_PASS_LIST_INCLUDE = {
+  challanRow: {
+    select: {
+      detailUrl: true,
+      consignerRowId: true,
+      consignerRow: {
+        select: {
+          id: true,
+          operatorType: true,
+          consignerName: true,
+          districtRow: { select: { dmoName: true } },
+        },
+      },
+    },
+  },
+};
+
+function aggregatePassRow(map, row) {
+  const vehicleRegNo = normalizeVehicleRegNo(row.vehicleRegNo);
+  if (!vehicleRegNo) return;
+
+  let agg = map.get(vehicleRegNo);
+  if (!agg) {
+    agg = {
+      vehicleRegNo,
+      passCount: 0,
+      quantityByUnit: {},
+      minerals: new Set(),
+      dmoNames: new Set(),
+      consignerNames: new Set(),
+      destinations: new Set(),
+      lastTransportedDate: null,
+      lastScrapedAt: null,
+    };
+    map.set(vehicleRegNo, agg);
+  }
+
+  agg.passCount += 1;
+  const unitKey = (row.unit && String(row.unit).trim()) || '—';
+  const qty = toNumber(row.quantity);
+  agg.quantityByUnit[unitKey] = (agg.quantityByUnit[unitKey] ?? 0) + qty;
+
+  if (row.mineral) agg.minerals.add(row.mineral);
+  if (row.destination) agg.destinations.add(row.destination);
+
+  const consignerRow = row.challanRow?.consignerRow;
+  if (consignerRow?.districtRow?.dmoName) agg.dmoNames.add(consignerRow.districtRow.dmoName);
+  if (consignerRow?.consignerName) agg.consignerNames.add(consignerRow.consignerName);
+
+  const transported = row.transportedDate?.trim() || null;
+  if (
+    transported &&
+    (!agg.lastTransportedDate || transported.localeCompare(agg.lastTransportedDate) > 0)
+  ) {
+    agg.lastTransportedDate = transported;
+  }
+
+  const scrapedAt = row.scrapedAt instanceof Date ? row.scrapedAt : new Date(row.scrapedAt);
+  if (!agg.lastScrapedAt || scrapedAt > agg.lastScrapedAt) {
+    agg.lastScrapedAt = scrapedAt;
+  }
+}
+
+function mapVehicleDataAggregate(agg, hasVehicleStatus) {
+  const units = Object.keys(agg.quantityByUnit);
+  const totalQuantity = units.length === 1 ? agg.quantityByUnit[units[0]] : null;
+  return {
+    vehicleRegNo: agg.vehicleRegNo,
+    passCount: agg.passCount,
+    totalQuantity,
+    quantityByUnit: agg.quantityByUnit,
+    minerals: [...agg.minerals].sort((a, b) => a.localeCompare(b)),
+    dmoNames: [...agg.dmoNames].sort((a, b) => a.localeCompare(b)),
+    consignerNames: [...agg.consignerNames].sort((a, b) => a.localeCompare(b)),
+    destinations: [...agg.destinations].sort((a, b) => a.localeCompare(b)),
+    lastTransportedDate: agg.lastTransportedDate,
+    lastScrapedAt: agg.lastScrapedAt ? agg.lastScrapedAt.toISOString() : null,
+    hasVehicleStatus,
+  };
+}
+
+function sortVehicleDataAggregates(items, sort, dir) {
+  const mult = dir === 'desc' ? -1 : 1;
+  items.sort((a, b) => {
+    switch (sort) {
+      case 'passes':
+        return mult * (a.passCount - b.passCount);
+      case 'qty': {
+        const aQty = a.totalQuantity ?? Object.values(a.quantityByUnit).reduce((s, n) => s + n, 0);
+        const bQty = b.totalQuantity ?? Object.values(b.quantityByUnit).reduce((s, n) => s + n, 0);
+        return mult * (aQty - bQty);
+      }
+      case 'lastDate': {
+        const aDate = a.lastTransportedDate ?? '';
+        const bDate = b.lastTransportedDate ?? '';
+        return mult * aDate.localeCompare(bDate);
+      }
+      default:
+        return mult * a.vehicleRegNo.localeCompare(b.vehicleRegNo);
+    }
+  });
+}
+
 function mapChalaanPassListItem(row) {
   const { challanRow } = row;
   const { consignerRow } = challanRow;
   return {
     ...mapChallanPass(row),
     consignerRowId: consignerRow.id,
+    consignerName: consignerRow.consignerName,
     operatorType: consignerRow.operatorType,
     role: consignerRow.operatorType,
     dmoName: consignerRow.districtRow.dmoName,
@@ -745,8 +867,16 @@ router.get('/district-rows/:id', async (req, res) => {
   const consignerCounts = await buildConsignerCountMap(prisma, [row.id]);
   const lesseeKey = `${row.id}:lessee`;
   const dealerKey = `${row.id}:dealer`;
-  const lessee = consignerCounts.get(lesseeKey) ?? { consigners: 0, challans: 0, challanExpected: 0 };
-  const dealer = consignerCounts.get(dealerKey) ?? { consigners: 0, challans: 0, challanExpected: 0 };
+  const lessee = consignerCounts.get(lesseeKey) ?? {
+    consigners: 0,
+    challans: 0,
+    challanExpected: 0,
+  };
+  const dealer = consignerCounts.get(dealerKey) ?? {
+    consigners: 0,
+    challans: 0,
+    challanExpected: 0,
+  };
 
   res.json({
     row: mapRow(row, consignerCounts),
@@ -837,22 +967,7 @@ router.get('/chalaan-passes', async (req, res) => {
       orderBy,
       take: limit,
       skip: offset,
-      include: {
-        challanRow: {
-          select: {
-            detailUrl: true,
-            consignerRowId: true,
-            consignerRow: {
-              select: {
-                id: true,
-                operatorType: true,
-                consignerName: true,
-                districtRow: { select: { dmoName: true } },
-              },
-            },
-          },
-        },
-      },
+      include: CHALAAN_PASS_LIST_INCLUDE,
     }),
   ]);
 
@@ -866,6 +981,117 @@ router.get('/chalaan-passes', async (req, res) => {
     limit,
     offset,
     items: rows.map(mapChalaanPassListItem),
+  });
+});
+
+router.get('/vehicle-data', async (req, res) => {
+  const prisma = getPrisma();
+  const snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
+
+  if (!snapshot) {
+    return res.json({ snapshot: null, total: 0, limit: 50, offset: 0, items: [] });
+  }
+
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
+  const sort = typeof req.query.sort === 'string' ? req.query.sort : 'vehicle';
+  const dir = req.query.dir === 'desc' ? 'desc' : 'asc';
+  const where = buildVehicleDataPassWhere(snapshot.id, req.query);
+
+  const passRows = await prisma.epassChallanPassRow.findMany({
+    where,
+    include: CHALAAN_PASS_LIST_INCLUDE,
+  });
+
+  const aggMap = new Map();
+  for (const row of passRows) {
+    aggregatePassRow(aggMap, row);
+  }
+
+  const allAggs = [...aggMap.values()].map((agg) => mapVehicleDataAggregate(agg, false));
+  sortVehicleDataAggregates(allAggs, sort, dir);
+  const total = allAggs.length;
+  const pageAggs = allAggs.slice(offset, offset + limit);
+
+  const vrnList = pageAggs.map((item) => item.vehicleRegNo);
+  const statusRows =
+    vrnList.length > 0
+      ? await prisma.epassVehicleStatusRow.findMany({
+          where: { vehicleRegNo: { in: vrnList } },
+          select: { vehicleRegNo: true },
+        })
+      : [];
+  const statusSet = new Set(statusRows.map((r) => r.vehicleRegNo));
+
+  const items = pageAggs.map((item) => ({
+    ...item,
+    hasVehicleStatus: statusSet.has(item.vehicleRegNo),
+  }));
+
+  res.json({
+    snapshot: {
+      id: snapshot.id,
+      reportDate: snapshot.reportDate,
+      scrapedAt: snapshot.scrapedAt.toISOString(),
+    },
+    total,
+    limit,
+    offset,
+    items,
+  });
+});
+
+router.get('/vehicle-data/:vehicleRegNo', async (req, res) => {
+  const prisma = getPrisma();
+  const vehicleRegNo = normalizeVehicleRegNo(req.params.vehicleRegNo);
+  if (!vehicleRegNo) {
+    return res.status(400).json({ error: 'Invalid vehicle registration number' });
+  }
+
+  const snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
+  if (!snapshot) {
+    return res.json({
+      vehicleRegNo,
+      snapshot: null,
+      summary: null,
+      passes: [],
+      vehicleStatus: null,
+    });
+  }
+
+  const where = {
+    ...buildVehicleDataPassWhere(snapshot.id, req.query),
+    vehicleRegNo: { equals: vehicleRegNo, mode: 'insensitive' },
+  };
+
+  const [passRows, vehicleStatusRow] = await Promise.all([
+    prisma.epassChallanPassRow.findMany({
+      where,
+      orderBy: [{ transportedDate: 'desc' }, { slNo: 'asc' }],
+      include: CHALAAN_PASS_LIST_INCLUDE,
+    }),
+    prisma.epassVehicleStatusRow.findUnique({
+      where: { vehicleRegNo },
+    }),
+  ]);
+
+  const aggMap = new Map();
+  for (const row of passRows) {
+    aggregatePassRow(aggMap, row);
+  }
+  const agg = aggMap.get(vehicleRegNo);
+  const summary = agg ? mapVehicleDataAggregate(agg, Boolean(vehicleStatusRow)) : null;
+
+  res.json({
+    vehicleRegNo,
+    snapshot: {
+      id: snapshot.id,
+      reportDate: snapshot.reportDate,
+      scrapedAt: snapshot.scrapedAt.toISOString(),
+    },
+    summary,
+    passes: passRows.map(mapChalaanPassListItem),
+    vehicleStatus: vehicleStatusRow ? mapVehicleStatusListItem(vehicleStatusRow) : null,
   });
 });
 
@@ -964,11 +1190,7 @@ router.get('/consigners/options', async (req, res) => {
 
   const consigners = await prisma.epassConsignerRow.findMany({
     where,
-    orderBy: [
-      { districtRow: { dmoName: 'asc' } },
-      { operatorType: 'asc' },
-      { slNo: 'asc' },
-    ],
+    orderBy: [{ districtRow: { dmoName: 'asc' } }, { operatorType: 'asc' }, { slNo: 'asc' }],
     take: 2000,
     include: {
       districtRow: {

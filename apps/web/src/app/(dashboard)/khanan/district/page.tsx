@@ -10,7 +10,9 @@ import {
   DistrictEpassFilters,
   type DistrictFilterValues,
 } from '@/components/khanan/DistrictEpassFilters';
-import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
+import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
+import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { DistrictEpassTable } from '@/components/khanan/DistrictEpassTable';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
 import { EpassBrowsePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
@@ -28,11 +30,7 @@ import {
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
-import {
-  hasActiveDateRangeWithNoSnapshots,
-  resolveSnapshotIdForDateFilters,
-  snapshotsForDateMode,
-} from '@/lib/epass-report-date';
+import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import type { DistrictSortDir, DistrictSortKey } from '@/lib/epass-types';
 import {
   districtFiltersFromParams,
@@ -90,12 +88,17 @@ function DistrictPageContent() {
     return resolveSnapshotIdForDateFilters(snapshotsData.items, dateFilterInput);
   }, [snapshotsData?.items, dateFilterInput, appliedFilters.snapshotId]);
 
-  const noSnapshotsInRange = useMemo(
-    () =>
-      snapshotsData?.items
-        ? hasActiveDateRangeWithNoSnapshots(snapshotsData.items, dateFilterInput)
-        : false,
+  const browseEmpty = useMemo(
+    () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
+  );
+
+  useStaleEpassSnapshotParams(
+    Boolean(snapshotsData) && !snapshotsLoading,
+    snapshotsData?.items.length ?? 0,
+    appliedFilters.snapshotId || null,
+    appliedFilters.reportDate || null,
+    updateParams,
   );
 
   const {
@@ -115,7 +118,7 @@ function DistrictPageContent() {
   useEffect(() => {
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (snapshotId) return;
-    if (noSnapshotsInRange) return;
+    if (browseEmpty) return;
 
     if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
       const inRange = snapshotsForDateMode(
@@ -156,7 +159,7 @@ function DistrictPageContent() {
     snapshotsLoading,
     snapshotsData,
     updateParams,
-    noSnapshotsInRange,
+    browseEmpty,
     appliedFilters.dateMode,
     appliedFilters.dateFrom,
     appliedFilters.dateTo,
@@ -185,7 +188,7 @@ function DistrictPageContent() {
   );
 
   const displayRows = useMemo(() => {
-    if (!snapshotId || noSnapshotsInRange || !rowsData?.rows) return [];
+    if (!snapshotId || browseEmpty || !rowsData?.rows) return [];
     const aggregated = aggregateDistrictRowsByDmo(
       rowsData.rows,
       appliedFilters.operator,
@@ -197,7 +200,7 @@ function DistrictPageContent() {
       hideZeroPasses: appliedFilters.hideZeroPasses,
     });
     return sortDistrictRows(filtered, sortKey, sortDir);
-  }, [rowsData?.rows, appliedFilters, sortKey, sortDir, snapshotId, noSnapshotsInRange]);
+  }, [rowsData?.rows, appliedFilters, sortKey, sortDir, snapshotId, browseEmpty]);
 
   const handleApplyFilters = useCallback(
     (next: DistrictFilterValues) => {
@@ -240,7 +243,7 @@ function DistrictPageContent() {
   );
 
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
-  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, noSnapshotsInRange);
+  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, browseEmpty);
   const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && rowsLoading);
   const isError = snapshotsError || rowsError;
   const refetch = () => {
@@ -280,8 +283,8 @@ function DistrictPageContent() {
         />
       ) : null}
 
-      {noSnapshotsInRange ? (
-        <EmptyStateCard message="No data available" />
+      {browseEmpty ? (
+        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
       ) : (
         <>
           <DistrictEpassTable

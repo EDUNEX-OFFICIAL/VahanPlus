@@ -5,7 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
+import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { ConsigneeEpassFilters } from '@/components/khanan/ConsigneeEpassFilters';
 import { ConsignerCombobox } from '@/components/khanan/ConsignerCombobox';
@@ -31,11 +34,7 @@ import {
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
-import {
-  hasActiveDateRangeWithNoSnapshots,
-  resolveSnapshotIdForDateFilters,
-  snapshotsForDateMode,
-} from '@/lib/epass-report-date';
+import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import type {
   ConsigneeSortDir,
   ConsigneeSortKey,
@@ -106,18 +105,23 @@ function ConsigneePageContent() {
     return resolveSnapshotIdForDateFilters(snapshotsData.items, dateFilterInput);
   }, [snapshotsData?.items, dateFilterInput, appliedFilters.snapshotId]);
 
-  const noSnapshotsInRange = useMemo(
-    () =>
-      snapshotsData?.items
-        ? hasActiveDateRangeWithNoSnapshots(snapshotsData.items, dateFilterInput)
-        : false,
+  const browseEmpty = useMemo(
+    () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
+  );
+
+  useStaleEpassSnapshotParams(
+    Boolean(snapshotsData) && !snapshotsLoading,
+    snapshotsData?.items.length ?? 0,
+    appliedFilters.snapshotId || null,
+    appliedFilters.reportDate || null,
+    updateParams,
   );
 
   useEffect(() => {
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (resolvedSnapshotId) return;
-    if (noSnapshotsInRange) return;
+    if (browseEmpty) return;
 
     if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
       const inRange = snapshotsForDateMode(
@@ -157,7 +161,7 @@ function ConsigneePageContent() {
     snapshotsLoading,
     snapshotsData,
     resolvedSnapshotId,
-    noSnapshotsInRange,
+    browseEmpty,
     updateParams,
     appliedFilters.dateMode,
     appliedFilters.dateFrom,
@@ -188,7 +192,7 @@ function ConsigneePageContent() {
     queryKey: ['epass', 'consigner-options', resolvedSnapshotId, appliedFilters],
     queryFn: () =>
       fetchConsignerOptions(toConsignerOptionsQueryParams(appliedFilters, resolvedSnapshotId)),
-    enabled: Boolean(resolvedSnapshotId) && !noSnapshotsInRange,
+    enabled: Boolean(resolvedSnapshotId) && !browseEmpty,
   });
 
   const { data: districtRowsData } = useQuery({
@@ -212,7 +216,7 @@ function ConsigneePageContent() {
 
   const challansQuery = useQuery({
     queryKey: ['epass', 'challans', consignerRowId, appliedFilters],
-    enabled: Boolean(consignerRowId) && !noSnapshotsInRange,
+    enabled: Boolean(consignerRowId) && !browseEmpty,
     queryFn: () => {
       if (!consignerRowId) throw new Error('Consigner required');
       return fetchConsignerChallans(consignerRowId, toConsignerChallansQueryParams(appliedFilters));
@@ -262,7 +266,7 @@ function ConsigneePageContent() {
 
   // Clear consigner when it no longer matches filtered options
   useEffect(() => {
-    if (noSnapshotsInRange || optionsQuery.isFetching || !optionsQuery.data || !consignerRowId) {
+    if (browseEmpty || optionsQuery.isFetching || !optionsQuery.data || !consignerRowId) {
       return;
     }
 
@@ -273,7 +277,7 @@ function ConsigneePageContent() {
   }, [
     optionsQuery.data,
     optionsQuery.isFetching,
-    noSnapshotsInRange,
+    browseEmpty,
     consignerRowId,
     appliedFilters,
     updateParams,
@@ -281,7 +285,7 @@ function ConsigneePageContent() {
 
   // Single consigner in scope — select automatically
   useEffect(() => {
-    if (noSnapshotsInRange || consignerRowId || optionsQuery.isLoading || !optionsQuery.data) {
+    if (browseEmpty || consignerRowId || optionsQuery.isLoading || !optionsQuery.data) {
       return;
     }
     if (optionsQuery.data.items.length === 1) {
@@ -293,7 +297,7 @@ function ConsigneePageContent() {
       );
     }
   }, [
-    noSnapshotsInRange,
+    browseEmpty,
     consignerRowId,
     optionsQuery.isLoading,
     optionsQuery.data,
@@ -336,20 +340,16 @@ function ConsigneePageContent() {
   }, [resolvedSnapshotId, snapshotsData?.items]);
 
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
-  const snapshotResolving = isSnapshotResolving(
-    snapshotsLoaded,
-    resolvedSnapshotId,
-    noSnapshotsInRange,
-  );
+  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, resolvedSnapshotId, browseEmpty);
   const pageLoading =
     snapshotsLoading ||
     snapshotResolving ||
-    (!noSnapshotsInRange && !consignerRowId && optionsQuery.isLoading) ||
+    (!browseEmpty && !consignerRowId && optionsQuery.isLoading) ||
     (Boolean(consignerRowId) && challansQuery.isLoading);
 
   const consignerOptionCount = optionsQuery.data?.items.length ?? 0;
   const awaitingConsignerSelection =
-    !noSnapshotsInRange && !consignerRowId && consignerOptionCount > 0 && !optionsQuery.isLoading;
+    !browseEmpty && !consignerRowId && consignerOptionCount > 0 && !optionsQuery.isLoading;
 
   if (snapshotsError || optionsQuery.isError || challansQuery.isError) {
     return (
@@ -375,7 +375,7 @@ function ConsigneePageContent() {
   if (pageLoading) {
     return (
       <ConsigneePageLoading
-        showConsignerPicker={!noSnapshotsInRange}
+        showConsignerPicker={!browseEmpty}
         showTable={Boolean(consignerRowId)}
       />
     );
@@ -396,8 +396,8 @@ function ConsigneePageContent() {
         />
       ) : null}
 
-      {noSnapshotsInRange ? (
-        <EmptyStateCard message="No data available" />
+      {browseEmpty ? (
+        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
       ) : (
         <Card
           className={[
@@ -419,7 +419,7 @@ function ConsigneePageContent() {
         </Card>
       )}
 
-      {!noSnapshotsInRange && !consignerRowId && (optionsQuery.data?.items.length ?? 0) === 0 ? (
+      {!browseEmpty && !consignerRowId && (optionsQuery.data?.items.length ?? 0) === 0 ? (
         <EmptyStateCard message="No consigners found" />
       ) : null}
 

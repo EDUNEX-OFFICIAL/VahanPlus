@@ -16,6 +16,7 @@ import {
   scrapeQueueInProgress,
 } from '@/components/khanan/config/KhananConfigStatusBar';
 import type { KhananScraperConfig, KhananScraperConfigPatch } from '@/lib/scraper-config-types';
+import { formatClearDataSummary } from '@/lib/format-clear-data-summary';
 import {
   SCRAPER_CONFIG_QUERY_KEY,
   SCRAPER_LIVE_QUERY_KEY,
@@ -275,7 +276,7 @@ export default function KhananConfigPage() {
             await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
             await queryClient.invalidateQueries({ queryKey: SCRAPER_LIVE_QUERY_KEY });
             const d = result.deleted;
-            return `Cleared ${d.snapshots} snapshots, ${d.consigners ?? 0} consigner rows, ${d.scrapeJobs} jobs, ${d.rawCaptures} captures, ${d.vehicleStatus} vehicle status, ${d.vehicleRecords} vehicle records, ${d.khananRecords} Khanan records.`;
+            return `Removed ${formatClearDataSummary(d)}.`;
           } finally {
             setActionBusy(false);
           }

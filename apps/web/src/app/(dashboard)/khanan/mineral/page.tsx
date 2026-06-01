@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
+import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
+import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
   DistrictEpassFilters,
@@ -27,11 +29,7 @@ import {
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
-import {
-  hasActiveDateRangeWithNoSnapshots,
-  resolveSnapshotIdForDateFilters,
-  snapshotsForDateMode,
-} from '@/lib/epass-report-date';
+import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import {
   filterDistrictRowsForMineral,
   parseMineralSortKey,
@@ -89,12 +87,17 @@ function MineralPageContent() {
     return resolveSnapshotIdForDateFilters(snapshotsData.items, dateFilterInput);
   }, [snapshotsData?.items, dateFilterInput, appliedFilters.snapshotId]);
 
-  const noSnapshotsInRange = useMemo(
-    () =>
-      snapshotsData?.items
-        ? hasActiveDateRangeWithNoSnapshots(snapshotsData.items, dateFilterInput)
-        : false,
+  const browseEmpty = useMemo(
+    () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
+  );
+
+  useStaleEpassSnapshotParams(
+    Boolean(snapshotsData) && !snapshotsLoading,
+    snapshotsData?.items.length ?? 0,
+    appliedFilters.snapshotId || null,
+    appliedFilters.reportDate || null,
+    updateParams,
   );
 
   const {
@@ -114,7 +117,7 @@ function MineralPageContent() {
   useEffect(() => {
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (snapshotId) return;
-    if (noSnapshotsInRange) return;
+    if (browseEmpty) return;
 
     if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
       const inRange = snapshotsForDateMode(
@@ -155,7 +158,7 @@ function MineralPageContent() {
     snapshotsLoading,
     snapshotsData,
     updateParams,
-    noSnapshotsInRange,
+    browseEmpty,
     appliedFilters.dateMode,
     appliedFilters.dateFrom,
     appliedFilters.dateTo,
@@ -184,11 +187,11 @@ function MineralPageContent() {
   );
 
   const displayMinerals = useMemo(() => {
-    if (!snapshotId || noSnapshotsInRange || !rowsData?.rows) return [];
+    if (!snapshotId || browseEmpty || !rowsData?.rows) return [];
     const filtered = filterDistrictRowsForMineral(rowsData.rows, appliedFilters);
     const aggregated = aggregateMinerals(filtered, appliedFilters.operator);
     return sortMineralRows(aggregated, sortKey, sortDir);
-  }, [rowsData?.rows, appliedFilters, sortKey, sortDir, snapshotId, noSnapshotsInRange]);
+  }, [rowsData?.rows, appliedFilters, sortKey, sortDir, snapshotId, browseEmpty]);
 
   const handleApplyFilters = useCallback(
     (next: DistrictFilterValues) => {
@@ -216,7 +219,7 @@ function MineralPageContent() {
   }, [snapshotsData, updateParams]);
 
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
-  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, noSnapshotsInRange);
+  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, browseEmpty);
   const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && rowsLoading);
   const isError = snapshotsError || rowsError;
   const refetch = () => {
@@ -256,8 +259,8 @@ function MineralPageContent() {
         />
       ) : null}
 
-      {noSnapshotsInRange ? (
-        <EmptyStateCard message="No data available" />
+      {browseEmpty ? (
+        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
       ) : snapshotId && rowsData ? (
         <MineralSummaryTable minerals={displayMinerals} operatorFilter={appliedFilters.operator} />
       ) : null}

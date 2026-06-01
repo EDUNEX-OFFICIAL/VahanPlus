@@ -13,11 +13,7 @@ export function EpassReportMetaBar({ snapshot, isLoading = false }: EpassReportM
   }
 
   if (!snapshot) {
-    return (
-      <Card className="border-amber-500/30 bg-amber-500/5">
-        <p className="text-sm text-text-secondary">No data available</p>
-      </Card>
-    );
+    return null;
   }
 
   const scraped = new Date(snapshot.scrapedAt).toLocaleString('en-IN', {

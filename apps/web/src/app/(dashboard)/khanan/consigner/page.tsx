@@ -5,7 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
+import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
@@ -39,11 +42,7 @@ import {
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
-import {
-  hasActiveDateRangeWithNoSnapshots,
-  resolveSnapshotIdForDateFilters,
-  snapshotsForDateMode,
-} from '@/lib/epass-report-date';
+import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import { parseOperatorParam } from '@/lib/operator';
 import type {
   ConsignerSortDir,
@@ -309,18 +308,23 @@ function ConsignerBrowse() {
     return resolveSnapshotIdForDateFilters(snapshotsData.items, dateFilterInput);
   }, [snapshotsData?.items, dateFilterInput, appliedFilters.snapshotId]);
 
-  const noSnapshotsInRange = useMemo(
-    () =>
-      snapshotsData?.items
-        ? hasActiveDateRangeWithNoSnapshots(snapshotsData.items, dateFilterInput)
-        : false,
+  const browseEmpty = useMemo(
+    () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
+  );
+
+  useStaleEpassSnapshotParams(
+    Boolean(snapshotsData) && !snapshotsLoading,
+    snapshotsData?.items.length ?? 0,
+    appliedFilters.snapshotId || null,
+    appliedFilters.reportDate || null,
+    updateParams,
   );
 
   useEffect(() => {
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (snapshotId) return;
-    if (noSnapshotsInRange) return;
+    if (browseEmpty) return;
 
     if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
       const inRange = snapshotsForDateMode(
@@ -361,7 +365,7 @@ function ConsignerBrowse() {
     snapshotsLoading,
     snapshotsData,
     updateParams,
-    noSnapshotsInRange,
+    browseEmpty,
     appliedFilters.dateMode,
     appliedFilters.dateFrom,
     appliedFilters.dateTo,
@@ -466,7 +470,7 @@ function ConsignerBrowse() {
   const snapshot = snapshotFromList(data?.snapshot ?? null);
   const total = data?.total ?? 0;
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
-  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, noSnapshotsInRange);
+  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, browseEmpty);
   const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && isLoading);
   const isErrorAll = snapshotsError || isError;
 
@@ -508,14 +512,14 @@ function ConsignerBrowse() {
         />
       ) : null}
 
-      {noSnapshotsInRange ? <EmptyStateCard message="No data available" /> : null}
+      {browseEmpty ? (
+        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
+      ) : null}
 
-      {!noSnapshotsInRange && data && snapshotId ? (
+      {!browseEmpty && data && snapshotId ? (
         <>
           {data.items.length === 0 ? (
-            <Card>
-              <p className="text-sm text-text-secondary">No consigners found</p>
-            </Card>
+            <EmptyStateCard message="No consigners found" />
           ) : (
             <>
               {useGroupedView ? (

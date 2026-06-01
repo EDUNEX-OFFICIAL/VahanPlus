@@ -126,6 +126,7 @@ export interface ClearDataResult {
   deleted: {
     vehicleStatus: number;
     snapshots: number;
+    consigners: number;
     rawCaptures: number;
     scrapeJobs: number;
     vehicleRecords: number;

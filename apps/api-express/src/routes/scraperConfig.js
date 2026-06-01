@@ -15,7 +15,8 @@ import {
   enqueueMissingVehicleStatusFromPasses,
 } from '@vahanplus/epass-orchestrator';
 import { requireAuth } from '../middleware/auth.js';
-import { obliterateScrapeQueue, stopScrapeQueue } from '../queues/queueMaintenance.js';
+import { stopScrapeQueue } from '../queues/queueMaintenance.js';
+import { clearAllScrapedData } from '../services/clearScrapedData.js';
 import { getScrapeQueue } from '../queues/scrapeQueue.js';
 import { enqueueScrapeJob } from '../services/enqueueScrape.js';
 import { syncEpassSchedule } from '../scheduler/epassSchedule.js';
@@ -539,26 +540,8 @@ router.post('/actions/clear-data', async (req, res) => {
   }
 
   const queue = getScrapeQueue();
-  await obliterateScrapeQueue(queue);
-
-  const deleted = await prisma.$transaction(async (tx) => {
-    const vehicleStatus = await tx.epassVehicleStatusRow.deleteMany();
-    const snapshots = await tx.epassSnapshot.deleteMany();
-    const rawCaptures = await tx.rawCapture.deleteMany();
-    const scrapeJobs = await tx.scrapeJob.deleteMany();
-    const vehicleRecords = await tx.vehicleRecord.deleteMany();
-    const khananRecords = await tx.khananRecord.deleteMany();
-    return {
-      vehicleStatus: vehicleStatus.count,
-      snapshots: snapshots.count,
-      rawCaptures: rawCaptures.count,
-      scrapeJobs: scrapeJobs.count,
-      vehicleRecords: vehicleRecords.count,
-      khananRecords: khananRecords.count,
-    };
-  });
-
-  res.json({ deleted, message: 'All scraped data cleared.' });
+  const result = await clearAllScrapedData(prisma, queue);
+  res.json(result);
 });
 
 export default router;

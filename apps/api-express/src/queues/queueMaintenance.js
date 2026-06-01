@@ -30,3 +30,19 @@ export async function stopScrapeQueue(queue) {
 export async function obliterateScrapeQueue(queue) {
   await stopScrapeQueue(queue);
 }
+
+const REPEATABLE_JOB_ID = 'bihar-epass-repeatable';
+
+/**
+ * Remove scheduled district scrape repeatables so a wipe is not immediately refilled.
+ *
+ * @param {BullQueue} queue
+ */
+export async function removeRepeatableScrapeJobs(queue) {
+  const repeatables = await queue.getRepeatableJobs();
+  for (const job of repeatables) {
+    if (job.id === REPEATABLE_JOB_ID || job.name === 'bihar-epass-scheduled') {
+      await queue.removeRepeatableByKey(job.key);
+    }
+  }
+}

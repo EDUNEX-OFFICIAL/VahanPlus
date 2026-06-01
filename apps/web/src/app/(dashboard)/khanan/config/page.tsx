@@ -275,7 +275,7 @@ export default function KhananConfigPage() {
             await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
             await queryClient.invalidateQueries({ queryKey: SCRAPER_LIVE_QUERY_KEY });
             const d = result.deleted;
-            return `Cleared ${d.snapshots} snapshots, ${d.scrapeJobs} jobs, ${d.rawCaptures} captures, ${d.vehicleStatus} vehicle status, ${d.vehicleRecords} vehicle records, ${d.khananRecords} Khanan records.`;
+            return `Cleared ${d.snapshots} snapshots, ${d.consigners ?? 0} consigner rows, ${d.scrapeJobs} jobs, ${d.rawCaptures} captures, ${d.vehicleStatus} vehicle status, ${d.vehicleRecords} vehicle records, ${d.khananRecords} Khanan records.`;
           } finally {
             setActionBusy(false);
           }

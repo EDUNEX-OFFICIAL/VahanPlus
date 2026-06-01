@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { Chip } from '@/components/ui/Chip';
+import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatInt } from '@/lib/epass-aggregate';
 import { buildConsigneeHref } from '@/lib/epass-filter-params';
 import { formatOperatorType } from '@/lib/operator';
@@ -78,9 +80,7 @@ export function ConsignerTable({
     align?: 'right';
   }) {
     if (!sortable || !onSort) {
-      return (
-        <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>{label}</th>
-      );
+      return <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>{label}</th>;
     }
     return (
       <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>
@@ -96,69 +96,125 @@ export function ConsignerTable({
     );
   }
 
-  const maxHeight = compact ? undefined : 'max-h-[calc(100vh-320px)]';
+  const maxHeight = compact ? undefined : 'max-h-[min(68vh,760px)]';
 
   return (
-    <Card className="overflow-hidden p-0">
-      <div className={`${maxHeight ?? ''} overflow-auto scrollbar-thin`.trim()}>
-        <table className="w-full min-w-[900px] border-collapse text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-surface-primary">
-            <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
-              {showDistrictCols ? (
-                <SortHeader label="DMO" columnKey="district" />
-              ) : null}
-              {showDistrictCols ? <SortHeader label="Operator" columnKey="operator" /> : null}
-              <SortHeader label="Sl" columnKey="slNo" />
-              <SortHeader label="Consigner" columnKey="consigner" />
-              <SortHeader label="Mineral" columnKey="mineral" />
-              <th className="px-4 py-3">Type</th>
-              <SortHeader label="Challan lines" columnKey="challans" align="right" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const consigneeHref =
-                consigneeLinkBase === '/khanan/consignee' && linkSearchParams
-                  ? buildConsigneeHref(row.id, linkSearchParams)
-                  : consigneeLinkBase === '/khanan/consignee'
-                    ? `${consigneeLinkBase}?consignerRowId=${row.id}`
-                    : `${consigneeLinkBase}/${row.id}/challans`;
+    <>
+      <div className="space-y-3 md:hidden">
+        {rows.map((row) => {
+          const consigneeHref =
+            consigneeLinkBase === '/khanan/consignee' && linkSearchParams
+              ? buildConsigneeHref(row.id, linkSearchParams)
+              : consigneeLinkBase === '/khanan/consignee'
+                ? `${consigneeLinkBase}?consignerRowId=${row.id}`
+                : `${consigneeLinkBase}/${row.id}/challans`;
 
-              return (
-                <tr
-                  key={row.id}
-                  className="border-b border-border-default/60 transition hover:bg-indigo-500/5"
-                >
+          return (
+            <MobileDataCard
+              key={row.id}
+              eyebrow={`Sl ${row.slNo}`}
+              title={row.consignerName}
+              subtitle={showDistrictCols && hasDmo(row) ? row.dmoName : undefined}
+              meta={
+                <>
+                  <Chip tone="indigo">{row.mineral ?? 'Mineral NA'}</Chip>
+                  <Chip>{row.mineralType ?? 'Type NA'}</Chip>
                   {showDistrictCols && hasDmo(row) ? (
-                    <>
-                      <td className="px-4 py-2.5 font-medium text-white">{row.dmoName}</td>
-                      <td className="px-4 py-2.5 text-text-secondary">
-                        {formatOperatorType(row.operatorType ?? row.role)}
-                      </td>
-                    </>
+                    <Chip tone="cyan">{formatOperatorType(row.operatorType ?? row.role)}</Chip>
                   ) : null}
-                  <td className="px-4 py-2.5 tabular-nums text-text-secondary">{row.slNo}</td>
-                  <td className="px-4 py-2.5 font-medium text-white">{row.consignerName}</td>
-                  <td className="px-4 py-2.5">{row.mineral ?? '—'}</td>
-                  <td className="px-4 py-2.5">{row.mineralType ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-right">
-                    {row.challanCount > 0 ? (
-                      <Link
-                        href={consigneeHref}
-                        className="font-medium text-indigo-300 underline-offset-2 hover:underline"
-                      >
-                        {formatInt(row.challanCount)}
-                      </Link>
-                    ) : (
-                      <span className="tabular-nums text-text-secondary">0</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                </>
+              }
+              action={
+                row.challanCount > 0 ? (
+                  <Link
+                    href={consigneeHref}
+                    className="inline-flex min-h-10 items-center rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 text-xs font-bold text-indigo-100"
+                  >
+                    View
+                  </Link>
+                ) : null
+              }
+            >
+              <DataField
+                label="Challan lines"
+                value={
+                  row.challanCount > 0 ? (
+                    <Link
+                      href={consigneeHref}
+                      className="text-indigo-200 underline-offset-2 hover:underline"
+                    >
+                      {formatInt(row.challanCount)}
+                    </Link>
+                  ) : (
+                    '0'
+                  )
+                }
+              />
+            </MobileDataCard>
+          );
+        })}
       </div>
-    </Card>
+      <Card className="hidden overflow-hidden p-0 md:block">
+        <div
+          className={`${maxHeight ?? 'max-h-[min(68vh,760px)]'} overflow-auto overscroll-contain scrollbar-thin`.trim()}
+        >
+          <table className="w-full min-w-[900px] border-collapse text-left text-sm">
+            <thead className="sticky top-0 z-10 bg-surface-primary">
+              <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
+                {showDistrictCols ? <SortHeader label="DMO" columnKey="district" /> : null}
+                {showDistrictCols ? <SortHeader label="Operator" columnKey="operator" /> : null}
+                <SortHeader label="Sl" columnKey="slNo" />
+                <SortHeader label="Consigner" columnKey="consigner" />
+                <SortHeader label="Mineral" columnKey="mineral" />
+                <th className="px-4 py-3">Type</th>
+                <SortHeader label="Challan lines" columnKey="challans" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const consigneeHref =
+                  consigneeLinkBase === '/khanan/consignee' && linkSearchParams
+                    ? buildConsigneeHref(row.id, linkSearchParams)
+                    : consigneeLinkBase === '/khanan/consignee'
+                      ? `${consigneeLinkBase}?consignerRowId=${row.id}`
+                      : `${consigneeLinkBase}/${row.id}/challans`;
+
+                return (
+                  <tr
+                    key={row.id}
+                    className="border-b border-border-default/60 transition hover:bg-indigo-500/5"
+                  >
+                    {showDistrictCols && hasDmo(row) ? (
+                      <>
+                        <td className="px-4 py-2.5 font-medium text-white">{row.dmoName}</td>
+                        <td className="px-4 py-2.5 text-text-secondary">
+                          {formatOperatorType(row.operatorType ?? row.role)}
+                        </td>
+                      </>
+                    ) : null}
+                    <td className="px-4 py-2.5 tabular-nums text-text-secondary">{row.slNo}</td>
+                    <td className="px-4 py-2.5 font-medium text-white">{row.consignerName}</td>
+                    <td className="px-4 py-2.5">{row.mineral ?? '—'}</td>
+                    <td className="px-4 py-2.5">{row.mineralType ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-right">
+                      {row.challanCount > 0 ? (
+                        <Link
+                          href={consigneeHref}
+                          className="font-medium text-indigo-300 underline-offset-2 hover:underline"
+                        >
+                          {formatInt(row.challanCount)}
+                        </Link>
+                      ) : (
+                        <span className="tabular-nums text-text-secondary">0</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </>
   );
 }

@@ -3,3 +3,5 @@ dist
 .next
 coverage
 pnpm-lock.yaml
+# Helm templates use Go syntax; not valid YAML for Prettier
+deploy/helm/**/*

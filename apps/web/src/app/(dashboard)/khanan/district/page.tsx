@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
   DistrictEpassFilters,
   type DistrictDateMode,
@@ -62,10 +63,7 @@ function parseDateMode(value: string | null): DistrictDateMode {
 
 function filtersFromParams(searchParams: URLSearchParams): DistrictFilterValues {
   return {
-    operator: parseOperatorParam(
-      searchParams.get('operator'),
-      searchParams.get('role'),
-    ),
+    operator: parseOperatorParam(searchParams.get('operator'), searchParams.get('role')),
     minerals: parseMineralsParam(searchParams.get('mineral')),
     dateMode: parseDateMode(searchParams.get('dateMode')),
     dateFrom: searchParams.get('dateFrom') ?? '',
@@ -229,16 +227,10 @@ function DistrictPageContent() {
     updateParams({
       snapshotId: snapshotId,
       reportDate: snapshotId
-        ? snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null
+        ? (snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null)
         : null,
     });
-  }, [
-    snapshotId,
-    appliedFilters.snapshotId,
-    snapshotsLoading,
-    snapshotsData,
-    updateParams,
-  ]);
+  }, [snapshotId, appliedFilters.snapshotId, snapshotsLoading, snapshotsData, updateParams]);
 
   const minerals = useMemo(
     () => (rowsData?.rows ? collectMinerals(rowsData.rows) : []),
@@ -324,7 +316,7 @@ function DistrictPageContent() {
   }
 
   return (
-    <div className="animate-slide-right space-y-6">
+    <PageStack>
       {isLoading ? (
         <Card className="animate-pulse">
           <div className="h-4 w-32 rounded bg-surface-deep" />
@@ -373,7 +365,7 @@ function DistrictPageContent() {
           ) : null}
         </>
       )}
-    </div>
+    </PageStack>
   );
 }
 
@@ -381,11 +373,11 @@ export default function DistrictPage() {
   return (
     <Suspense
       fallback={
-        <div className="space-y-6">
+        <PageStack>
           <Card className="animate-pulse p-12">
             <div className="h-48 rounded bg-surface-deep" />
           </Card>
-        </div>
+        </PageStack>
       }
     >
       <DistrictPageContent />

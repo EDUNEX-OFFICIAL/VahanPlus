@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
+import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
   ConsignerEpassFilters,
   type ConsignerDateMode,
@@ -83,13 +85,9 @@ function parseDateMode(value: string | null): ConsignerDateMode {
 }
 
 function filtersFromParams(searchParams: URLSearchParams): ConsignerFilterValues {
-  const districtRaw =
-    searchParams.get('district') ?? searchParams.get('dmo') ?? '';
+  const districtRaw = searchParams.get('district') ?? searchParams.get('dmo') ?? '';
   return {
-    operator: parseOperatorParam(
-      searchParams.get('operator'),
-      searchParams.get('role'),
-    ),
+    operator: parseOperatorParam(searchParams.get('operator'), searchParams.get('role')),
     minerals: parseConsignerMineralsParam(searchParams.get('mineral')),
     dateMode: parseDateMode(searchParams.get('dateMode')),
     dateFrom: searchParams.get('dateFrom') ?? '',
@@ -281,8 +279,7 @@ function ConsignerBrowse() {
   const { sortKey, sortDir, updateParams, handleSort, handleApplyFilters } =
     useConsignerSortHandlers(searchParams, router);
 
-  const roleFilter =
-    appliedFilters.operator === 'all' ? undefined : appliedFilters.operator;
+  const roleFilter = appliedFilters.operator === 'all' ? undefined : appliedFilters.operator;
 
   const {
     data: snapshotsData,
@@ -381,16 +378,10 @@ function ConsignerBrowse() {
     updateParams({
       snapshotId: snapshotId,
       reportDate: snapshotId
-        ? snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null
+        ? (snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null)
         : null,
     });
-  }, [
-    snapshotId,
-    appliedFilters.snapshotId,
-    snapshotsLoading,
-    snapshotsData,
-    updateParams,
-  ]);
+  }, [snapshotId, appliedFilters.snapshotId, snapshotsLoading, snapshotsData, updateParams]);
 
   const { data: districtRowsData } = useQuery({
     queryKey: ['epass', 'snapshot-rows', snapshotId, 'minerals'],
@@ -411,6 +402,7 @@ function ConsignerBrowse() {
     () => (districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : []),
     [districtRowsData?.rows],
   );
+  const pageSize = Math.max(Number(searchParams.get('limit') || String(PAGE_SIZE)), 10);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [
@@ -425,6 +417,7 @@ function ConsignerBrowse() {
       sortKey,
       sortDir,
       offset,
+      pageSize,
     ],
     queryFn: () => {
       const token = getToken();
@@ -438,7 +431,7 @@ function ConsignerBrowse() {
         hideZeroChallans: appliedFilters.hideZeroChallans,
         sort: sortKey ?? 'district',
         dir: sortDir,
-        limit: PAGE_SIZE,
+        limit: pageSize,
         offset,
       });
     },
@@ -479,8 +472,6 @@ function ConsignerBrowse() {
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);
   const total = data?.total ?? 0;
-  const pageStart = total === 0 ? 0 : offset + 1;
-  const pageEnd = Math.min(offset + PAGE_SIZE, total);
   const isLoadingAll = snapshotsLoading || (Boolean(snapshotId) && isLoading);
   const isErrorAll = snapshotsError || isError;
 
@@ -548,10 +539,6 @@ function ConsignerBrowse() {
             </Card>
           ) : (
             <>
-              <p className="text-sm text-text-secondary tabular-nums">
-                {pageStart}–{pageEnd} of {total}
-              </p>
-
               {useGroupedView ? (
                 <ConsignerGroupedView
                   groups={groups}
@@ -572,26 +559,15 @@ function ConsignerBrowse() {
                 />
               )}
 
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="secondary"
-                  className="min-h-8 px-3 py-1 text-xs"
-                  disabled={offset <= 0}
-                  onClick={() =>
-                    updateParams({ offset: String(Math.max(0, offset - PAGE_SIZE)) })
-                  }
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="min-h-8 px-3 py-1 text-xs"
-                  disabled={offset + PAGE_SIZE >= total}
-                  onClick={() => updateParams({ offset: String(offset + PAGE_SIZE) })}
-                >
-                  Next
-                </Button>
-              </div>
+              <ResponsivePagination
+                total={total}
+                offset={offset}
+                pageSize={pageSize}
+                onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
+                onPageSizeChange={(nextSize) =>
+                  updateParams({ limit: String(nextSize), offset: '0' })
+                }
+              />
             </>
           )}
         </>
@@ -603,25 +579,21 @@ function ConsignerBrowse() {
 function ConsignerPageContent() {
   const searchParams = useSearchParams();
   const districtRowId = searchParams.get('districtRowId') ?? '';
-  const operatorParam = parseOperatorParam(
-    searchParams.get('operator'),
-    searchParams.get('role'),
-  );
-  const operatorType: OperatorType =
-    operatorParam === 'dealer' ? 'dealer' : 'lessee';
+  const operatorParam = parseOperatorParam(searchParams.get('operator'), searchParams.get('role'));
+  const operatorType: OperatorType = operatorParam === 'dealer' ? 'dealer' : 'lessee';
 
   if (districtRowId) {
     return (
-      <div className="animate-slide-right space-y-6">
+      <PageStack>
         <ConsignerDrillDown districtRowId={districtRowId} operatorType={operatorType} />
-      </div>
+      </PageStack>
     );
   }
 
   return (
-    <div className="animate-slide-right space-y-6">
+    <PageStack>
       <ConsignerBrowse />
-    </div>
+    </PageStack>
   );
 }
 

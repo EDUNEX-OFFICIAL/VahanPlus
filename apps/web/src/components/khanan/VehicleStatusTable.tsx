@@ -1,6 +1,8 @@
 'use client';
 
 import { Card } from '@/components/ui/Card';
+import { Chip } from '@/components/ui/Chip';
+import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import type {
   EpassVehicleStatusListItemDto,
   VehicleStatusSortDir,
@@ -60,9 +62,7 @@ export function VehicleStatusTable({
     align?: 'right';
   }) {
     if (!sortable || !onSort) {
-      return (
-        <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>{label}</th>
-      );
+      return <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>{label}</th>;
     }
     return (
       <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>
@@ -79,59 +79,87 @@ export function VehicleStatusTable({
   }
 
   return (
-    <Card className="overflow-hidden p-0">
-      <div className="max-h-[calc(100vh-320px)] overflow-auto scrollbar-thin">
-        <table className="w-full min-w-[1200px] border-collapse text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-surface-primary">
-            <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
-              <SortHeader label="KS Reg No" columnKey="ksRegNo" />
-              <SortHeader label="Vehicle Reg No" columnKey="vehicleRegNo" />
-              <SortHeader label="Vehicle Class" columnKey="vehicleClass" />
-              <SortHeader label="Rc Fit Up To" columnKey="rcFitUpTo" />
-              <SortHeader label="Rc Tax Up To" columnKey="rcTaxUpTo" />
-              <SortHeader label="Insurance Upto" columnKey="insuranceUpTo" />
-              <SortHeader label="PUCC Upto" columnKey="puccUpTo" />
-              <SortHeader label="IMEI No" columnKey="imeiNo" />
-              <SortHeader label="ESIM Validity" columnKey="esimValidity" />
-              <SortHeader label="Gross Wt (MT)" columnKey="grossWeightMt" align="right" />
-              <SortHeader label="Unladen Wt (MT)" columnKey="unladenWeightMt" align="right" />
-              <SortHeader label="Scraped" columnKey="scrapedAt" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                className={`border-b border-border-default/60 ${row.found ? '' : 'opacity-60'}`}
-              >
-                <td className="px-4 py-2.5 font-mono text-sm text-indigo-200">
-                  {row.ksRegNo ?? '—'}
-                </td>
-                <td className="px-4 py-2.5 font-mono text-sm text-white">{row.vehicleRegNo}</td>
-                <td className="px-4 py-2.5 text-white">{row.vehicleClass ?? '—'}</td>
-                <td className="px-4 py-2.5 text-text-secondary">{row.rcFitUpTo ?? '—'}</td>
-                <td className="px-4 py-2.5 text-text-secondary">{row.rcTaxUpTo ?? '—'}</td>
-                <td className="px-4 py-2.5 text-text-secondary">{row.insuranceUpTo ?? '—'}</td>
-                <td className="px-4 py-2.5 text-text-secondary">{row.puccUpTo ?? '—'}</td>
-                <td className="px-4 py-2.5 text-white">{row.imeiNo ?? '—'}</td>
-                <td className="px-4 py-2.5 text-white">{row.esimValidity ?? '—'}</td>
-                <td className="px-4 py-2.5 text-right tabular-nums">
-                  {formatWeight(row.grossWeightMt)}
-                </td>
-                <td className="px-4 py-2.5 text-right tabular-nums">
-                  {formatWeight(row.unladenWeightMt)}
-                </td>
-                <td className="px-4 py-2.5 text-text-secondary">
-                  {new Date(row.scrapedAt).toLocaleString('en-IN', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <>
+      <div className="space-y-3 md:hidden">
+        {rows.map((row) => (
+          <MobileDataCard
+            key={row.id}
+            eyebrow={row.ksRegNo ?? 'KS NA'}
+            title={row.vehicleRegNo}
+            subtitle={row.vehicleClass ?? 'Vehicle class NA'}
+            meta={
+              <>
+                <Chip tone={row.found ? 'emerald' : 'amber'}>
+                  {row.found ? 'Found' : 'Not found'}
+                </Chip>
+                <Chip tone="indigo">{row.esimValidity ?? 'ESIM NA'}</Chip>
+              </>
+            }
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <DataField label="RC Fit" value={row.rcFitUpTo ?? '—'} />
+              <DataField label="Insurance" value={row.insuranceUpTo ?? '—'} />
+              <DataField label="Gross WT" value={formatWeight(row.grossWeightMt)} />
+              <DataField label="Unladen WT" value={formatWeight(row.unladenWeightMt)} />
+              <DataField className="col-span-2" label="IMEI" value={row.imeiNo ?? '—'} />
+            </div>
+          </MobileDataCard>
+        ))}
       </div>
-    </Card>
+      <Card className="hidden overflow-hidden p-0 md:block">
+        <div className="max-h-[min(68vh,760px)] overflow-auto overscroll-contain scrollbar-thin">
+          <table className="w-full min-w-[1200px] border-collapse text-left text-sm">
+            <thead className="sticky top-0 z-10 bg-surface-primary">
+              <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
+                <SortHeader label="KS Reg No" columnKey="ksRegNo" />
+                <SortHeader label="Vehicle Reg No" columnKey="vehicleRegNo" />
+                <SortHeader label="Vehicle Class" columnKey="vehicleClass" />
+                <SortHeader label="Rc Fit Up To" columnKey="rcFitUpTo" />
+                <SortHeader label="Rc Tax Up To" columnKey="rcTaxUpTo" />
+                <SortHeader label="Insurance Upto" columnKey="insuranceUpTo" />
+                <SortHeader label="PUCC Upto" columnKey="puccUpTo" />
+                <SortHeader label="IMEI No" columnKey="imeiNo" />
+                <SortHeader label="ESIM Validity" columnKey="esimValidity" />
+                <SortHeader label="Gross Wt (MT)" columnKey="grossWeightMt" align="right" />
+                <SortHeader label="Unladen Wt (MT)" columnKey="unladenWeightMt" align="right" />
+                <SortHeader label="Scraped" columnKey="scrapedAt" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className={`border-b border-border-default/60 ${row.found ? '' : 'opacity-60'}`}
+                >
+                  <td className="px-4 py-2.5 font-mono text-sm text-indigo-200">
+                    {row.ksRegNo ?? '—'}
+                  </td>
+                  <td className="px-4 py-2.5 font-mono text-sm text-white">{row.vehicleRegNo}</td>
+                  <td className="px-4 py-2.5 text-white">{row.vehicleClass ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-text-secondary">{row.rcFitUpTo ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-text-secondary">{row.rcTaxUpTo ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-text-secondary">{row.insuranceUpTo ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-text-secondary">{row.puccUpTo ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-white">{row.imeiNo ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-white">{row.esimValidity ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
+                    {formatWeight(row.grossWeightMt)}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
+                    {formatWeight(row.unladenWeightMt)}
+                  </td>
+                  <td className="px-4 py-2.5 text-text-secondary">
+                    {new Date(row.scrapedAt).toLocaleString('en-IN', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </>
   );
 }

@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
+import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { VehicleStatusFilters } from '@/components/khanan/VehicleStatusFilters';
 import { VehicleStatusMetaBar } from '@/components/khanan/VehicleStatusMetaBar';
 import { VehicleStatusTable } from '@/components/khanan/VehicleStatusTable';
@@ -46,6 +48,7 @@ function VehicleStatusPageContent() {
   const searchParams = useSearchParams();
   const appliedFilters = useMemo(() => parseVehicleStatusFilters(searchParams), [searchParams]);
   const offset = Math.max(Number(searchParams.get('offset') || '0'), 0);
+  const pageSize = Math.max(Number(searchParams.get('limit') || String(PAGE_SIZE)), 10);
   const sortKey = parseSortKey(searchParams.get('sort')) ?? 'vehicleRegNo';
   const sortDir: VehicleStatusSortDir = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
 
@@ -60,10 +63,10 @@ function VehicleStatusPageContent() {
             : undefined,
       sort: sortKey,
       dir: sortDir,
-      limit: PAGE_SIZE,
+      limit: pageSize,
       offset,
     }),
-    [appliedFilters, sortKey, sortDir, offset],
+    [appliedFilters, sortKey, sortDir, pageSize, offset],
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -122,13 +125,11 @@ function VehicleStatusPageContent() {
   }, [updateParams]);
 
   const total = data?.total ?? 0;
-  const pageStart = total === 0 ? 0 : offset + 1;
-  const pageEnd = Math.min(offset + PAGE_SIZE, total);
   const activeSortKey = searchParams.get('sort') ? sortKey : null;
 
   return (
-    <div className="animate-slide-right space-y-6">
-      <h1 className="text-2xl font-semibold text-white">Vehicle Status</h1>
+    <PageStack>
+      <h1 className="text-2xl font-semibold text-white sm:text-3xl">Vehicle Status</h1>
 
       {isLoading ? (
         <Card className="animate-pulse">
@@ -171,40 +172,26 @@ function VehicleStatusPageContent() {
             </Card>
           ) : (
             <>
-              <p className="text-sm text-text-secondary tabular-nums">
-                {pageStart}–{pageEnd} of {total}
-              </p>
               <VehicleStatusTable
                 rows={data.items}
                 sortKey={activeSortKey}
                 sortDir={sortDir}
                 onSort={handleSort}
               />
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="secondary"
-                  className="min-h-8 px-3 py-1 text-xs"
-                  disabled={offset <= 0}
-                  onClick={() =>
-                    updateParams({ offset: String(Math.max(0, offset - PAGE_SIZE)) })
-                  }
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="min-h-8 px-3 py-1 text-xs"
-                  disabled={offset + PAGE_SIZE >= total}
-                  onClick={() => updateParams({ offset: String(offset + PAGE_SIZE) })}
-                >
-                  Next
-                </Button>
-              </div>
+              <ResponsivePagination
+                total={total}
+                offset={offset}
+                pageSize={pageSize}
+                onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
+                onPageSizeChange={(nextSize) =>
+                  updateParams({ limit: String(nextSize), offset: '0' })
+                }
+              />
             </>
           )}
         </>
       ) : null}
-    </div>
+    </PageStack>
   );
 }
 

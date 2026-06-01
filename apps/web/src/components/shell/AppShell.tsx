@@ -1,17 +1,28 @@
-import { ReactNode } from 'react';
+'use client';
+
+import { ReactNode, useState } from 'react';
 import { AmbientBlobs } from './AmbientBlobs';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { ResponsiveContainer } from '@/components/ui/ResponsiveLayout';
+import { cn } from '@/lib/utils';
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className="relative min-h-dvh overflow-x-hidden">
       <AmbientBlobs />
-      <Sidebar />
-      <div className="relative z-10 ml-[272px] flex h-screen flex-col overflow-hidden">
+      <Sidebar desktopCollapsed={desktopCollapsed} onDesktopCollapsedChange={setDesktopCollapsed} />
+      <div
+        className={cn(
+          'relative z-10 flex min-h-dvh flex-col transition-[padding] duration-300',
+          desktopCollapsed ? 'xl:pl-[88px]' : 'xl:pl-[272px]',
+        )}
+      >
         <Header />
-        <main className="flex-1 overflow-y-auto p-8 scrollbar-thin">
-          <div className="mx-auto w-full max-w-[1400px]">{children}</div>
+        <main className="flex-1 pb-28 pt-4 sm:pt-5 lg:pt-6 xl:pb-8">
+          <ResponsiveContainer>{children}</ResponsiveContainer>
         </main>
       </div>
     </div>

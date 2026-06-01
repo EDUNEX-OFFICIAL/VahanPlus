@@ -2,6 +2,8 @@
   --surface-deep: #05070a;
   --surface-primary: #0b0f16;
   --surface-secondary: #0d121b;
+  --surface-elevated: #111827;
+  --surface-glass: rgb(15 23 42 / 0.68);
   --border-default: #1f2937;
   --border-hover: #2d3748;
   --brand-blue: #2563eb;
@@ -18,4 +20,6 @@
   --blob-teal: #14b8a6;
   --blob-rose: #f43f5e;
   --blob-amber: #f59e0b;
+  --radius-card: 1.25rem;
+  --shadow-glow: 0 0 36px rgb(99 102 241 / 0.24);
 }

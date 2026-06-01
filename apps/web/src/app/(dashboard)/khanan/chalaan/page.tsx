@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
+import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { ChalaanEpassFilters } from '@/components/khanan/ChalaanEpassFilters';
 import { ChalaanTable } from '@/components/khanan/ChalaanTable';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
@@ -28,7 +30,12 @@ import {
   resolveSnapshotIdForDateFilters,
   snapshotsForDateMode,
 } from '@/lib/epass-report-date';
-import type { ChalaanSortDir, ChalaanSortKey, EpassBrowseFilterValues, EpassSnapshotDto } from '@/lib/epass-types';
+import type {
+  ChalaanSortDir,
+  ChalaanSortKey,
+  EpassBrowseFilterValues,
+  EpassSnapshotDto,
+} from '@/lib/epass-types';
 
 const PAGE_SIZE = 50;
 const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
@@ -98,6 +105,7 @@ function ChalaanPageContent() {
   const searchParams = useSearchParams();
   const appliedFilters = useMemo(() => parseEpassFilterParams(searchParams), [searchParams]);
   const offset = Math.max(Number(searchParams.get('offset') || '0'), 0);
+  const pageSize = Math.max(Number(searchParams.get('limit') || String(PAGE_SIZE)), 10);
   const { sortKey, sortDir, updateParams, handleSort, handleApplyFilters } =
     useChalaanSortHandlers(searchParams);
 
@@ -198,16 +206,10 @@ function ChalaanPageContent() {
     updateParams({
       snapshotId: snapshotId,
       reportDate: snapshotId
-        ? snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null
+        ? (snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null)
         : null,
     });
-  }, [
-    snapshotId,
-    appliedFilters.snapshotId,
-    snapshotsLoading,
-    snapshotsData,
-    updateParams,
-  ]);
+  }, [snapshotId, appliedFilters.snapshotId, snapshotsLoading, snapshotsData, updateParams]);
 
   const { data: districtRowsData } = useQuery({
     queryKey: ['epass', 'snapshot-rows', snapshotId, 'chalaan-filters'],
@@ -230,8 +232,8 @@ function ChalaanPageContent() {
   );
 
   const listParams = useMemo(
-    () => toChalaanListQueryParams(appliedFilters, snapshotId, sortKey, sortDir, offset, PAGE_SIZE),
-    [appliedFilters, snapshotId, sortKey, sortDir, offset],
+    () => toChalaanListQueryParams(appliedFilters, snapshotId, sortKey, sortDir, offset, pageSize),
+    [appliedFilters, snapshotId, sortKey, sortDir, offset, pageSize],
   );
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -246,8 +248,6 @@ function ChalaanPageContent() {
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);
   const total = data?.total ?? 0;
-  const pageStart = total === 0 ? 0 : offset + 1;
-  const pageEnd = Math.min(offset + PAGE_SIZE, total);
 
   const handleClearFilters = useCallback(() => {
     updateParams({
@@ -273,7 +273,7 @@ function ChalaanPageContent() {
   }, [updateParams, appliedFilters.reportDate, snapshotId]);
 
   return (
-    <div className="animate-slide-right space-y-6">
+    <PageStack>
       <EpassReportMetaBar snapshot={snapshot} />
 
       {snapshotsError ? (
@@ -323,40 +323,26 @@ function ChalaanPageContent() {
             </Card>
           ) : (
             <>
-              <p className="text-sm text-text-secondary tabular-nums">
-                {pageStart}–{pageEnd} of {total}
-              </p>
               <ChalaanTable
                 rows={data.items}
                 sortKey={sortKey}
                 sortDir={sortDir}
                 onSort={handleSort}
               />
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="secondary"
-                  className="min-h-8 px-3 py-1 text-xs"
-                  disabled={offset <= 0}
-                  onClick={() =>
-                    updateParams({ offset: String(Math.max(0, offset - PAGE_SIZE)) })
-                  }
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="min-h-8 px-3 py-1 text-xs"
-                  disabled={offset + PAGE_SIZE >= total}
-                  onClick={() => updateParams({ offset: String(offset + PAGE_SIZE) })}
-                >
-                  Next
-                </Button>
-              </div>
+              <ResponsivePagination
+                total={total}
+                offset={offset}
+                pageSize={pageSize}
+                onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
+                onPageSizeChange={(nextSize) =>
+                  updateParams({ limit: String(nextSize), offset: '0' })
+                }
+              />
             </>
           )}
         </>
       ) : null}
-    </div>
+    </PageStack>
   );
 }
 

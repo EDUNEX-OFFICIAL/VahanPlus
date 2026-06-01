@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { KhananConfigActions } from '@/components/khanan/config/KhananConfigActions';
 import { KhananConfigAdvanced } from '@/components/khanan/config/KhananConfigAdvanced';
 import { KhananConfigJobsTable } from '@/components/khanan/config/KhananConfigJobsTable';
@@ -87,7 +88,7 @@ export default function KhananConfigPage() {
       setShowCustom(false);
     }
     lastServerConfigVersion.current = v;
-  }, [data?.config?.configVersion]);
+  }, [data?.config]);
 
   useEffect(() => {
     if (!justSaved) return;
@@ -173,11 +174,11 @@ export default function KhananConfigPage() {
 
   if (isLoading || !draft || !data) {
     return (
-      <div className="animate-slide-right space-y-6">
+      <PageStack>
         <Card className="animate-pulse p-12">
           <div className="h-24 rounded bg-surface-deep" />
         </Card>
-      </div>
+      </PageStack>
     );
   }
 
@@ -192,11 +193,10 @@ export default function KhananConfigPage() {
     );
   }
 
-  const dirty =
-    JSON.stringify(draft) !== JSON.stringify(data.config) || draftPreset != null;
+  const dirty = JSON.stringify(draft) !== JSON.stringify(data.config) || draftPreset != null;
 
   return (
-    <div className="animate-slide-right space-y-6">
+    <PageStack>
       <Card>
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400">KhananSoft</p>
         <h2 className="mt-2 text-2xl font-bold text-white">Bihar portal fetch</h2>
@@ -275,6 +275,6 @@ export default function KhananConfigPage() {
       ) : null}
 
       <KhananConfigJobsTable jobs={jobsData?.items ?? []} loading={jobsLoading} />
-    </div>
+    </PageStack>
   );
 }

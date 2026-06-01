@@ -2,40 +2,63 @@ export interface NavLink {
   type: 'link';
   label: string;
   href: string;
+  icon?: NavIcon;
 }
 
 export interface NavGroup {
   type: 'group';
   label: string;
   prefix?: string;
-  children: { label: string; href: string }[];
+  icon?: NavIcon;
+  children: { label: string; href: string; icon?: NavIcon }[];
 }
 
 export type NavItem = NavLink | NavGroup;
+export type NavIcon =
+  | 'dashboard'
+  | 'khanan'
+  | 'crm'
+  | 'consigner'
+  | 'consignee'
+  | 'district'
+  | 'mineral'
+  | 'chalaan'
+  | 'vehicle'
+  | 'status'
+  | 'config';
 
 export const navItems: NavItem[] = [
-  { type: 'link', label: 'Dashboard', href: '/' },
+  { type: 'link', label: 'Dashboard', href: '/', icon: 'dashboard' },
   {
     type: 'group',
     label: 'KhananSoft',
     prefix: '/khanan',
+    icon: 'khanan',
     children: [
-      { label: 'Consigner Data', href: '/khanan/consigner' },
-      { label: 'Consignee Data', href: '/khanan/consignee' },
-      { label: 'District', href: '/khanan/district' },
-      { label: 'Mineral', href: '/khanan/mineral' },
-      { label: 'Chalaan', href: '/khanan/chalaan' },
-      { label: 'Vehicle Data', href: '/khanan/vehicle-data' },
-      { label: 'Vehicle Status', href: '/khanan/vehicle-status' },
-      { label: 'Khanan Config', href: '/khanan/config' },
+      { label: 'Consigner Data', href: '/khanan/consigner', icon: 'consigner' },
+      { label: 'Consignee Data', href: '/khanan/consignee', icon: 'consignee' },
+      { label: 'District', href: '/khanan/district', icon: 'district' },
+      { label: 'Mineral', href: '/khanan/mineral', icon: 'mineral' },
+      { label: 'Chalaan', href: '/khanan/chalaan', icon: 'chalaan' },
+      { label: 'Vehicle Data', href: '/khanan/vehicle-data', icon: 'vehicle' },
+      { label: 'Vehicle Status', href: '/khanan/vehicle-status', icon: 'status' },
+      { label: 'Khanan Config', href: '/khanan/config', icon: 'config' },
     ],
   },
   {
     type: 'group',
     label: 'CRM',
     prefix: '/crm',
+    icon: 'crm',
     children: [],
   },
+];
+
+export const quickNavItems = [
+  { label: 'Home', href: '/', icon: 'dashboard' as const },
+  { label: 'Consigner', href: '/khanan/consigner', icon: 'consigner' as const },
+  { label: 'Chalaan', href: '/khanan/chalaan', icon: 'chalaan' as const },
+  { label: 'Status', href: '/khanan/vehicle-status', icon: 'status' as const },
 ];
 
 function findChildTitle(pathname: string): string | null {

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChalaanDetailDialog } from '@/components/khanan/ChalaanDetailDialog';
 import { Card } from '@/components/ui/Card';
+import { Chip } from '@/components/ui/Chip';
+import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatQty } from '@/lib/epass-aggregate';
 import type {
   ChalaanSortDir,
@@ -51,12 +53,7 @@ interface ChalaanTableProps {
   onSort?: (key: ChalaanSortKey) => void;
 }
 
-export function ChalaanTable({
-  rows,
-  sortKey = null,
-  sortDir = 'asc',
-  onSort,
-}: ChalaanTableProps) {
+export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: ChalaanTableProps) {
   const sortable = Boolean(onSort);
   const [selectedRow, setSelectedRow] = useState<EpassChalaanPassListItemDto | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -102,9 +99,7 @@ export function ChalaanTable({
     align?: 'right';
   }) {
     if (!sortable || !onSort) {
-      return (
-        <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>{label}</th>
-      );
+      return <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>{label}</th>;
     }
     return (
       <th className={`px-4 py-3 ${align === 'right' ? 'text-right' : ''}`}>
@@ -122,8 +117,44 @@ export function ChalaanTable({
 
   return (
     <>
-      <Card className="overflow-hidden p-0">
-        <div className="max-h-[calc(100vh-360px)] overflow-auto scrollbar-thin">
+      <div className="space-y-3 md:hidden">
+        {rows.map((row) => (
+          <MobileDataCard
+            key={row.id}
+            eyebrow={`Sl ${row.slNo}`}
+            title={row.challanNo}
+            subtitle={row.consigneeName}
+            meta={
+              <>
+                <Chip tone="indigo">{row.mineral ?? 'Mineral NA'}</Chip>
+                <Chip>{row.mineralCategory ?? 'Category NA'}</Chip>
+                <Chip tone="cyan">{row.checkStatus ?? 'Status NA'}</Chip>
+              </>
+            }
+            action={
+              <button
+                type="button"
+                onClick={() => openDetail(row)}
+                className="inline-flex min-h-10 items-center rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 text-xs font-bold text-indigo-100"
+              >
+                View
+              </button>
+            }
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <DataField label="Vehicle" value={row.vehicleRegNo ?? '—'} />
+              <DataField label="Date" value={row.transportedDate ?? '—'} />
+              <DataField
+                label="Qty"
+                value={`${formatQty(row.quantity)} ${row.unit ?? ''}`.trim()}
+              />
+              <DataField label="Destination" value={row.destination ?? '—'} />
+            </div>
+          </MobileDataCard>
+        ))}
+      </div>
+      <Card className="hidden overflow-hidden p-0 md:block">
+        <div className="max-h-[min(68vh,760px)] overflow-auto overscroll-contain scrollbar-thin">
           <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
             <thead className="sticky top-0 z-10 bg-surface-primary">
               <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">

@@ -1,8 +1,9 @@
 {{- if .Values.ingress.enabled }}
+# API ingress: strip /api prefix before proxying to api-express (rewrite applies only here).
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "vahanplus.fullname" . }}
+  name: {{ include "vahanplus.fullname" . }}-api
   labels:
     {{- include "vahanplus.labels" . | nindent 4 }}
   annotations:
@@ -39,6 +40,30 @@ spec:
                 port:
                   number: {{ .Values.apiNest.port }}
           {{- end }}
+---
+# Web ingress: no rewrite — required so /_next/static/* serves real CSS/JS (not HTML).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "vahanplus.fullname" . }}-web
+  labels:
+    {{- include "vahanplus.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
           - path: /
             pathType: Prefix
             backend:

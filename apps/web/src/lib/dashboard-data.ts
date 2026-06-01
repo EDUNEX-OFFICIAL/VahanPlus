@@ -5,6 +5,7 @@ export interface KpiMetric {
   delta: string;
   trend: 'up' | 'down' | 'neutral';
   accent?: string;
+  href: string;
 }
 
 export const kpis: KpiMetric[] = [
@@ -15,6 +16,7 @@ export const kpis: KpiMetric[] = [
     delta: '+12%',
     trend: 'up',
     accent: 'indigo',
+    href: '/khanan/config',
   },
   {
     id: 'vehicle',
@@ -23,6 +25,7 @@ export const kpis: KpiMetric[] = [
     delta: '+8%',
     trend: 'up',
     accent: 'cyan',
+    href: '/khanan/vehicle-status',
   },
   {
     id: 'khanan',
@@ -31,6 +34,7 @@ export const kpis: KpiMetric[] = [
     delta: '+3%',
     trend: 'up',
     accent: 'lime',
+    href: '/khanan/district',
   },
   {
     id: 'failed',
@@ -39,5 +43,6 @@ export const kpis: KpiMetric[] = [
     delta: '-4%',
     trend: 'down',
     accent: 'rose',
+    href: '/khanan/config',
   },
 ];

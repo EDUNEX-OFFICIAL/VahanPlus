@@ -5,6 +5,8 @@
   --color-surface-deep: var(--surface-deep);
   --color-surface-primary: var(--surface-primary);
   --color-surface-secondary: var(--surface-secondary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-glass: var(--surface-glass);
   --color-border-default: var(--border-default);
   --color-brand: var(--brand-blue);
   --color-accent: var(--accent-indigo);
@@ -52,6 +54,18 @@ body {
   min-height: 100%;
   background: var(--surface-deep);
   color: var(--text-secondary);
+}
+
+body {
+  overflow-x: hidden;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
 }
 
 ::selection {
@@ -128,6 +142,17 @@ body {
 
 .animate-pulse-glow {
   animation: pulse-glow 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 /* Optional alias — global * rules above apply to all scrollable areas */

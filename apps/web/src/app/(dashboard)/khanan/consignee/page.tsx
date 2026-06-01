@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { ConsigneeEpassFilters } from '@/components/khanan/ConsigneeEpassFilters';
 import { ConsignerCombobox } from '@/components/khanan/ConsignerCombobox';
 import { ConsigneeTable } from '@/components/khanan/ConsigneeTable';
@@ -12,10 +13,7 @@ import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
 import { getToken } from '@/lib/auth';
 import { formatOperatorType } from '@/lib/operator';
 import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
-import {
-  applyConsigneeFilters,
-  sortConsigneeRows,
-} from '@/lib/epass-consignee-view';
+import { applyConsigneeFilters, sortConsigneeRows } from '@/lib/epass-consignee-view';
 import {
   buildChalaanHref,
   parseEpassFilterParams,
@@ -174,7 +172,7 @@ function ConsigneePageContent() {
     updateParams({
       snapshotId: resolvedSnapshotId,
       reportDate: resolvedSnapshotId
-        ? snapshotsData.items.find((s) => s.id === resolvedSnapshotId)?.reportDate ?? null
+        ? (snapshotsData.items.find((s) => s.id === resolvedSnapshotId)?.reportDate ?? null)
         : null,
       consignerRowId: resolvedSnapshotId ? consignerRowId : null,
     });
@@ -188,12 +186,7 @@ function ConsigneePageContent() {
   ]);
 
   const optionsQuery = useQuery({
-    queryKey: [
-      'epass',
-      'consigner-options',
-      resolvedSnapshotId,
-      appliedFilters,
-    ],
+    queryKey: ['epass', 'consigner-options', resolvedSnapshotId, appliedFilters],
     queryFn: () => {
       const token = getToken();
       if (!token) throw new Error('Not authenticated');
@@ -244,8 +237,7 @@ function ConsigneePageContent() {
     const filtered = applyConsigneeFilters(challansQuery.data.items, {
       consigneeSearch: appliedFilters.consigneeSearch,
       hideZeroPasses: appliedFilters.hideZeroPasses,
-      dateFrom:
-        appliedFilters.dateMode === 'range' ? appliedFilters.dateFrom : undefined,
+      dateFrom: appliedFilters.dateMode === 'range' ? appliedFilters.dateFrom : undefined,
       dateTo:
         appliedFilters.dateMode === 'range'
           ? appliedFilters.dateTo || appliedFilters.dateFrom
@@ -300,19 +292,22 @@ function ConsigneePageContent() {
     updateParams,
   ]);
 
-  const handleSort = useCallback((key: ConsigneeSortKey) => {
-    if (sortKey !== key) {
-      setSortKey(key);
+  const handleSort = useCallback(
+    (key: ConsigneeSortKey) => {
+      if (sortKey !== key) {
+        setSortKey(key);
+        setSortDir('asc');
+        return;
+      }
+      if (sortDir === 'asc') {
+        setSortDir('desc');
+        return;
+      }
+      setSortKey(null);
       setSortDir('asc');
-      return;
-    }
-    if (sortDir === 'asc') {
-      setSortDir('desc');
-      return;
-    }
-    setSortKey(null);
-    setSortDir('asc');
-  }, [sortKey, sortDir]);
+    },
+    [sortKey, sortDir],
+  );
 
   const handleConsignerChange = useCallback(
     (id: string) => {
@@ -331,11 +326,10 @@ function ConsigneePageContent() {
     return snap ? snapshotFromListItem(snap) : null;
   }, [resolvedSnapshotId, snapshotsData?.items]);
 
-  const isLoadingAll =
-    snapshotsLoading || (Boolean(resolvedSnapshotId) && optionsQuery.isLoading);
+  const isLoadingAll = snapshotsLoading || (Boolean(resolvedSnapshotId) && optionsQuery.isLoading);
 
   return (
-    <div className="animate-slide-right space-y-6">
+    <PageStack>
       {isLoadingAll ? (
         <Card className="animate-pulse">
           <div className="h-4 w-32 rounded bg-surface-deep" />
@@ -429,8 +423,7 @@ function ConsigneePageContent() {
                 <span className="ml-2 text-sm font-normal text-text-secondary">
                   {challansQuery.data.districtRow.dmoName} ·{' '}
                   {formatOperatorType(
-                    challansQuery.data.consigner.operatorType ??
-                      challansQuery.data.consigner.role,
+                    challansQuery.data.consigner.operatorType ?? challansQuery.data.consigner.role,
                   )}
                 </span>
               </h2>
@@ -451,20 +444,20 @@ function ConsigneePageContent() {
                   sortDir={sortDir}
                   onSort={handleSort}
                   getChalaanHref={
-                  challansQuery.data
-                    ? (row) =>
-                        row.challanCount > 0
-                          ? buildChalaanHref(searchParams, {
-                              district: challansQuery.data!.districtRow.dmoName,
-                              consigner: challansQuery.data!.consigner.consignerName,
-                              consignee: row.consigneeName,
-                              snapshotId:
-                                appliedFilters.dateMode !== 'range'
-                                  ? resolvedSnapshotId ?? null
-                                  : null,
-                            })
-                          : null
-                    : undefined
+                    challansQuery.data
+                      ? (row) =>
+                          row.challanCount > 0
+                            ? buildChalaanHref(searchParams, {
+                                district: challansQuery.data!.districtRow.dmoName,
+                                consigner: challansQuery.data!.consigner.consignerName,
+                                consignee: row.consigneeName,
+                                snapshotId:
+                                  appliedFilters.dateMode !== 'range'
+                                    ? (resolvedSnapshotId ?? null)
+                                    : null,
+                              })
+                            : null
+                      : undefined
                   }
                 />
               )}
@@ -472,7 +465,7 @@ function ConsigneePageContent() {
           ) : null}
         </>
       ) : null}
-    </div>
+    </PageStack>
   );
 }
 

@@ -68,21 +68,6 @@ function LiveDetail({ live }: { live: ScraperLiveResponse }) {
 
   return (
     <>
-      {live.activeJobs.length > 0 ? (
-        <div className="mt-4 space-y-2">
-          <p className="text-xs uppercase tracking-wider text-text-secondary">Active now</p>
-          {live.activeJobs.map((job) => (
-            <div
-              key={String(job.id)}
-              className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm"
-            >
-              <span className="font-semibold text-white">{job.type}</span>
-              <span className="ml-2 text-text-secondary">{job.target}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
       {grouped.length > 0 ? (
         <>
           <div className="mt-6 space-y-4 md:hidden">
@@ -136,9 +121,9 @@ function LiveDetail({ live }: { live: ScraperLiveResponse }) {
             </table>
           </div>
         </>
-      ) : live.activeJobs.length === 0 ? (
-        <p className="mt-4 text-sm text-text-secondary">Waiting for snapshot rows…</p>
-      ) : null}
+      ) : (
+        <p className="mt-4 text-sm text-text-secondary">Waiting for report rows…</p>
+      )}
     </>
   );
 }
@@ -178,7 +163,7 @@ export function KhananConfigLiveScrape({ status, scrapeActive, live, loading }: 
     );
   }
 
-  const showLive = live && (live.snapshots.length > 0 || live.activeJobs.length > 0);
+  const showLive = live && live.snapshots.length > 0;
 
   return (
     <Card className="border-emerald-500/20">

@@ -73,7 +73,7 @@ export function KhananConfigDangerZone({
         />
         <p className="mt-2 text-xs text-text-secondary">
           {allowDataWipe
-            ? 'Enabled — the button below will remove all snapshots, jobs, and scraped rows.'
+            ? 'Enabled — the button below will remove all snapshots and scraped rows.'
             : 'Disabled — turn on to enable the clear action.'}
         </p>
       </div>

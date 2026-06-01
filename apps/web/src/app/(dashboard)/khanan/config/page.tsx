@@ -159,7 +159,7 @@ export default function KhananConfigPage() {
       await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
       await queryClient.invalidateQueries({ queryKey: SCRAPER_LIVE_QUERY_KEY });
       if (res.enqueued != null) {
-        return res.enqueued === 0 ? 'Nothing to queue' : `Queued ${res.enqueued} jobs`;
+        return res.enqueued === 0 ? 'Nothing to start' : 'Started';
       }
       return res.message ?? 'Done';
     } finally {

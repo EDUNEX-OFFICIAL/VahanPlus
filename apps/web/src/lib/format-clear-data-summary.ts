@@ -5,7 +5,6 @@ export function formatClearDataSummary(deleted: ClearDataResult['deleted']): str
   return [
     `${deleted.snapshots} district reports`,
     `${deleted.consigners ?? 0} consigner rows`,
-    `${deleted.scrapeJobs} queue tasks`,
     `${deleted.rawCaptures} stored responses`,
     `${deleted.vehicleStatus} vehicle status rows`,
   ].join(' · ');

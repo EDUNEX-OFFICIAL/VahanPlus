@@ -26,40 +26,26 @@ function inProgressCount(status: ScraperConfigStatus): number {
   return scrapeQueueInProgress(status);
 }
 
-function formatJobCount(n: number, singular: string, plural: string): string {
-  return n === 1 ? `1 ${singular}` : `${n} ${plural}`;
-}
-
 /** Operator-facing run state derived from BullMQ (single source for live backlog). */
 export function resolveRunStatus(status: ScraperConfigStatus): RunStatus {
   const q = status.queue;
   const inProgress = inProgressCount(status);
-  const active = q.active ?? 0;
-  const waiting = q.waiting ?? 0;
 
   if (q.isPaused && inProgress > 0) {
     return {
       state: 'stopping',
       label: 'Stopping',
-      detail: formatJobCount(inProgress, 'job winding down', 'jobs winding down'),
+      detail: null,
       dotClass: 'bg-amber-400',
       labelClass: 'text-amber-400',
     };
   }
 
   if (inProgress > 0) {
-    let detail: string;
-    if (active > 0 && waiting === 0) {
-      detail = formatJobCount(active, 'job running', 'jobs running');
-    } else if (waiting > 0 && active === 0) {
-      detail = formatJobCount(waiting, 'job starting', 'jobs starting');
-    } else {
-      detail = formatJobCount(inProgress, 'job in progress', 'jobs in progress');
-    }
     return {
       state: 'working',
       label: 'Running',
-      detail,
+      detail: null,
       dotClass: 'bg-emerald-400 animate-pulse',
       labelClass: 'text-emerald-400',
     };

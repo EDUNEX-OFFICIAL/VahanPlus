@@ -70,7 +70,7 @@ export function KhananConfigActions({
     setMessage(null);
     try {
       if (days > LARGE_RANGE_CONFIRM_THRESHOLD) {
-        if (!window.confirm(`Queue ${days} district reports?`)) return;
+        if (!window.confirm(`Run district reports for ${days} days?`)) return;
         setMessage(await tryEnqueue(true));
         return;
       }
@@ -78,7 +78,7 @@ export function KhananConfigActions({
     } catch (e) {
       if (e instanceof ScraperConfigActionError && e.requiresConfirm) {
         const n = e.dayCount ?? days;
-        if (!window.confirm(`Queue ${n} district reports?`)) return;
+        if (!window.confirm(`Run district reports for ${n} days?`)) return;
         try {
           setMessage(await tryEnqueue(true));
         } catch (err) {
@@ -169,7 +169,7 @@ export function KhananConfigActions({
             variant="destructive"
             disabled={busy}
             onClick={() =>
-              run(() => onStop(), 'Stop scraping? All queued and running jobs will be cancelled.')
+              run(() => onStop(), 'Stop scraping? Work in progress will be cancelled.')
             }
           >
             Stop

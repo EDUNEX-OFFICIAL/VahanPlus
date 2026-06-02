@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Input } from '@/components/ui/Input';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
@@ -112,11 +113,7 @@ export default function ImportDataPage() {
         ) : null}
       </Card>
 
-      {error ? (
-        <Card className="border-red-500/30">
-          <p className="text-sm font-semibold text-red-400">{error}</p>
-        </Card>
-      ) : null}
+      {error ? <DataErrorCard message={error} /> : null}
 
       {message ? (
         <Card className="border-emerald-500/30 bg-emerald-500/5">

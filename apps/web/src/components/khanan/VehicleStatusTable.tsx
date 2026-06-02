@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
+import { formatDateDmy, normalizeReportDate } from '@/lib/epass-report-date';
 import type {
   EpassVehicleStatusListItemDto,
   VehicleStatusSortDir,
@@ -28,7 +29,7 @@ function SortIndicator({
 
 function formatWeight(value: number | null): string {
   if (value == null) return '—';
-  return value.toLocaleString('en-IN', { maximumFractionDigits: 4 });
+  return value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 interface VehicleStatusTableProps {
@@ -47,7 +48,7 @@ export function VehicleStatusTable({
   const sortable = Boolean(onSort);
 
   if (rows.length === 0) {
-    return <EmptyStateCard message="No vehicle status records found" />;
+    return <EmptyStateCard message="No matching records" />;
   }
 
   function SortHeader({
@@ -102,8 +103,17 @@ export function VehicleStatusTable({
             }
           >
             <div className="grid grid-cols-2 gap-2">
-              <DataField label="RC Fit" value={row.rcFitUpTo ?? '—'} />
-              <DataField label="Insurance" value={row.insuranceUpTo ?? '—'} />
+              <DataField
+                label="RC Fit"
+                value={row.rcFitUpTo ? normalizeReportDate(row.rcFitUpTo) : '—'}
+              />
+              <DataField
+                label="Insurance"
+                value={row.insuranceUpTo ? normalizeReportDate(row.insuranceUpTo) : '—'}
+              />
+              <DataField label="RC Days" value={row.rcDaysLeft ?? '—'} />
+              <DataField label="Insurance Days" value={row.insuranceDaysLeft ?? '—'} />
+              <DataField label="Fitness Days" value={row.fitnessDaysLeft ?? '—'} />
               <DataField label="Gross WT" value={formatWeight(row.grossWeightMt)} />
               <DataField label="Unladen WT" value={formatWeight(row.unladenWeightMt)} />
               <DataField className="col-span-2" label="IMEI" value={row.imeiNo ?? '—'} />
@@ -116,26 +126,35 @@ export function VehicleStatusTable({
           <table className="w-full min-w-[1200px] border-collapse text-left text-sm">
             <thead className="sticky top-0 z-10 bg-surface-primary">
               <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
+                <th className="px-4 py-3">S.No.</th>
                 <SortHeader label="KS Reg No" columnKey="ksRegNo" />
                 <SortHeader label="Vehicle Reg No" columnKey="vehicleRegNo" />
                 <SortHeader label="Vehicle Class" columnKey="vehicleClass" />
                 <SortHeader label="Rc Fit Up To" columnKey="rcFitUpTo" />
                 <SortHeader label="Rc Tax Up To" columnKey="rcTaxUpTo" />
                 <SortHeader label="Insurance Upto" columnKey="insuranceUpTo" />
+                <SortHeader
+                  label="Insurance Days Left"
+                  columnKey="insuranceDaysLeft"
+                  align="right"
+                />
+                <SortHeader label="RC Days Left" columnKey="rcDaysLeft" align="right" />
+                <SortHeader label="Fitness Days Left" columnKey="fitnessDaysLeft" align="right" />
                 <SortHeader label="PUCC Upto" columnKey="puccUpTo" />
-                <SortHeader label="IMEI No" columnKey="imeiNo" />
-                <SortHeader label="ESIM Validity" columnKey="esimValidity" />
                 <SortHeader label="Gross Wt (MT)" columnKey="grossWeightMt" align="right" />
                 <SortHeader label="Unladen Wt (MT)" columnKey="unladenWeightMt" align="right" />
+                <SortHeader label="IMEI No" columnKey="imeiNo" />
+                <SortHeader label="ESIM Validity" columnKey="esimValidity" />
                 <SortHeader label="Scraped" columnKey="scrapedAt" />
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {rows.map((row, index) => (
                 <tr
                   key={row.id}
                   className={`border-b border-border-default/60 ${row.found ? '' : 'opacity-60'}`}
                 >
+                  <td className="px-4 py-2.5 tabular-nums text-text-secondary">{index + 1}</td>
                   <td className="px-4 py-2.5 font-mono text-sm text-indigo-200">
                     {row.ksRegNo ?? '—'}
                   </td>
@@ -148,23 +167,35 @@ export function VehicleStatusTable({
                     </Link>
                   </td>
                   <td className="px-4 py-2.5 text-white">{row.vehicleClass ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-text-secondary">{row.rcFitUpTo ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-text-secondary">{row.rcTaxUpTo ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-text-secondary">{row.insuranceUpTo ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-text-secondary">{row.puccUpTo ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-white">{row.imeiNo ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-white">{row.esimValidity ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-text-secondary">
+                    {row.rcFitUpTo ? normalizeReportDate(row.rcFitUpTo) : '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-text-secondary">
+                    {row.rcTaxUpTo ? normalizeReportDate(row.rcTaxUpTo) : '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-text-secondary">
+                    {row.insuranceUpTo ? normalizeReportDate(row.insuranceUpTo) : '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
+                    {row.insuranceDaysLeft ?? '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">{row.rcDaysLeft ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
+                    {row.fitnessDaysLeft ?? '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-text-secondary">
+                    {row.puccUpTo ? normalizeReportDate(row.puccUpTo) : '—'}
+                  </td>
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     {formatWeight(row.grossWeightMt)}
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     {formatWeight(row.unladenWeightMt)}
                   </td>
+                  <td className="px-4 py-2.5 text-white">{row.imeiNo ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-white">{row.esimValidity ?? '—'}</td>
                   <td className="px-4 py-2.5 text-text-secondary">
-                    {new Date(row.scrapedAt).toLocaleString('en-IN', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    })}
+                    {formatDateDmy(new Date(row.scrapedAt))}
                   </td>
                 </tr>
               ))}

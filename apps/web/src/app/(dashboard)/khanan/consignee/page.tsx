@@ -3,8 +3,8 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
@@ -33,6 +33,7 @@ import {
   fetchEpassSnapshots,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
+  updateChallanGhatNumber,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import type {
@@ -237,6 +238,18 @@ function ConsigneePageContent() {
     return sortConsigneeRows(filtered, sortKey, sortDir);
   }, [challansQuery.data?.items, appliedFilters, sortKey, sortDir]);
 
+  const totals = useMemo(() => {
+    return displayRows.reduce(
+      (acc, row) => {
+        acc.totalChalaan += row.challanCount;
+        acc.totalPasses += row.challanCount;
+        acc.totalQuantity += row.dispatchedQty;
+        return acc;
+      },
+      { totalChalaan: 0, totalPasses: 0, totalQuantity: 0 },
+    );
+  }, [displayRows]);
+
   const handleApplyFilters = useCallback(
     (next: typeof appliedFilters) => {
       updateParams(serializeEpassFilterParams(next));
@@ -354,20 +367,13 @@ function ConsigneePageContent() {
   if (snapshotsError || optionsQuery.isError || challansQuery.isError) {
     return (
       <PageStack>
-        <Card className="border-red-500/30">
-          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-          <Button
-            className="mt-4"
-            variant="secondary"
-            onClick={() => {
-              void refetchSnapshots();
-              void optionsQuery.refetch();
-              void challansQuery.refetch();
-            }}
-          >
-            Retry
-          </Button>
-        </Card>
+        <DataErrorCard
+          onRetry={() => {
+            void refetchSnapshots();
+            void optionsQuery.refetch();
+            void challansQuery.refetch();
+          }}
+        />
       </PageStack>
     );
   }
@@ -460,16 +466,37 @@ function ConsigneePageContent() {
                                 district: challansQuery.data!.districtRow.dmoName,
                                 consigner: challansQuery.data!.consigner.consignerName,
                                 consignee: row.consigneeName,
-                                snapshotId:
-                                  appliedFilters.dateMode !== 'range'
-                                    ? (resolvedSnapshotId ?? null)
-                                    : null,
+                                snapshotId: resolvedSnapshotId ?? null,
                               })
                             : null
                       : undefined
                   }
+                  onSaveGhatNumber={async (rowId, ghatNumber) => {
+                    await updateChallanGhatNumber(rowId, ghatNumber);
+                    await challansQuery.refetch();
+                  }}
                 />
               )}
+              {displayRows.length > 0 ? (
+                <Card>
+                  <div className="flex flex-wrap gap-6 text-sm">
+                    <p className="tabular-nums text-text-secondary">
+                      Total Chalaan:{' '}
+                      <span className="font-semibold text-white">{totals.totalChalaan}</span>
+                    </p>
+                    <p className="tabular-nums text-text-secondary">
+                      Total Passes:{' '}
+                      <span className="font-semibold text-white">{totals.totalPasses}</span>
+                    </p>
+                    <p className="tabular-nums text-text-secondary">
+                      Total Quantity:{' '}
+                      <span className="font-semibold text-white">
+                        {totals.totalQuantity.toFixed(2)}
+                      </span>
+                    </p>
+                  </div>
+                </Card>
+              ) : null}
             </>
           ) : null}
         </>

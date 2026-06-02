@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AdaptiveDialog } from '@/components/ui/AdaptiveDialog';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { fetchVehicleDataDetail } from '@/lib/epass';
 import { formatQty } from '@/lib/epass-aggregate';
 import { formatVehicleDataPreview, formatVehicleDataQty } from '@/lib/epass-vehicle-data-view';
@@ -97,14 +98,7 @@ export function VehicleDataDetailDialog({
         </Card>
       ) : null}
 
-      {isError ? (
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-          <Button variant="secondary" className="text-sm" onClick={() => refetch()}>
-            Retry
-          </Button>
-        </div>
-      ) : null}
+      {isError ? <DataErrorCard onRetry={() => refetch()} /> : null}
 
       {!isLoading && !isError && data ? (
         <div className="space-y-6">

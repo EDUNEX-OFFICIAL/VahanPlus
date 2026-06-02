@@ -71,8 +71,8 @@ export function AdaptiveFilterSheet({
           className={cn(
             'fixed z-50 flex flex-col overflow-hidden border border-border-default/80 bg-surface-primary/95 text-white shadow-2xl shadow-black/40 backdrop-blur-2xl focus:outline-none',
             'inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] max-h-[min(72dvh,calc(100dvh-11rem),640px)] rounded-[1.75rem]',
-            'md:inset-y-4 md:right-4 md:left-auto md:h-auto md:w-[min(420px,calc(100vw-2rem))] md:rounded-[1.75rem]',
-            'xl:top-24 xl:bottom-auto xl:right-8 xl:max-h-[calc(100dvh-8rem)]',
+            'md:inset-auto md:left-4 md:top-[calc(5.25rem+env(safe-area-inset-top))] md:h-auto md:w-[min(420px,calc(100vw-2rem))] md:rounded-[1.75rem]',
+            'xl:top-24 xl:left-8 xl:max-h-[calc(100dvh-8rem)]',
           )}
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border-default/70 bg-surface-primary/95 px-4 py-4 sm:px-5">

@@ -1,4 +1,7 @@
-import { parseConsignerMineralsParam, serializeConsignerMinerals } from '@/lib/epass-consigner-view';
+import {
+  parseConsignerMineralsParam,
+  serializeConsignerMinerals,
+} from '@/lib/epass-consigner-view';
 import { parseDistrictsParam, serializeDistricts } from '@/lib/epass-district-view';
 import type { ChalaanListParams, EpassBrowseFilterValues } from '@/lib/epass-types';
 import type { EpassDateMode } from '@/lib/epass-report-date';
@@ -21,15 +24,13 @@ const PRESERVE_KEYS = [
   'hideZeroPasses',
   'consigner',
   'consignee',
+  'destination',
 ] as const;
 
 export function parseEpassFilterParams(searchParams: URLSearchParams): EpassBrowseFilterValues {
   const districtRaw = searchParams.get('district') ?? searchParams.get('dmo') ?? '';
   return {
-    operator: parseOperatorParam(
-      searchParams.get('operator'),
-      searchParams.get('role'),
-    ),
+    operator: parseOperatorParam(searchParams.get('operator'), searchParams.get('role')),
     minerals: parseConsignerMineralsParam(searchParams.get('mineral')),
     dateMode: searchParams.get('dateMode') === 'range' ? 'range' : 'specific',
     dateFrom: searchParams.get('dateFrom') ?? '',
@@ -42,6 +43,7 @@ export function parseEpassFilterParams(searchParams: URLSearchParams): EpassBrow
     consigneeSearch: searchParams.get('consignee') ?? '',
     hideZeroPasses: searchParams.get('hideZeroPasses') === '1',
     consignerRowId: searchParams.get('consignerRowId') ?? '',
+    destination: searchParams.get('destination') ?? '',
   };
 }
 
@@ -65,6 +67,7 @@ export function serializeEpassFilterParams(
     consigner: filters.consignerSearch.trim() || null,
     consignee: filters.consigneeSearch.trim() || null,
     consignerRowId: filters.consignerRowId || null,
+    destination: filters.destination.trim() || null,
     ...extra,
   };
 }
@@ -87,10 +90,7 @@ export function copyEpassParamsFromSearch(
   return next;
 }
 
-export function buildConsigneeHref(
-  consignerRowId: string,
-  searchParams: URLSearchParams,
-): string {
+export function buildConsigneeHref(consignerRowId: string, searchParams: URLSearchParams): string {
   const next = copyEpassParamsFromSearch(searchParams);
   next.set('consignerRowId', consignerRowId);
   const qs = next.toString();
@@ -153,6 +153,7 @@ export function toConsignerChallansQueryParams(
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     consignee: filters.consigneeSearch.trim() || undefined,
+    destination: filters.destination.trim() || undefined,
     hideZeroPasses: filters.hideZeroPasses ? '1' : undefined,
   };
 }
@@ -172,6 +173,7 @@ export function toChalaanListQueryParams(
     mineral: serializeConsignerMinerals(filters.minerals),
     consigner: filters.consignerSearch.trim() || undefined,
     consignee: filters.consigneeSearch.trim() || undefined,
+    destination: filters.destination.trim() || undefined,
     hideZeroPasses: filters.hideZeroPasses,
     sort: sortKey as ChalaanListParams['sort'],
     dir: sortKey ? sortDir : undefined,

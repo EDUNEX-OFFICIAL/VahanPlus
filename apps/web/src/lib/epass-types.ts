@@ -80,6 +80,8 @@ export interface EpassChallanRowDto {
   challanCount: number;
   dispatchedQty: number;
   unit: string | null;
+  ghatNumber: string | null;
+  operatorType: OperatorType | null;
   detailUrl: string | null;
   scrapedAt: string;
 }
@@ -98,6 +100,7 @@ export interface EpassBrowseFilterValues {
   consigneeSearch: string;
   hideZeroPasses: boolean;
   consignerRowId: string;
+  destination: string;
 }
 
 export type ConsigneeSortKey = 'date' | 'consignee' | 'mineral' | 'passes' | 'qty' | 'slNo';
@@ -347,6 +350,7 @@ export interface ChalaanListParams {
   mineral?: string;
   consigner?: string;
   consignee?: string;
+  destination?: string;
   hideZeroPasses?: boolean;
   sort?: ChalaanSortKey;
   dir?: ChalaanSortDir;
@@ -381,6 +385,9 @@ export interface EpassVehicleStatusListItemDto {
   grossWeightMt: number | null;
   unladenWeightMt: number | null;
   found: boolean;
+  insuranceDaysLeft: number | null;
+  rcDaysLeft: number | null;
+  fitnessDaysLeft: number | null;
   scrapedAt: string;
 }
 
@@ -404,9 +411,17 @@ export type VehicleStatusFoundFilter = 'all' | 'found' | 'notFound';
 export interface VehicleStatusFilterValues {
   search: string;
   found: VehicleStatusFoundFilter;
+  insuranceExpiryDays: string;
+  rcExpiryDays: string;
+  fitnessExpiryDays: string;
+  grossWeightMin: string;
+  grossWeightMax: string;
+  vehicleClass: string;
+  esimValidity: string;
 }
 
 export type VehicleStatusSortKey =
+  | 'serialNo'
   | 'vehicleRegNo'
   | 'ksRegNo'
   | 'vehicleClass'
@@ -416,6 +431,9 @@ export type VehicleStatusSortKey =
   | 'puccUpTo'
   | 'imeiNo'
   | 'esimValidity'
+  | 'insuranceDaysLeft'
+  | 'rcDaysLeft'
+  | 'fitnessDaysLeft'
   | 'grossWeightMt'
   | 'unladenWeightMt'
   | 'scrapedAt';
@@ -425,6 +443,13 @@ export type VehicleStatusSortDir = 'asc' | 'desc';
 export interface VehicleStatusListParams {
   q?: string;
   found?: boolean;
+  insuranceExpiryDays?: number;
+  rcExpiryDays?: number;
+  fitnessExpiryDays?: number;
+  grossWeightMin?: number;
+  grossWeightMax?: number;
+  vehicleClass?: string;
+  esimValidity?: string;
   sort?: VehicleStatusSortKey;
   dir?: VehicleStatusSortDir;
   limit?: number;

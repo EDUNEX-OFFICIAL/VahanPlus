@@ -3,14 +3,14 @@
 import { Suspense, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
-import { PageStack } from '@/components/ui/ResponsiveLayout';
+import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { VehicleStatusFilters } from '@/components/khanan/VehicleStatusFilters';
 import { VehicleStatusMetaBar } from '@/components/khanan/VehicleStatusMetaBar';
 import { VehicleStatusTable } from '@/components/khanan/VehicleStatusTable';
 import { VehicleStatusPageLoading, VehicleStatusPageSkeleton } from '@/components/khanan/skeletons';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
+import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
+import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
   parseVehicleStatusFilters,
   serializeVehicleStatusFoundFilter,
@@ -33,6 +33,9 @@ function parseSortKey(raw: string | null): VehicleStatusSortKey | null {
     'rcFitUpTo',
     'rcTaxUpTo',
     'insuranceUpTo',
+    'insuranceDaysLeft',
+    'rcDaysLeft',
+    'fitnessDaysLeft',
     'puccUpTo',
     'imeiNo',
     'esimValidity',
@@ -61,6 +64,21 @@ function VehicleStatusPageContent() {
           : appliedFilters.found === 'notFound'
             ? false
             : undefined,
+      insuranceExpiryDays: appliedFilters.insuranceExpiryDays
+        ? Number(appliedFilters.insuranceExpiryDays)
+        : undefined,
+      rcExpiryDays: appliedFilters.rcExpiryDays ? Number(appliedFilters.rcExpiryDays) : undefined,
+      fitnessExpiryDays: appliedFilters.fitnessExpiryDays
+        ? Number(appliedFilters.fitnessExpiryDays)
+        : undefined,
+      grossWeightMin: appliedFilters.grossWeightMin
+        ? Number(appliedFilters.grossWeightMin)
+        : undefined,
+      grossWeightMax: appliedFilters.grossWeightMax
+        ? Number(appliedFilters.grossWeightMax)
+        : undefined,
+      vehicleClass: appliedFilters.vehicleClass || undefined,
+      esimValidity: appliedFilters.esimValidity || undefined,
       sort: sortKey,
       dir: sortDir,
       limit: pageSize,
@@ -108,6 +126,13 @@ function VehicleStatusPageContent() {
       updateParams({
         q: next.search.trim() || null,
         found: serializeVehicleStatusFoundFilter(next.found),
+        insuranceExpiryDays: next.insuranceExpiryDays.trim() || null,
+        rcExpiryDays: next.rcExpiryDays.trim() || null,
+        fitnessExpiryDays: next.fitnessExpiryDays.trim() || null,
+        grossWeightMin: next.grossWeightMin.trim() || null,
+        grossWeightMax: next.grossWeightMax.trim() || null,
+        vehicleClass: next.vehicleClass.trim() || null,
+        esimValidity: next.esimValidity.trim() || null,
         offset: '0',
       });
     },
@@ -118,26 +143,29 @@ function VehicleStatusPageContent() {
     updateParams({
       q: null,
       found: null,
+      insuranceExpiryDays: null,
+      rcExpiryDays: null,
+      fitnessExpiryDays: null,
+      grossWeightMin: null,
+      grossWeightMax: null,
+      vehicleClass: null,
+      esimValidity: null,
       offset: '0',
     });
   }, [updateParams]);
 
   const total = data?.total ?? 0;
   const activeSortKey = searchParams.get('sort') ? sortKey : null;
+  const noRecords = (data?.stats?.total ?? 0) === 0;
 
   if (isError) {
     return (
       <PageStack>
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">Vehicle Status</h1>
-        <Card className="border-red-500/30">
-          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-          {error instanceof Error && error.message ? (
-            <p className="mt-2 text-xs text-text-secondary">{error.message}</p>
-          ) : null}
-          <Button className="mt-4" variant="secondary" onClick={() => refetch()}>
-            Retry
-          </Button>
-        </Card>
+        <DataErrorCard
+          message={error instanceof Error ? error.message : undefined}
+          onRetry={() => refetch()}
+        />
       </PageStack>
     );
   }
@@ -160,35 +188,41 @@ function VehicleStatusPageContent() {
     <PageStack>
       <h1 className="text-2xl font-semibold text-white sm:text-3xl">Vehicle Status</h1>
 
-      <VehicleStatusMetaBar stats={data?.stats ?? null} />
-
-      <VehicleStatusFilters
-        values={appliedFilters}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-      />
-
-      {data ? (
+      {noRecords ? (
+        <EpassEmptyState message="No vehicle status records found" />
+      ) : (
         <>
-          <VehicleStatusTable
-            rows={data.items}
-            sortKey={activeSortKey}
-            sortDir={sortDir}
-            onSort={handleSort}
+          <VehicleStatusMetaBar stats={data?.stats ?? null} />
+
+          <VehicleStatusFilters
+            values={appliedFilters}
+            onApply={handleApplyFilters}
+            onClear={handleClearFilters}
           />
-          {data.items.length > 0 ? (
-            <ResponsivePagination
-              total={total}
-              offset={offset}
-              pageSize={pageSize}
-              onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
-              onPageSizeChange={(nextSize) =>
-                updateParams({ limit: String(nextSize), offset: '0' })
-              }
-            />
+
+          {data ? (
+            <>
+              <VehicleStatusTable
+                rows={data.items}
+                sortKey={activeSortKey}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
+              {data.items.length > 0 ? (
+                <ResponsivePagination
+                  total={total}
+                  offset={offset}
+                  pageSize={pageSize}
+                  onPageChange={(nextOffset) => updateParams({ offset: String(nextOffset) })}
+                  onPageSizeChange={(nextSize) =>
+                    updateParams({ limit: String(nextSize), offset: '0' })
+                  }
+                />
+              ) : null}
+            </>
           ) : null}
         </>
-      ) : null}
+      )}
     </PageStack>
   );
 }

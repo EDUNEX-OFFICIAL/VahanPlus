@@ -2,6 +2,7 @@
 
 import { VehicleStatusMetaBarSkeleton } from '@/components/khanan/skeletons/VehicleStatusMetaBarSkeleton';
 import { Card } from '@/components/ui/Card';
+import { formatDateDmy } from '@/lib/epass-report-date';
 import type { VehicleStatusStatsDto } from '@/lib/epass-types';
 
 interface VehicleStatusMetaBarProps {
@@ -15,19 +16,10 @@ export function VehicleStatusMetaBar({ stats, isLoading = false }: VehicleStatus
   }
 
   if (!stats || stats.total === 0) {
-    return (
-      <Card className="border-amber-500/30 bg-amber-500/5">
-        <p className="text-sm text-text-secondary">No data available</p>
-      </Card>
-    );
+    return null;
   }
 
-  const lastScraped = stats.lastScrapedAt
-    ? new Date(stats.lastScrapedAt).toLocaleString('en-IN', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      })
-    : '—';
+  const lastScraped = stats.lastScrapedAt ? formatDateDmy(new Date(stats.lastScrapedAt)) : '—';
 
   return (
     <Card>

@@ -10,7 +10,7 @@ import { EpassBrowsePageLoading, EpassBrowsePageSkeleton } from '@/components/kh
 import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import { Button } from '@/components/ui/Button';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
-import { Card } from '@/components/ui/Card';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
@@ -279,6 +279,7 @@ function VehicleDataPageContent() {
         consigneeSearch: '',
         hideZeroPasses: false,
         consignerRowId: '',
+        destination: '',
       }),
       q: null,
       sort: null,
@@ -298,19 +299,12 @@ function VehicleDataPageContent() {
   if (snapshotsError || isError) {
     return (
       <PageStack>
-        <Card className="border-red-500/30">
-          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-          <Button
-            className="mt-4"
-            variant="secondary"
-            onClick={() => {
-              void refetchSnapshots();
-              void refetch();
-            }}
-          >
-            Retry
-          </Button>
-        </Card>
+        <DataErrorCard
+          onRetry={() => {
+            void refetchSnapshots();
+            void refetch();
+          }}
+        />
       </PageStack>
     );
   }

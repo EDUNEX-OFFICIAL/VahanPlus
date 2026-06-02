@@ -3,9 +3,9 @@
 import { Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
-import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { Card } from '@/components/ui/Card';
+import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
@@ -246,6 +246,13 @@ function ChalaanPageContent() {
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);
   const total = data?.total ?? 0;
+  const pageTotals = useMemo(() => {
+    const rows = data?.items ?? [];
+    return {
+      quantity: rows.reduce((sum, row) => sum + row.quantity, 0),
+      chalaan: rows.length,
+    };
+  }, [data?.items]);
 
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
   const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, browseEmpty);
@@ -267,6 +274,7 @@ function ChalaanPageContent() {
         consigneeSearch: '',
         hideZeroPasses: false,
         consignerRowId: '',
+        destination: '',
       }),
       sort: null,
       dir: null,
@@ -277,19 +285,12 @@ function ChalaanPageContent() {
   if (snapshotsError || isError) {
     return (
       <PageStack>
-        <Card className="border-red-500/30">
-          <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-          <Button
-            className="mt-4"
-            variant="secondary"
-            onClick={() => {
-              void refetchSnapshots();
-              void refetch();
-            }}
-          >
-            Retry
-          </Button>
-        </Card>
+        <DataErrorCard
+          onRetry={() => {
+            void refetchSnapshots();
+            void refetch();
+          }}
+        />
       </PageStack>
     );
   }
@@ -316,6 +317,20 @@ function ChalaanPageContent() {
       ) : data ? (
         <>
           <ChalaanTable rows={data.items} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+          {data.items.length > 0 ? (
+            <Card>
+              <div className="flex flex-wrap gap-6 text-sm">
+                <p className="tabular-nums text-text-secondary">
+                  Total Chalaan:{' '}
+                  <span className="font-semibold text-white">{pageTotals.chalaan}</span>
+                </p>
+                <p className="tabular-nums text-text-secondary">
+                  Total Quantity:{' '}
+                  <span className="font-semibold text-white">{pageTotals.quantity.toFixed(2)}</span>
+                </p>
+              </div>
+            </Card>
+          ) : null}
           {data.items.length > 0 ? (
             <ResponsivePagination
               total={total}

@@ -154,10 +154,11 @@ export function DistrictEpassTable({
           <table className="w-full min-w-[800px] border-collapse text-left text-sm">
             <thead className="sticky top-0 z-10 bg-surface-primary">
               <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
+                <th className="px-3 py-2 font-semibold">S.No.</th>
                 {COLUMNS.map((col) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-3 font-semibold ${col.align === 'right' ? 'text-right' : ''}`}
+                    className={`px-3 py-2 font-semibold ${col.align === 'right' ? 'text-right' : ''}`}
                   >
                     <button
                       type="button"
@@ -177,6 +178,7 @@ export function DistrictEpassTable({
                   key={row.district}
                   className="border-b border-border-default/60 transition hover:bg-indigo-500/5"
                 >
+                  <td className="px-4 py-2.5 tabular-nums text-text-secondary">{row.slNo}</td>
                   <td className="px-4 py-2.5 font-medium text-white">{row.district}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     {formatInt(row.totalUsers)}

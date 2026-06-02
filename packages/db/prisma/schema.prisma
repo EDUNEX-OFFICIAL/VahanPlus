@@ -205,6 +205,7 @@ model EpassChallanRow {
   challanCount     Int
   dispatchedQty    Decimal          @db.Decimal(18, 3)
   unit             String?
+  ghatNumber       String?
   detailUrl        String?
   scrapedAt        DateTime         @default(now())
   passes           EpassChallanPassRow[]

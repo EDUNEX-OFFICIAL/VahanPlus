@@ -57,7 +57,9 @@ function LoginForm() {
     const password = String(form.get('password') || '');
     try {
       await login(username, password);
-      router.push(nextPath);
+      await fetchSessionUser({ redirectOnUnauthenticated: false });
+      window.location.assign(nextPath);
+      return;
     } catch (err) {
       setError(loginErrorMessage(err));
     } finally {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { KhananConfigActions } from '@/components/khanan/config/KhananConfigActions';
 import { KhananConfigAdvanced } from '@/components/khanan/config/KhananConfigAdvanced';
@@ -178,14 +179,7 @@ export default function KhananConfigPage() {
   }
 
   if (isError) {
-    return (
-      <Card className="border-red-500/30">
-        <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-        <Button className="mt-4" variant="secondary" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </Card>
-    );
+    return <DataErrorCard onRetry={() => refetch()} />;
   }
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(data.config) || draftPreset != null;

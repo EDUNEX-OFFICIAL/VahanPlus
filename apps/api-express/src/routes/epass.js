@@ -16,6 +16,63 @@ function toNumber(value) {
   return Number(value);
 }
 
+function normalizeMineralLabel(value) {
+  const source = String(value ?? '').trim();
+  if (!source) return null;
+  const lower = source.toLowerCase();
+  if (lower.includes('yellow')) return 'Sand Yellow';
+  if (lower.includes('white')) return 'Sand White Sand';
+  const cleaned = source
+    .replace(/\bno\s*size\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned || null;
+}
+
+function normalizeConsignerName(value) {
+  const source = String(value ?? '').trim();
+  if (!source) return '';
+  return source.replace(/-\d{5,}$/g, '').trim();
+}
+
+function formatDateDmy(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return `${String(date.getDate()).padStart(2, '0')}-${months[date.getMonth()]}-${date.getFullYear()}`;
+}
+
+function parseDateFlexible(value) {
+  const source = String(value ?? '').trim();
+  if (!source) return null;
+  const report = parseReportDate(source);
+  if (report) return report;
+  const timestamp = Date.parse(source);
+  if (!Number.isNaN(timestamp)) return new Date(timestamp);
+  return null;
+}
+
+function daysLeftFromDate(value) {
+  const parsed = parseDateFlexible(value);
+  if (!parsed) return null;
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const target = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  return Math.ceil((target.getTime() - start.getTime()) / 86400000);
+}
+
 function parseOperatorFromQuery(query) {
   const raw = query.operator ?? query.role;
   if (raw === 'lessee' || raw === 'dealer') return raw;
@@ -91,8 +148,8 @@ function mapConsigner(row) {
     operatorType,
     role: operatorType,
     slNo: row.slNo,
-    consignerName: row.consignerName,
-    mineral: row.mineral,
+    consignerName: normalizeConsignerName(row.consignerName),
+    mineral: normalizeMineralLabel(row.mineral),
     mineralType: row.mineralType,
     challanCount: row.challanCount,
     challanDetailUrl: row.challanDetailUrl,
@@ -365,11 +422,13 @@ function mapChallan(row) {
     slNo: row.slNo,
     reportDate,
     consigneeName: row.consigneeName,
-    mineral: row.mineral,
+    mineral: normalizeMineralLabel(row.mineral),
     mineralCategory: row.mineralCategory,
     challanCount: row.challanCount,
     dispatchedQty: toNumber(row.dispatchedQty),
     unit: row.unit,
+    ghatNumber: row.ghatNumber ?? null,
+    operatorType: row.consignerRow?.operatorType ?? null,
     detailUrl: row.detailUrl,
     scrapedAt: row.scrapedAt.toISOString(),
   };
@@ -379,7 +438,7 @@ function mapChalaanListItem(row) {
   const { consignerRow } = row;
   return {
     ...mapChallan(row),
-    consignerName: consignerRow.consignerName,
+    consignerName: normalizeConsignerName(consignerRow.consignerName),
     operatorType: consignerRow.operatorType,
     role: consignerRow.operatorType,
     dmoName: consignerRow.districtRow.dmoName,
@@ -506,6 +565,10 @@ function buildChalaanPassWhere(snapshotId, query) {
   if (consignee) {
     where.consigneeName = { contains: consignee, mode: 'insensitive' };
   }
+  const destination = typeof query.destination === 'string' ? query.destination.trim() : '';
+  if (destination) {
+    where.destination = { contains: destination, mode: 'insensitive' };
+  }
 
   const minerals = parseMineralList(query);
   if (minerals.length > 0) {
@@ -615,7 +678,8 @@ function aggregatePassRow(map, row) {
   const qty = toNumber(row.quantity);
   agg.quantityByUnit[unitKey] = (agg.quantityByUnit[unitKey] ?? 0) + qty;
 
-  if (row.mineral) agg.minerals.add(row.mineral);
+  const mineral = normalizeMineralLabel(row.mineral);
+  if (mineral) agg.minerals.add(mineral);
   if (row.destination) agg.destinations.add(row.destination);
 
   const consignerRow = row.challanRow?.consignerRow;
@@ -682,7 +746,7 @@ function mapChalaanPassListItem(row) {
   return {
     ...mapChallanPass(row),
     consignerRowId: consignerRow.id,
-    consignerName: consignerRow.consignerName,
+    consignerName: normalizeConsignerName(consignerRow.consignerName),
     operatorType: consignerRow.operatorType,
     role: consignerRow.operatorType,
     dmoName: consignerRow.districtRow.dmoName,
@@ -934,11 +998,11 @@ function mapChallanPass(row) {
     consigneeName: row.consigneeName,
     challanNo: row.challanNo,
     portalPassId: row.portalPassId,
-    mineral: row.mineral,
+    mineral: normalizeMineralLabel(row.mineral),
     mineralCategory: row.mineralCategory,
     vehicleRegNo: row.vehicleRegNo,
     destination: row.destination,
-    transportedDate: row.transportedDate,
+    transportedDate: formatDateDmy(parseDateFlexible(row.transportedDate)) ?? row.transportedDate,
     quantity: toNumber(row.quantity),
     unit: row.unit,
     checkStatus: row.checkStatus,
@@ -955,7 +1019,7 @@ router.get('/chalaan-passes', async (req, res) => {
     return res.json({ snapshot: null, total: 0, limit: 50, offset: 0, items: [] });
   }
 
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
   const where = buildChalaanPassWhere(snapshot.id, req.query);
   const orderBy = buildChalaanPassOrderBy(req.query);
@@ -992,7 +1056,7 @@ router.get('/vehicle-data', async (req, res) => {
     return res.json({ snapshot: null, total: 0, limit: 50, offset: 0, items: [] });
   }
 
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
   const sort = typeof req.query.sort === 'string' ? req.query.sort : 'vehicle';
   const dir = req.query.dir === 'desc' ? 'desc' : 'asc';
@@ -1144,7 +1208,7 @@ router.get('/chalaans', async (req, res) => {
     return res.json({ snapshot: null, total: 0, limit: 50, offset: 0, items: [] });
   }
 
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
   const where = buildChalaanWhere(snapshot.id, req.query);
   const orderBy = buildChalaanOrderBy(req.query);
@@ -1231,7 +1295,7 @@ router.get('/consigners', async (req, res) => {
     return res.json({ snapshot: null, total: 0, items: [] });
   }
 
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
   const where = buildConsignerWhere(snapshot.id, req.query);
 
@@ -1332,6 +1396,33 @@ router.get('/consigners/:id/challans', async (req, res) => {
   });
 });
 
+router.patch('/challans/:id/ghat-number', async (req, res) => {
+  const prisma = getPrisma();
+  const rawGhat = typeof req.body?.ghatNumber === 'string' ? req.body.ghatNumber : '';
+  const ghatNumber = rawGhat.trim();
+  if (ghatNumber.length > 64) {
+    return res.status(400).json({ error: 'Ghat number is too long' });
+  }
+
+  const challan = await prisma.epassChallanRow.findUnique({
+    where: { id: req.params.id },
+    include: { consignerRow: { select: { operatorType: true } } },
+  });
+  if (!challan) {
+    return res.status(404).json({ error: 'Challan row not found' });
+  }
+  if (challan.consignerRow.operatorType !== 'lessee') {
+    return res.status(400).json({ error: 'Ghat number can be set only for Lessee rows' });
+  }
+
+  const updated = await prisma.epassChallanRow.update({
+    where: { id: challan.id },
+    data: { ghatNumber: ghatNumber || null },
+    include: { consignerRow: { include: { districtRow: { include: { snapshot: true } } } } },
+  });
+  return res.json({ item: mapChallan(updated) });
+});
+
 function buildVehicleStatusWhere(query) {
   const where = {};
   const q = typeof query.q === 'string' ? query.q.trim() : '';
@@ -1346,6 +1437,22 @@ function buildVehicleStatusWhere(query) {
   } else if (query.found === '1' || query.found === 'true') {
     where.found = true;
   }
+  const vehicleClass = typeof query.vehicleClass === 'string' ? query.vehicleClass.trim() : '';
+  if (vehicleClass) {
+    where.vehicleClass = { contains: vehicleClass, mode: 'insensitive' };
+  }
+  const esimValidity = typeof query.esimValidity === 'string' ? query.esimValidity.trim() : '';
+  if (esimValidity) {
+    where.esimValidity = { contains: esimValidity, mode: 'insensitive' };
+  }
+  const grossWeightMin = Number(query.grossWeightMin);
+  const grossWeightMax = Number(query.grossWeightMax);
+  if (Number.isFinite(grossWeightMin) || Number.isFinite(grossWeightMax)) {
+    where.grossWeightMt = {
+      ...(Number.isFinite(grossWeightMin) ? { gte: grossWeightMin } : {}),
+      ...(Number.isFinite(grossWeightMax) ? { lte: grossWeightMax } : {}),
+    };
+  }
   return where;
 }
 
@@ -1359,6 +1466,9 @@ function buildVehicleStatusOrderBy(query) {
     rcFitUpTo: { rcFitUpTo: dir },
     rcTaxUpTo: { rcTaxUpTo: dir },
     insuranceUpTo: { insuranceUpTo: dir },
+    insuranceDaysLeft: { insuranceUpTo: dir },
+    rcDaysLeft: { rcTaxUpTo: dir },
+    fitnessDaysLeft: { rcFitUpTo: dir },
     puccUpTo: { puccUpTo: dir },
     imeiNo: { imeiNo: dir },
     esimValidity: { esimValidity: dir },
@@ -1384,25 +1494,22 @@ function mapVehicleStatusListItem(row) {
     grossWeightMt: row.grossWeightMt != null ? toNumber(row.grossWeightMt) : null,
     unladenWeightMt: row.unladenWeightMt != null ? toNumber(row.unladenWeightMt) : null,
     found: row.found,
+    insuranceDaysLeft: daysLeftFromDate(row.insuranceUpTo),
+    rcDaysLeft: daysLeftFromDate(row.rcTaxUpTo),
+    fitnessDaysLeft: daysLeftFromDate(row.rcFitUpTo),
     scrapedAt: row.scrapedAt.toISOString(),
   };
 }
 
 router.get('/vehicle-status', async (req, res) => {
   const prisma = getPrisma();
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
   const where = buildVehicleStatusWhere(req.query);
   const orderBy = buildVehicleStatusOrderBy(req.query);
 
-  const [total, rows, statsTotal, statsFound, statsNotFound, latestRow] = await Promise.all([
-    prisma.epassVehicleStatusRow.count({ where }),
-    prisma.epassVehicleStatusRow.findMany({
-      where,
-      orderBy,
-      take: limit,
-      skip: offset,
-    }),
+  const [rows, statsTotal, statsFound, statsNotFound, latestRow] = await Promise.all([
+    prisma.epassVehicleStatusRow.findMany({ where, orderBy }),
     prisma.epassVehicleStatusRow.count(),
     prisma.epassVehicleStatusRow.count({ where: { found: true } }),
     prisma.epassVehicleStatusRow.count({ where: { found: false } }),
@@ -1411,12 +1518,31 @@ router.get('/vehicle-status', async (req, res) => {
       select: { scrapedAt: true },
     }),
   ]);
+  let mapped = rows.map(mapVehicleStatusListItem);
+  const insuranceExpiryDays = Number(req.query.insuranceExpiryDays);
+  const rcExpiryDays = Number(req.query.rcExpiryDays);
+  const fitnessExpiryDays = Number(req.query.fitnessExpiryDays);
+  if (Number.isFinite(insuranceExpiryDays)) {
+    mapped = mapped.filter(
+      (r) => r.insuranceDaysLeft != null && r.insuranceDaysLeft <= insuranceExpiryDays,
+    );
+  }
+  if (Number.isFinite(rcExpiryDays)) {
+    mapped = mapped.filter((r) => r.rcDaysLeft != null && r.rcDaysLeft <= rcExpiryDays);
+  }
+  if (Number.isFinite(fitnessExpiryDays)) {
+    mapped = mapped.filter(
+      (r) => r.fitnessDaysLeft != null && r.fitnessDaysLeft <= fitnessExpiryDays,
+    );
+  }
+  const total = mapped.length;
+  const pageItems = mapped.slice(offset, offset + limit);
 
   res.json({
     total,
     limit,
     offset,
-    items: rows.map(mapVehicleStatusListItem),
+    items: pageItems,
     stats: {
       total: statsTotal,
       found: statsFound,

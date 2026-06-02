@@ -108,6 +108,7 @@ export function fetchChalaanList(params: ChalaanListParams = {}) {
   if (params.mineral) q.set('mineral', params.mineral);
   if (params.consigner) q.set('consigner', params.consigner);
   if (params.consignee) q.set('consignee', params.consignee);
+  if (params.destination) q.set('destination', params.destination);
   if (params.hideZeroPasses) q.set('hideZeroPasses', '1');
   if (params.sort) q.set('sort', params.sort);
   if (params.dir) q.set('dir', params.dir);
@@ -137,6 +138,13 @@ export function fetchChalaanPassList(params: ChalaanListParams = {}) {
 
 export function fetchChalaanPasses(challanRowId: string) {
   return apiFetch<ChalaanPassesResponse>(`/epass/chalaans/${challanRowId}/passes`);
+}
+
+export function updateChallanGhatNumber(challanRowId: string, ghatNumber: string) {
+  return apiFetch<{ item: unknown }>(`/epass/challans/${challanRowId}/ghat-number`, {
+    method: 'PATCH',
+    body: JSON.stringify({ ghatNumber }),
+  });
 }
 
 type EpassPassBrowseQueryParams = {
@@ -194,6 +202,15 @@ export function fetchVehicleStatusList(params: VehicleStatusListParams = {}) {
   if (params.q) q.set('q', params.q);
   if (params.found === true) q.set('found', '1');
   if (params.found === false) q.set('found', '0');
+  if (params.insuranceExpiryDays != null)
+    q.set('insuranceExpiryDays', String(params.insuranceExpiryDays));
+  if (params.rcExpiryDays != null) q.set('rcExpiryDays', String(params.rcExpiryDays));
+  if (params.fitnessExpiryDays != null)
+    q.set('fitnessExpiryDays', String(params.fitnessExpiryDays));
+  if (params.grossWeightMin != null) q.set('grossWeightMin', String(params.grossWeightMin));
+  if (params.grossWeightMax != null) q.set('grossWeightMax', String(params.grossWeightMax));
+  if (params.vehicleClass) q.set('vehicleClass', params.vehicleClass);
+  if (params.esimValidity) q.set('esimValidity', params.esimValidity);
   if (params.sort) q.set('sort', params.sort);
   if (params.dir) q.set('dir', params.dir);
   if (params.limit != null) q.set('limit', String(params.limit));

@@ -23,7 +23,7 @@ export function ResponsivePagination({
   total,
   offset,
   pageSize,
-  pageSizeOptions = [25, 50, 100],
+  pageSizeOptions = [25, 50, 100, 250, 500, 1000],
   onPageChange,
   onPageSizeChange,
   className,

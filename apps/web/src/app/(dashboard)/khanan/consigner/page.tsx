@@ -3,8 +3,8 @@
 import { Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
@@ -232,14 +232,7 @@ function ConsignerDrillDown({
   }
 
   if (isError || !data) {
-    return (
-      <Card className="border-red-500/30">
-        <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-        <Button className="mt-4" variant="secondary" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </Card>
-    );
+    return <DataErrorCard onRetry={() => refetch()} />;
   }
 
   const opLabel = operatorType === 'lessee' ? 'Lessee' : 'Dealer';
@@ -481,15 +474,10 @@ function ConsignerBrowse() {
 
   if (isErrorAll) {
     return (
-      <Card className="border-red-500/30">
-        <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-        {error instanceof Error && error.message ? (
-          <p className="mt-2 text-xs text-text-secondary">{error.message}</p>
-        ) : null}
-        <Button className="mt-4" variant="secondary" onClick={() => refetchAll()}>
-          Retry
-        </Button>
-      </Card>
+      <DataErrorCard
+        message={error instanceof Error ? error.message : undefined}
+        onRetry={() => refetchAll()}
+      />
     );
   }
 

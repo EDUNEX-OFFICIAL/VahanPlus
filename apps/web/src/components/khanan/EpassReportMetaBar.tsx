@@ -1,5 +1,6 @@
 import { EpassReportMetaBarSkeleton } from '@/components/khanan/skeletons/EpassReportMetaBarSkeleton';
 import { Card } from '@/components/ui/Card';
+import { formatDateDmy, normalizeReportDate } from '@/lib/epass-report-date';
 import type { EpassSnapshotDto } from '@/lib/epass-types';
 
 interface EpassReportMetaBarProps {
@@ -16,10 +17,7 @@ export function EpassReportMetaBar({ snapshot, isLoading = false }: EpassReportM
     return null;
   }
 
-  const scraped = new Date(snapshot.scrapedAt).toLocaleString('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  const scrapedDate = formatDateDmy(new Date(snapshot.scrapedAt));
 
   return (
     <Card>
@@ -27,7 +25,9 @@ export function EpassReportMetaBar({ snapshot, isLoading = false }: EpassReportM
       <div className="mt-4 flex flex-wrap gap-6 text-sm">
         <div>
           <p className="text-xs uppercase tracking-wider text-text-secondary">Report date</p>
-          <p className="mt-1 font-semibold text-white">{snapshot.reportDate}</p>
+          <p className="mt-1 font-semibold text-white">
+            {normalizeReportDate(snapshot.reportDate)}
+          </p>
         </div>
         {snapshot.reportGeneratedOn ? (
           <div>
@@ -37,7 +37,7 @@ export function EpassReportMetaBar({ snapshot, isLoading = false }: EpassReportM
         ) : null}
         <div>
           <p className="text-xs uppercase tracking-wider text-text-secondary">Scraped at</p>
-          <p className="mt-1 font-semibold text-white">{scraped}</p>
+          <p className="mt-1 font-semibold text-white">{scrapedDate}</p>
         </div>
         {snapshot.rowCount > 0 ? (
           <div>

@@ -32,7 +32,7 @@ async function hasValidSession(request: NextRequest): Promise<boolean> {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return false;
   try {
-    await jwtVerify(token, getJwtSecret());
+    await jwtVerify(token, getJwtSecret(), { algorithms: ['HS256'] });
     return true;
   } catch {
     return false;

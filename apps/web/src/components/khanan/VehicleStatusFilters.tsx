@@ -85,6 +85,70 @@ export function VehicleStatusFilters({ values, onApply, onClear }: VehicleStatus
           ))}
         </div>
       </FilterSection>
+
+      <FilterSection title="Expiry windows (days)">
+        <div className="grid grid-cols-3 gap-2">
+          <input
+            type="number"
+            min={0}
+            value={draft.insuranceExpiryDays}
+            onChange={(e) => patch({ insuranceExpiryDays: e.target.value })}
+            placeholder="Insurance"
+            className={filterInputClass}
+          />
+          <input
+            type="number"
+            min={0}
+            value={draft.rcExpiryDays}
+            onChange={(e) => patch({ rcExpiryDays: e.target.value })}
+            placeholder="RC"
+            className={filterInputClass}
+          />
+          <input
+            type="number"
+            min={0}
+            value={draft.fitnessExpiryDays}
+            onChange={(e) => patch({ fitnessExpiryDays: e.target.value })}
+            placeholder="Fitness"
+            className={filterInputClass}
+          />
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Vehicle metadata">
+        <input
+          type="text"
+          value={draft.vehicleClass}
+          onChange={(e) => patch({ vehicleClass: e.target.value })}
+          placeholder="Vehicle class"
+          className={filterInputClass}
+        />
+        <input
+          type="text"
+          value={draft.esimValidity}
+          onChange={(e) => patch({ esimValidity: e.target.value })}
+          placeholder="eSIM validity"
+          className={filterInputClass}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="number"
+            min={0}
+            value={draft.grossWeightMin}
+            onChange={(e) => patch({ grossWeightMin: e.target.value })}
+            placeholder="Gross WT min"
+            className={filterInputClass}
+          />
+          <input
+            type="number"
+            min={0}
+            value={draft.grossWeightMax}
+            onChange={(e) => patch({ grossWeightMax: e.target.value })}
+            placeholder="Gross WT max"
+            className={filterInputClass}
+          />
+        </div>
+      </FilterSection>
     </AdaptiveFilterSheet>
   );
 }

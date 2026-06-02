@@ -51,7 +51,7 @@ worker:
 
 ingress:
   enabled: true
-  host: vahanplus.example.com
+  host: exp.vahan360.info
   className: nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod

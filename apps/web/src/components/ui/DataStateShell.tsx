@@ -1,13 +1,14 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { Button } from '@/components/ui/Button';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { Card } from '@/components/ui/Card';
 import { SkeletonBone } from '@/components/ui/Skeleton';
 
 interface DataStateShellProps {
   isLoading?: boolean;
   isError?: boolean;
+  errorMessage?: string;
   onRetry?: () => void;
   metaSkeleton?: ReactNode;
   filtersSkeleton?: ReactNode;
@@ -35,6 +36,7 @@ function DefaultTableSkeleton() {
 export function DataStateShell({
   isLoading,
   isError,
+  errorMessage,
   onRetry,
   metaSkeleton,
   filtersSkeleton,
@@ -52,16 +54,7 @@ export function DataStateShell({
   }
 
   if (isError) {
-    return (
-      <Card className="border-red-500/30">
-        <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-        {onRetry ? (
-          <Button className="mt-4" variant="secondary" onClick={onRetry}>
-            Retry
-          </Button>
-        ) : null}
-      </Card>
-    );
+    return <DataErrorCard message={errorMessage} onRetry={onRetry} />;
   }
 
   return <>{children}</>;

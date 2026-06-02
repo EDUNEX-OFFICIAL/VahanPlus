@@ -7,6 +7,8 @@ import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatQty } from '@/lib/epass-aggregate';
+import { normalizeMineralLabel } from '@/lib/epass-consignee-view';
+import { normalizeReportDate } from '@/lib/epass-report-date';
 import type {
   ChalaanSortDir,
   ChalaanSortKey,
@@ -124,7 +126,6 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
             meta={
               <>
                 <Chip tone="indigo">{row.mineral ?? 'Mineral NA'}</Chip>
-                <Chip>{row.mineralCategory ?? 'Category NA'}</Chip>
                 <Chip tone="cyan">{row.checkStatus ?? 'Status NA'}</Chip>
               </>
             }
@@ -158,7 +159,6 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
                 <SortHeader label="Sl" columnKey="slNo" />
                 <SortHeader label="Challan no" columnKey="challanNo" />
                 <SortHeader label="Mineral" columnKey="mineral" />
-                <th className="px-4 py-3">Category</th>
                 <SortHeader label="Vehicle" columnKey="vehicle" />
                 <SortHeader label="Destination" columnKey="destination" />
                 <SortHeader label="Date" columnKey="date" />
@@ -194,11 +194,16 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
                       row.challanNo
                     )}
                   </td>
-                  <td className="px-4 py-2.5">{row.mineral ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-text-secondary">{row.mineralCategory ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-white">{row.vehicleRegNo ?? '—'}</td>
+                  <td className="px-4 py-2.5">{normalizeMineralLabel(row.mineral)}</td>
+                  <td className="px-4 py-2.5 text-white">
+                    <span className="rounded-md border border-indigo-500/40 bg-indigo-500/15 px-2 py-1 font-semibold text-indigo-100">
+                      {row.vehicleRegNo ?? '—'}
+                    </span>
+                  </td>
                   <td className="px-4 py-2.5 text-white">{row.destination ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-text-secondary">{row.transportedDate ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-text-secondary">
+                    {row.transportedDate ? normalizeReportDate(row.transportedDate) : '—'}
+                  </td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{formatQty(row.quantity)}</td>
                   <td className="px-4 py-2.5 text-text-secondary">{row.unit ?? '—'}</td>
                   <td className="px-4 py-2.5 text-white">{row.checkStatus ?? '—'}</td>

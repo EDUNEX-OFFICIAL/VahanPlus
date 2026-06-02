@@ -1,4 +1,4 @@
-import { isReportDateInRange } from '@/lib/epass-report-date';
+import { isReportDateInRange, normalizeReportDate } from '@/lib/epass-report-date';
 import type {
   ConsigneeSortDir,
   ConsigneeSortKey,
@@ -84,5 +84,19 @@ export function sortConsigneeRows(
 
 /** Display portal report date in table (keep portal format). */
 export function formatReportDateCell(reportDate: string): string {
-  return reportDate.trim() || '—';
+  return normalizeReportDate(reportDate);
+}
+
+export function normalizeMineralLabel(value: string | null | undefined): string {
+  const source = (value ?? '').trim();
+  if (!source) return '—';
+  const lower = source.toLowerCase();
+  if (lower.includes('yellow')) return 'Sand Yellow';
+  if (lower.includes('white')) return 'Sand White Sand';
+  return (
+    source
+      .replace(/\bno\s*size\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim() || '—'
+  );
 }

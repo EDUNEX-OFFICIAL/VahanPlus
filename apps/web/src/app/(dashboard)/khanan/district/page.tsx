@@ -3,8 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
   DistrictEpassFilters,
@@ -252,14 +251,7 @@ function DistrictPageContent() {
   };
 
   if (isError) {
-    return (
-      <Card className="border-red-500/30">
-        <p className="text-sm font-semibold text-red-400">Unable to load data</p>
-        <Button className="mt-4" variant="secondary" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </Card>
-    );
+    return <DataErrorCard onRetry={() => refetch()} />;
   }
 
   if (pageLoading) {

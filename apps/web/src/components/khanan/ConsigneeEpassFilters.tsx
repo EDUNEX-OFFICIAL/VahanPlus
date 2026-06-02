@@ -54,6 +54,7 @@ export function buildConsigneeFilterChips(values: EpassBrowseFilterValues): stri
   }
   if (values.consignerSearch.trim()) chips.push(values.consignerSearch.trim());
   if (values.consigneeSearch.trim()) chips.push(`Consignee: ${values.consigneeSearch.trim()}`);
+  if (values.destination.trim()) chips.push(`Destination: ${values.destination.trim()}`);
   if (values.hideZeroPasses) chips.push('No zero passes');
   return chips;
 }
@@ -373,6 +374,23 @@ export function ConsigneeEpassFilters({
                     value={draft.consignerSearch}
                     onChange={(e) => patch({ consignerSearch: e.target.value })}
                     placeholder="Search by name"
+                    className={inputClass}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="text-xs uppercase tracking-wider text-text-secondary"
+                    htmlFor="consignee-destination-search"
+                  >
+                    Destination
+                  </label>
+                  <input
+                    id="consignee-destination-search"
+                    type="search"
+                    value={draft.destination}
+                    onChange={(e) => patch({ destination: e.target.value })}
+                    placeholder="Search destination"
                     className={inputClass}
                   />
                 </div>

@@ -13,6 +13,21 @@ const MONTHS: Record<string, number> = {
   dec: 11,
 };
 
+const MONTH_LABELS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
 /** Parse portal report dates like `20-May-2026`. Returns null if unparseable. */
 export function parseReportDate(value: string): Date | null {
   const trimmed = value.trim();
@@ -27,6 +42,24 @@ export function parseReportDate(value: string): Date | null {
   const d = new Date(year, month, day);
   if (d.getFullYear() !== year || d.getMonth() !== month || d.getDate() !== day) return null;
   return d;
+}
+
+export function formatDateDmy(value: Date): string {
+  const day = String(value.getDate()).padStart(2, '0');
+  const month = MONTH_LABELS[value.getMonth()] ?? 'Jan';
+  const year = value.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+export function normalizeReportDate(value: string): string {
+  const trimmed = value.trim();
+  const parsed = parseReportDate(trimmed);
+  if (parsed) return formatDateDmy(parsed);
+  const iso = parseIsoDateInput(trimmed);
+  if (iso) return formatDateDmy(iso);
+  const timestamp = Date.parse(trimmed);
+  if (!Number.isNaN(timestamp)) return formatDateDmy(new Date(timestamp));
+  return trimmed || '—';
 }
 
 export function compareReportDates(a: string, b: string): number {
@@ -133,6 +166,7 @@ export function hasActiveDateRangeWithNoSnapshots<T extends { reportDate: string
 ): boolean {
   if (filters.dateMode !== 'range') return false;
   if (!filters.dateFrom && !filters.dateTo) return false;
-  return snapshotsForDateMode(snapshots, filters.dateMode, filters.dateFrom, filters.dateTo)
-    .length === 0;
+  return (
+    snapshotsForDateMode(snapshots, filters.dateMode, filters.dateFrom, filters.dateTo).length === 0
+  );
 }

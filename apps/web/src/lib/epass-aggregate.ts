@@ -60,7 +60,7 @@ export function aggregateMinerals(
 }
 
 export function formatQty(value: number): string {
-  return value.toLocaleString('en-IN', { maximumFractionDigits: 3 });
+  return value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function formatInt(value: number): string {

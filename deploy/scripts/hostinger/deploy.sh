@@ -19,6 +19,7 @@ RELEASE="${RELEASE:-vahanplus}"
 VALUES_FILE="$ROOT/deploy/helm/vahanplus/values-hostinger-kvm4.yaml"
 SKIP_SMOKE="${SKIP_SMOKE:-false}"
 SKIP_METRICS="${SKIP_METRICS:-true}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 if [[ -f "$ENV_FILE" ]]; then
   set -a
@@ -72,8 +73,12 @@ echo "==> Helm upgrade"
 helm upgrade --install "$RELEASE" "$ROOT/deploy/helm/vahanplus" \
   --namespace "$NAMESPACE" \
   --create-namespace \
+  --reset-values \
   -f "$VALUES_FILE" \
   --set "global.imageRegistry=ghcr.io/${GHCR_ORG}" \
+  --set "apiExpress.image=vahanplus-api-express:${IMAGE_TAG}" \
+  --set "web.image=vahanplus-web:${IMAGE_TAG}" \
+  --set "worker.image=vahanplus-worker:${IMAGE_TAG}" \
   --set "ingress.host=${VAHANPLUS_DOMAIN}" \
   --wait \
   --timeout 10m

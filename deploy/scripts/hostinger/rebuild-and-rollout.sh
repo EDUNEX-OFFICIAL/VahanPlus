@@ -61,6 +61,7 @@ echo "==> Helm rollout"
 helm upgrade --install "$RELEASE" "$ROOT/deploy/helm/vahanplus" \
   --namespace "$NAMESPACE" \
   --create-namespace \
+  --reset-values \
   -f "$VALUES_FILE" \
   --set "global.imageRegistry=${REG}" \
   --set "global.imagePullPolicy=Always" \

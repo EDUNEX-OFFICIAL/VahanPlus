@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, '../../..');
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(moduleDir, '../../..');
 
 function parseEnvFile(content) {
   for (const line of content.split('\n')) {

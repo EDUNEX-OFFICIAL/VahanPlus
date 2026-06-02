@@ -27,6 +27,8 @@ jobs:
 
       - name: Validate Prisma schema
         run: pnpm db:validate
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/vahanplus
 
       - name: Lint and build
         run: pnpm turbo run lint build

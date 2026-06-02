@@ -1,4 +1,4 @@
-import { apiFetch, clearSession } from '@/lib/api';
+import { API_URL, apiFetch, clearSession } from '@/lib/api';
 import type {
   ActionResult,
   ClearDataResult,
@@ -7,8 +7,6 @@ import type {
   ScraperJobListItem,
   ScraperLiveResponse,
 } from '@/lib/scraper-config-types';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export class ScraperConfigActionError extends Error {
   requiresConfirm?: boolean;

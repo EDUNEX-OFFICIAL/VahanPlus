@@ -62,4 +62,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            ${{ matrix.needs_api_url && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || 'https://vahanplus.example.com/api') || '' }}
+            ${{ matrix.needs_api_url && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || '/api') || '' }}

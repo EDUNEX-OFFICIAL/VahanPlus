@@ -1,6 +1,14 @@
 import { safeNextPath } from '@/lib/safe-next-path';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+function resolveApiUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
+  if (!raw) return '/api';
+  // Guard against CI/build fallback placeholders leaking into production bundles.
+  if (/vahanplus\.example\.com/i.test(raw)) return '/api';
+  return raw.replace(/\/+$/, '');
+}
+
+export const API_URL = resolveApiUrl();
 
 type ApiFetchOptions = RequestInit & {
   /** When false, 401 does not clear session or navigate (e.g. login page probe). Default true. */
@@ -46,9 +54,11 @@ export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Prom
       headers,
     });
   } catch {
-    throw new Error(
-      `Cannot reach API at ${API_URL}. Start api-express (pnpm dev) and ensure Postgres is running on port 5434.`,
-    );
+    const helper =
+      API_URL === '/api'
+        ? 'Check ingress/service routing for /api and API pod health.'
+        : `Start api-express (pnpm dev) and ensure Postgres is running on port 5434.`;
+    throw new Error(`Cannot reach API at ${API_URL}. ${helper}`);
   }
 
   if (!res.ok) {

@@ -2,11 +2,11 @@
 
 Single VPS (4 vCPU, 16 GB RAM): **k3s** for apps, **Docker Compose** for Postgres + Redis on the host.
 
-| Component | Where |
-|-----------|--------|
-| web, api-express, worker | k3s pods (Helm) |
-| Postgres, Redis | `docker-compose.infra.prod.yml` on host (`127.0.0.1:5434`, `6379`) |
-| Ingress + TLS | ingress-nginx + cert-manager (Let's Encrypt) |
+| Component                | Where                                                              |
+| ------------------------ | ------------------------------------------------------------------ |
+| web, api-express, worker | k3s pods (Helm)                                                    |
+| Postgres, Redis          | `docker-compose.infra.prod.yml` on host (`127.0.0.1:5434`, `6379`) |
+| Ingress + TLS            | ingress-nginx + cert-manager (Let's Encrypt)                       |
 
 Do **not** use [`values-prod.yaml`](../../deploy/helm/vahanplus/values-prod.yaml) on KVM4 (it assumes AWS RDS and 2+ replicas). Use [`values-hostinger-kvm4.yaml`](../../deploy/helm/vahanplus/values-hostinger-kvm4.yaml).
 
@@ -119,9 +119,27 @@ Then run `./deploy/scripts/hostinger/deploy.sh` (migrate Job is idempotent for a
 
 ## Updates (new release)
 
+**UI-only change (fast — rebuilds web image only):**
+
 ```bash
 cd /opt/vahanplus
 git pull
+./deploy/scripts/redeploy-live.sh --web-only
+```
+
+**App + worker + API change (full rebuild on VPS):**
+
+```bash
+cd /opt/vahanplus
+git pull
+./deploy/scripts/redeploy-live.sh
+```
+
+Equivalent legacy script: `./deploy/scripts/hostinger/rebuild-and-rollout.sh`
+
+**First-time or secrets/infra change** — use full deploy (does not rebuild images on VPS):
+
+```bash
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ./deploy/scripts/hostinger/deploy.sh
 ```

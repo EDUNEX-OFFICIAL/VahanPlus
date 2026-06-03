@@ -92,7 +92,7 @@ export function normalizeMineralLabel(value: string | null | undefined): string 
   if (!source) return '—';
   const lower = source.toLowerCase();
   if (lower.includes('yellow')) return 'Sand Yellow';
-  if (lower.includes('white')) return 'Sand White Sand';
+  if (lower.includes('white')) return 'Sand White';
   return (
     source
       .replace(/\bno\s*size\b/gi, '')

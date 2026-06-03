@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Build api-express, web, worker on the VPS, push to GHCR, roll out via Helm.
 #
+# Prefer the wrapper (same behavior as --all):
+#   ./deploy/scripts/redeploy-live.sh
+#
 # Usage (repo root):
 #   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 #   source deploy/env/hostinger.env

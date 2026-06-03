@@ -107,6 +107,18 @@ export function stopScraping() {
   });
 }
 
+export function pauseScrapeQueue() {
+  return apiFetch<ActionResult>('/epass/scraper-config/actions/pause-queue', {
+    method: 'POST',
+  });
+}
+
+export function resumeScrapeQueue() {
+  return apiFetch<ActionResult>('/epass/scraper-config/actions/resume-queue', {
+    method: 'POST',
+  });
+}
+
 export function fetchScraperLive() {
   return apiFetch<ScraperLiveResponse>('/epass/scraper-config/live');
 }

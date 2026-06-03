@@ -7,7 +7,7 @@ interface Props {
   updatedAt: string;
 }
 
-type ScraperRunState = 'stopping' | 'working' | 'ready';
+type ScraperRunState = 'paused' | 'stopping' | 'working' | 'ready';
 
 interface RunStatus {
   state: ScraperRunState;
@@ -33,11 +33,11 @@ export function resolveRunStatus(status: ScraperConfigStatus): RunStatus {
 
   if (q.isPaused && inProgress > 0) {
     return {
-      state: 'stopping',
-      label: 'Stopping',
+      state: 'paused',
+      label: 'Paused',
       detail: null,
       dotClass: 'bg-amber-400',
-      labelClass: 'text-amber-400',
+      labelClass: 'text-amber-300',
     };
   }
 
@@ -70,6 +70,7 @@ export function KhananConfigStatusBar({ status, updatedAt }: Props) {
   return (
     <Card
       className={cn(
+        run.state === 'paused' && 'border-amber-500/40',
         run.state === 'stopping' && 'border-amber-500/40',
         run.state === 'working' && 'border-emerald-500/25',
         run.state === 'ready' && 'border-slate-700/50',

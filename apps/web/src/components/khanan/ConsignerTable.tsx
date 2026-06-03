@@ -98,7 +98,7 @@ export function ConsignerTable({
   return (
     <>
       <div className="space-y-3 md:hidden">
-        {rows.map((row) => {
+        {rows.map((row, index) => {
           const consigneeHref =
             consigneeLinkBase === '/khanan/consignee' && linkSearchParams
               ? buildConsigneeHref(row.id, linkSearchParams)
@@ -109,7 +109,7 @@ export function ConsignerTable({
           return (
             <MobileDataCard
               key={row.id}
-              eyebrow={`Sl ${row.slNo}`}
+              eyebrow={`Sl ${index + 1}`}
               title={row.consignerName}
               subtitle={showDistrictCols && hasDmo(row) ? row.dmoName : undefined}
               meta={
@@ -168,7 +168,7 @@ export function ConsignerTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
+              {rows.map((row, index) => {
                 const consigneeHref =
                   consigneeLinkBase === '/khanan/consignee' && linkSearchParams
                     ? buildConsigneeHref(row.id, linkSearchParams)
@@ -189,7 +189,7 @@ export function ConsignerTable({
                         </td>
                       </>
                     ) : null}
-                    <td className="px-4 py-2.5 tabular-nums text-text-secondary">{row.slNo}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-text-secondary">{index + 1}</td>
                     <td className="px-4 py-2.5 font-medium text-white">{row.consignerName}</td>
                     <td className="px-4 py-2.5">{row.mineral ?? '—'}</td>
                     <td className="px-4 py-2.5">{row.mineralType ?? '—'}</td>

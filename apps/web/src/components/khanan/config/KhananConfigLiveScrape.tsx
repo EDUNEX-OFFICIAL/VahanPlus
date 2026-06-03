@@ -1,11 +1,17 @@
 'use client';
 
+import { Activity, Calendar, Clock, Inbox, Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Chip } from '@/components/ui/Chip';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
-import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
-import type { ScraperConfigStatus, ScraperLiveResponse } from '@/lib/scraper-config-types';
+import { auditLiveScrapeDates, type LiveScrapeDateAudit } from '@/lib/live-scrape-date-audit';
+import { compareReportDates } from '@/lib/epass-report-date';
+import type {
+  LiveSnapshotRow,
+  ScraperConfigStatus,
+  ScraperLiveResponse,
+} from '@/lib/scraper-config-types';
+import { cn } from '@/lib/utils';
 
 const LIVE_SNAPSHOT_LIMIT = 5;
 
@@ -16,19 +22,205 @@ interface Props {
   loading?: boolean;
 }
 
-function formatWhen(iso: string) {
-  return new Date(iso).toLocaleString('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+type AuditedRow = LiveSnapshotRow & { dateAudit: LiveScrapeDateAudit };
+
+interface MetricTotals {
+  district: number;
+  consigner: number;
+  challan: number;
+  pass: number;
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function withDateAudit(rows: LiveSnapshotRow[]): AuditedRow[] {
+  return rows.map((row) => ({
+    ...row,
+    dateAudit: auditLiveScrapeDates(row.reportDate, row.scrapedAt),
+  }));
+}
+
+function sumTotals(rows: AuditedRow[]): MetricTotals {
+  return rows.reduce(
+    (acc, row) => ({
+      district: acc.district + row.districtRows,
+      consigner: acc.consigner + row.consignerRows,
+      challan: acc.challan + row.challanRows,
+      pass: acc.pass + row.passRows,
+    }),
+    { district: 0, consigner: 0, challan: 0, pass: 0 },
+  );
+}
+
+function accentClass(status: LiveScrapeDateAudit['status']): string {
+  if (status === 'mismatch') return 'border-l-amber-400/90';
+  if (status === 'missing' || status === 'unparseable') return 'border-l-red-400/90';
+  return 'border-l-emerald-500/50';
+}
+
+function formatCount(n: number): string {
+  return n.toLocaleString('en-IN');
+}
+
+function SectionHeader({
+  title,
+  subtitle,
+  live,
+}: {
+  title: string;
+  subtitle?: string;
+  live?: boolean;
+}) {
   return (
-    <span className="tabular-nums text-text-secondary">
-      <span className="text-xs uppercase tracking-wider">{label}</span>{' '}
-      <span className="font-medium text-white">{value.toLocaleString('en-IN')}</span>
-    </span>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-xs font-bold uppercase tracking-wider text-text-secondary">{title}</p>
+        {subtitle ? <p className="mt-1 text-sm text-text-secondary">{subtitle}</p> : null}
+      </div>
+      {live ? (
+        <div className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+          </span>
+          <span className="text-xs font-semibold text-emerald-200">Live</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MetricPill({ label, value }: { label: string; value: number }) {
+  const highlight = value > 0;
+  return (
+    <div
+      className={cn(
+        'rounded-xl border px-3 py-2.5 text-center',
+        highlight
+          ? 'border-indigo-500/25 bg-indigo-500/8'
+          : 'border-border-default/60 bg-surface-deep/40',
+      )}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+        {label}
+      </p>
+      <p
+        className={cn(
+          'mt-1 text-lg font-semibold tabular-nums leading-none',
+          highlight ? 'text-white' : 'text-slate-500',
+        )}
+      >
+        {formatCount(value)}
+      </p>
+    </div>
+  );
+}
+
+function MetricsGrid({ totals }: { totals: MetricTotals }) {
+  return (
+    <div className="grid grid-cols-4 gap-2 sm:gap-3">
+      <MetricPill label="District" value={totals.district} />
+      <MetricPill label="Consigner" value={totals.consigner} />
+      <MetricPill label="Challan" value={totals.challan} />
+      <MetricPill label="Pass" value={totals.pass} />
+    </div>
+  );
+}
+
+function ActivityRow({ row }: { row: AuditedRow }) {
+  const { dateAudit } = row;
+  const tooltip = [dateAudit.reportDateRaw, dateAudit.detail].filter(Boolean).join(' · ');
+  const hasActivity =
+    row.districtRows > 0 || row.consignerRows > 0 || row.challanRows > 0 || row.passRows > 0;
+
+  return (
+    <article
+      className={cn(
+        'rounded-xl border border-border-default/50 border-l-[3px] bg-surface-deep/35 p-3.5 sm:p-4',
+        accentClass(dateAudit.status),
+        !hasActivity && 'opacity-80',
+      )}
+      title={tooltip || undefined}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <div className="flex items-center gap-2 text-white">
+            <Calendar className="h-4 w-4 shrink-0 text-indigo-400/90" aria-hidden />
+            <p className="truncate font-semibold">{dateAudit.reportDateDisplay}</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-text-secondary">
+            <Clock className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+            <time dateTime={row.scrapedAt}>{dateAudit.scrapedAtDisplay}</time>
+          </div>
+        </div>
+        <div className="grid shrink-0 grid-cols-4 gap-1.5 sm:gap-2 sm:text-right">
+          {(
+            [
+              ['Dist.', row.districtRows],
+              ['Cons.', row.consignerRows],
+              ['Ch.', row.challanRows],
+              ['Pass', row.passRows],
+            ] as const
+          ).map(([label, value]) => (
+            <div key={label} className="rounded-lg bg-black/20 px-2 py-1.5 sm:min-w-[3.25rem]">
+              <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                {label}
+              </p>
+              <p
+                className={cn(
+                  'text-sm font-semibold tabular-nums',
+                  value > 0 ? 'text-white' : 'text-slate-600',
+                )}
+              >
+                {formatCount(value)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ReportDateGroup({ reportDate, rows }: { reportDate: string; rows: AuditedRow[] }) {
+  const groupTotals = sumTotals(rows);
+
+  return (
+    <section className="space-y-2">
+      <div className="flex flex-wrap items-end justify-between gap-2 px-0.5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-300/90">
+          {reportDate}
+        </p>
+        <p className="text-xs tabular-nums text-text-secondary">
+          {rows.length} {rows.length === 1 ? 'update' : 'updates'}
+        </p>
+      </div>
+      <div className="space-y-2">
+        {rows.map((row) => (
+          <ActivityRow key={row.id} row={row} />
+        ))}
+      </div>
+      {rows.length > 1 ? (
+        <div className="rounded-lg border border-dashed border-border-default/40 px-3 py-2">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+            Group total
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {(
+              [
+                ['District', groupTotals.district],
+                ['Consigner', groupTotals.consigner],
+                ['Challan', groupTotals.challan],
+                ['Pass', groupTotals.pass],
+              ] as const
+            ).map(([label, value]) => (
+              <p key={label} className="text-xs text-text-secondary">
+                <span className="block text-[10px] uppercase tracking-wide">{label}</span>
+                <span className="font-semibold tabular-nums text-white">{formatCount(value)}</span>
+              </p>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -37,94 +229,107 @@ function IdleSummary({ status }: { status: ScraperConfigStatus }) {
   const stats = status.latestSnapshotStats;
   if (!snap || !stats) return null;
 
+  const audit = auditLiveScrapeDates(snap.reportDate, snap.scrapedAt);
+  const totals: MetricTotals = {
+    district: stats.districtRows,
+    consigner: stats.consignerRows,
+    challan: stats.challanRows,
+    pass: stats.passRows,
+  };
+
   return (
-    <div className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-2 text-sm">
-      <span className="font-medium text-white">{snap.reportDate}</span>
-      <span className="text-text-secondary">{formatWhen(snap.scrapedAt)}</span>
-      <Stat label="District" value={stats.districtRows} />
-      <Stat label="Consigner" value={stats.consignerRows} />
-      <Stat label="Challan" value={stats.challanRows} />
-      <Stat label="Pass" value={stats.passRows} />
+    <div className="mt-5 space-y-4">
+      <div
+        className={cn(
+          'rounded-xl border border-border-default/60 border-l-[3px] bg-gradient-to-br from-surface-deep/80 to-surface-deep/30 p-4 sm:p-5',
+          accentClass(audit.status),
+        )}
+        title={[audit.reportDateRaw, audit.detail].filter(Boolean).join(' · ') || undefined}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+              Report date
+            </p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-white">
+              {audit.reportDateDisplay}
+            </p>
+            <p className="mt-3 flex items-center gap-2 text-sm text-text-secondary">
+              <Clock className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+              <time dateTime={snap.scrapedAt}>{audit.scrapedAtDisplay}</time>
+            </p>
+          </div>
+          <Activity className="hidden h-10 w-10 text-indigo-500/25 sm:block" aria-hidden />
+        </div>
+      </div>
+      <MetricsGrid totals={totals} />
     </div>
   );
 }
 
 function LiveDetail({ live }: { live: ScraperLiveResponse }) {
   const recentSnapshots = useMemo(
-    () => live.snapshots.slice(0, LIVE_SNAPSHOT_LIMIT),
+    () => withDateAudit(live.snapshots.slice(0, LIVE_SNAPSHOT_LIMIT)),
     [live.snapshots],
   );
 
   const grouped = useMemo(() => {
     if (!recentSnapshots.length) return [];
-    const byDate = new Map<string, typeof recentSnapshots>();
+    const byDate = new Map<string, AuditedRow[]>();
     for (const row of recentSnapshots) {
-      const list = byDate.get(row.reportDate) ?? [];
+      const key = row.dateAudit.reportDateDisplay;
+      const list = byDate.get(key) ?? [];
       list.push(row);
-      byDate.set(row.reportDate, list);
+      byDate.set(key, list);
     }
-    return [...byDate.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    return [...byDate.entries()].sort((a, b) => {
+      const sampleA = a[1][0]?.reportDate ?? '';
+      const sampleB = b[1][0]?.reportDate ?? '';
+      return compareReportDates(sampleB, sampleA);
+    });
   }, [recentSnapshots]);
 
-  return (
-    <>
-      {grouped.length > 0 ? (
-        <>
-          <div className="mt-6 space-y-4 md:hidden">
-            {grouped.map(([reportDate, rows]) => (
-              <MobileDataCard key={reportDate} eyebrow="Report date" title={reportDate}>
-                {rows.map((row) => (
-                  <div key={row.id} className="mt-3 border-t border-border-default/60 pt-3">
-                    <p className="text-xs text-text-secondary">
-                      Scraped {formatWhen(row.scrapedAt)}
-                    </p>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <DataField label="District" value={String(row.districtRows)} />
-                      <DataField label="Consigner" value={String(row.consignerRows)} />
-                      <DataField label="Challan" value={String(row.challanRows)} />
-                      <DataField label="Pass" value={String(row.passRows)} />
-                    </div>
-                  </div>
-                ))}
-              </MobileDataCard>
-            ))}
-          </div>
+  const overallTotals = useMemo(() => sumTotals(recentSnapshots), [recentSnapshots]);
 
-          <div className="mt-6 hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-              <thead>
-                <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
-                  <th className="px-3 py-2 font-semibold">Report date</th>
-                  <th className="px-3 py-2 font-semibold">Scraped at</th>
-                  <th className="px-3 py-2 font-semibold text-right">District</th>
-                  <th className="px-3 py-2 font-semibold text-right">Consigner</th>
-                  <th className="px-3 py-2 font-semibold text-right">Challan</th>
-                  <th className="px-3 py-2 font-semibold text-right">Pass</th>
-                </tr>
-              </thead>
-              <tbody>
-                {grouped.flatMap(([reportDate, rows]) =>
-                  rows.map((row, idx) => (
-                    <tr key={row.id} className="border-b border-border-default/50">
-                      <td className="px-3 py-3 font-medium text-white">
-                        {idx === 0 ? reportDate : ''}
-                      </td>
-                      <td className="px-3 py-3 text-text-secondary">{formatWhen(row.scrapedAt)}</td>
-                      <td className="px-3 py-3 text-right tabular-nums">{row.districtRows}</td>
-                      <td className="px-3 py-3 text-right tabular-nums">{row.consignerRows}</td>
-                      <td className="px-3 py-3 text-right tabular-nums">{row.challanRows}</td>
-                      <td className="px-3 py-3 text-right tabular-nums">{row.passRows}</td>
-                    </tr>
-                  )),
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      ) : (
-        <p className="mt-4 text-sm text-text-secondary">Waiting for report rows…</p>
-      )}
-    </>
+  if (!grouped.length) {
+    return (
+      <div className="mt-5 flex items-center gap-3 rounded-xl border border-dashed border-border-default/60 bg-surface-deep/30 px-4 py-6 text-sm text-text-secondary">
+        <Loader2 className="h-5 w-5 shrink-0 animate-spin text-indigo-400" aria-hidden />
+        Waiting for report rows…
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-5 space-y-5">
+      <MetricsGrid totals={overallTotals} />
+
+      <div className="space-y-5">
+        {grouped.map(([displayDate, rows]) => (
+          <ReportDateGroup key={displayDate} reportDate={displayDate} rows={rows} />
+        ))}
+      </div>
+
+      <p className="text-center text-xs text-text-secondary">
+        Showing latest {recentSnapshots.length} of {live.snapshots.length} updates
+      </p>
+    </div>
+  );
+}
+
+function LiveScrapeSkeleton() {
+  return (
+    <div className="mt-5 animate-pulse space-y-4">
+      <div className="grid grid-cols-4 gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-16 rounded-xl bg-surface-deep" />
+        ))}
+      </div>
+      <div className="space-y-2">
+        <div className="h-24 rounded-xl bg-surface-deep" />
+        <div className="h-24 rounded-xl bg-surface-deep" />
+      </div>
+    </div>
   );
 }
 
@@ -134,9 +339,7 @@ export function KhananConfigLiveScrape({ status, scrapeActive, live, loading }: 
   if (!scrapeActive && !hasHistory) {
     return (
       <Card>
-        <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-          Last scrape
-        </h3>
+        <SectionHeader title="Scrape activity" />
         <div className="mt-4">
           <EmptyStateCard message="No scrape data yet" />
         </div>
@@ -146,10 +349,8 @@ export function KhananConfigLiveScrape({ status, scrapeActive, live, loading }: 
 
   if (!scrapeActive) {
     return (
-      <Card>
-        <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-          Last scrape
-        </h3>
+      <Card className="border-slate-700/50">
+        <SectionHeader title="Last scrape" subtitle="Most recent completed run" />
         <IdleSummary status={status} />
       </Card>
     );
@@ -157,26 +358,35 @@ export function KhananConfigLiveScrape({ status, scrapeActive, live, loading }: 
 
   if (loading && !live) {
     return (
-      <Card className="animate-pulse p-12">
-        <div className="h-32 rounded bg-surface-deep" />
+      <Card className="border-emerald-500/20">
+        <SectionHeader title="Live activity" subtitle="Fetching latest rows" live />
+        <LiveScrapeSkeleton />
       </Card>
     );
   }
 
   const showLive = live && live.snapshots.length > 0;
+  const updateCount = live?.snapshots.length ?? 0;
 
   return (
-    <Card className="border-emerald-500/20">
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary">
-          Live scrape
-        </h3>
-        <Chip tone="emerald">Running</Chip>
-      </div>
+    <Card className="relative overflow-hidden border-emerald-500/25" aria-live="polite">
+      <div className="pointer-events-none absolute -right-16 -top-16 h-32 w-32 rounded-full bg-emerald-500/10 blur-3xl" />
+      <SectionHeader
+        title="Live activity"
+        subtitle={
+          showLive
+            ? `${Math.min(updateCount, LIVE_SNAPSHOT_LIMIT)} recent updates`
+            : 'Starting scrape'
+        }
+        live
+      />
       {showLive && live ? (
         <LiveDetail live={live} />
       ) : (
-        <p className="mt-4 text-sm text-text-secondary">Starting…</p>
+        <div className="mt-5 flex items-center gap-3 rounded-xl border border-dashed border-emerald-500/20 bg-emerald-500/5 px-4 py-8 text-sm text-emerald-100/80">
+          <Inbox className="h-5 w-5 shrink-0 opacity-70" aria-hidden />
+          Starting…
+        </div>
       )}
     </Card>
   );

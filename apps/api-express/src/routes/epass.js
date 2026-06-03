@@ -21,7 +21,7 @@ function normalizeMineralLabel(value) {
   if (!source) return null;
   const lower = source.toLowerCase();
   if (lower.includes('yellow')) return 'Sand Yellow';
-  if (lower.includes('white')) return 'Sand White Sand';
+  if (lower.includes('white')) return 'Sand White';
   const cleaned = source
     .replace(/\bno\s*size\b/gi, '')
     .replace(/\s+/g, ' ')
@@ -59,6 +59,26 @@ function parseDateFlexible(value) {
   if (!source) return null;
   const report = parseReportDate(source);
   if (report) return report;
+  const dmyDash = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(source);
+  if (dmyDash) {
+    const day = Number(dmyDash[1]);
+    const month = Number(dmyDash[2]) - 1;
+    const year = Number(dmyDash[3]);
+    const parsed = new Date(year, month, day);
+    if (parsed.getFullYear() === year && parsed.getMonth() === month && parsed.getDate() === day) {
+      return parsed;
+    }
+  }
+  const dmySlash = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(source);
+  if (dmySlash) {
+    const day = Number(dmySlash[1]);
+    const month = Number(dmySlash[2]) - 1;
+    const year = Number(dmySlash[3]);
+    const parsed = new Date(year, month, day);
+    if (parsed.getFullYear() === year && parsed.getMonth() === month && parsed.getDate() === day) {
+      return parsed;
+    }
+  }
   const timestamp = Date.parse(source);
   if (!Number.isNaN(timestamp)) return new Date(timestamp);
   return null;

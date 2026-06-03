@@ -173,12 +173,12 @@ export function DistrictEpassTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {rows.map((row, index) => (
                 <tr
                   key={row.district}
                   className="border-b border-border-default/60 transition hover:bg-indigo-500/5"
                 >
-                  <td className="px-4 py-2.5 tabular-nums text-text-secondary">{row.slNo}</td>
+                  <td className="px-4 py-2.5 tabular-nums text-text-secondary">{index + 1}</td>
                   <td className="px-4 py-2.5 font-medium text-white">{row.district}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     {formatInt(row.totalUsers)}

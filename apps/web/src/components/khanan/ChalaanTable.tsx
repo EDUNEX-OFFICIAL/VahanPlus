@@ -117,10 +117,10 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
   return (
     <>
       <div className="space-y-3 md:hidden">
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <MobileDataCard
             key={row.id}
-            eyebrow={`Sl ${row.slNo}`}
+            eyebrow={`Sl ${index + 1}`}
             title={row.challanNo}
             subtitle={row.consigneeName}
             meta={
@@ -171,13 +171,13 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {rows.map((row, index) => (
                 <tr
                   key={row.id}
                   className="cursor-pointer border-b border-border-default/60 transition hover:bg-indigo-500/5"
                   onClick={() => openDetail(row)}
                 >
-                  <td className="px-4 py-2.5 tabular-nums text-text-secondary">{row.slNo}</td>
+                  <td className="px-4 py-2.5 tabular-nums text-text-secondary">{index + 1}</td>
                   <td className="px-4 py-2.5 font-mono text-sm text-indigo-200">
                     {row.portalChallanUrl ? (
                       <a

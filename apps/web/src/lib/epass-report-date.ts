@@ -55,6 +55,8 @@ export function normalizeReportDate(value: string): string {
   const trimmed = value.trim();
   const parsed = parseReportDate(trimmed);
   if (parsed) return formatDateDmy(parsed);
+  const dmy = parseNumericDmy(trimmed);
+  if (dmy) return formatDateDmy(dmy);
   const iso = parseIsoDateInput(trimmed);
   if (iso) return formatDateDmy(iso);
   const timestamp = Date.parse(trimmed);
@@ -62,11 +64,60 @@ export function normalizeReportDate(value: string): string {
   return trimmed || '—';
 }
 
+function parseNumericDmy(value: string): Date | null {
+  const dash = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(value);
+  if (dash) {
+    const day = Number(dash[1]);
+    const month = Number(dash[2]) - 1;
+    const year = Number(dash[3]);
+    const parsed = new Date(year, month, day);
+    if (parsed.getFullYear() === year && parsed.getMonth() === month && parsed.getDate() === day) {
+      return parsed;
+    }
+  }
+  const slash = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+  if (slash) {
+    const day = Number(slash[1]);
+    const month = Number(slash[2]) - 1;
+    const year = Number(slash[3]);
+    const parsed = new Date(year, month, day);
+    if (parsed.getFullYear() === year && parsed.getMonth() === month && parsed.getDate() === day) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
 export function compareReportDates(a: string, b: string): number {
-  const da = parseReportDate(a);
-  const db = parseReportDate(b);
+  const da = parseReportDateFlexible(a);
+  const db = parseReportDateFlexible(b);
   if (da && db) return da.getTime() - db.getTime();
   return a.localeCompare(b);
+}
+
+/** Best-effort parse of portal/stored report date strings into a local calendar date. */
+export function parseReportDateFlexible(value: string): Date | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const portal = parseReportDate(trimmed);
+  if (portal) return portal;
+
+  const dmy = parseNumericDmy(trimmed);
+  if (dmy) return dmy;
+
+  const iso = parseIsoDateInput(trimmed);
+  if (iso) return iso;
+
+  const timestamp = Date.parse(trimmed);
+  if (!Number.isNaN(timestamp)) return new Date(timestamp);
+
+  return null;
+}
+
+/** Start of local calendar day (ms) for lag comparisons. */
+export function startOfLocalDayMs(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 
 /** ISO date string `yyyy-mm-dd` from report date, or null. */

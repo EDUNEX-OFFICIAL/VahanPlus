@@ -76,12 +76,12 @@ export function ConsigneeTable({
   return (
     <>
       <div className="space-y-3 md:hidden">
-        {rows.map((row) => {
+        {rows.map((row, index) => {
           const chalaanHref = row.challanCount > 0 && getChalaanHref ? getChalaanHref(row) : null;
           return (
             <MobileDataCard
               key={row.id}
-              eyebrow={`Sl ${row.slNo}`}
+              eyebrow={`Sl ${index + 1}`}
               title={row.consigneeName}
               subtitle={formatReportDateCell(row.reportDate)}
               meta={
@@ -131,7 +131,7 @@ export function ConsigneeTable({
             <thead className="sticky top-0 z-10 bg-surface-primary">
               <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
                 <SortHeader label="Sl" columnKey="slNo" />
-                <SortHeader label="Date" columnKey="date" />
+                <SortHeader label="Report date" columnKey="date" />
                 <SortHeader label="Consignee" columnKey="consignee" />
                 <SortHeader label="Mineral" columnKey="mineral" />
                 <th className="px-4 py-3">Ghat Number</th>
@@ -141,7 +141,7 @@ export function ConsigneeTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
+              {rows.map((row, index) => {
                 const chalaanHref =
                   row.challanCount > 0 && getChalaanHref ? getChalaanHref(row) : null;
                 return (
@@ -149,7 +149,7 @@ export function ConsigneeTable({
                     key={row.id}
                     className="border-b border-border-default/60 transition hover:bg-indigo-500/5"
                   >
-                    <td className="px-4 py-2.5 tabular-nums text-text-secondary">{row.slNo}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-text-secondary">{index + 1}</td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-indigo-200/90">
                       {formatReportDateCell(row.reportDate)}
                     </td>

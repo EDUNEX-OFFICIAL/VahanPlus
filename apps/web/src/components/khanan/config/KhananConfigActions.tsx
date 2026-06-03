@@ -17,6 +17,8 @@ interface Props {
   scheduleTimezone: string;
   onRunDistrict: (date: string) => Promise<string>;
   onRunDistrictRange: (from: string, to: string, confirmLargeRange: boolean) => Promise<string>;
+  onPause: () => Promise<string>;
+  onResume: () => Promise<string>;
   onStop: () => Promise<string>;
   busy?: boolean;
 }
@@ -27,6 +29,8 @@ export function KhananConfigActions({
   scheduleTimezone,
   onRunDistrict,
   onRunDistrictRange,
+  onPause,
+  onResume,
   onStop,
   busy,
 }: Props) {
@@ -92,8 +96,9 @@ export function KhananConfigActions({
 
   const snap = status.latestSnapshot;
   const snapLabel = snap?.reportDate ?? '—';
-  const runState = resolveRunStatus(status).state;
-  const showQueueControls = runState !== 'ready';
+  const runStatus = resolveRunStatus(status);
+  const showQueueControls = runStatus.state !== 'ready';
+  const queuePaused = status.queue.isPaused;
 
   return (
     <Card>
@@ -164,7 +169,29 @@ export function KhananConfigActions({
       </div>
 
       {showQueueControls ? (
-        <div className="mt-4 border-t border-slate-700/50 pt-4">
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-700/50 pt-4">
+          {queuePaused ? (
+            <Button
+              variant="success"
+              disabled={busy}
+              onClick={() => run(() => onResume(), 'Resume scraping queue?')}
+            >
+              Resume
+            </Button>
+          ) : (
+            <Button
+              variant="warning"
+              disabled={busy}
+              onClick={() =>
+                run(
+                  () => onPause(),
+                  'Pause queue? Jobs in progress may finish; new jobs will wait.',
+                )
+              }
+            >
+              Pause
+            </Button>
+          )}
           <Button
             variant="destructive"
             disabled={busy}

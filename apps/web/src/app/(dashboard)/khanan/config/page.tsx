@@ -18,6 +18,7 @@ import {
 } from '@/components/khanan/config/KhananConfigStatusBar';
 import type { KhananScraperConfig, KhananScraperConfigPatch } from '@/lib/scraper-config-types';
 import { formatClearDataSummary } from '@/lib/format-clear-data-summary';
+import { SCRAPER_SPEED_PRESETS } from '@/lib/scraper-speed-presets';
 import {
   SCRAPER_CONFIG_QUERY_KEY,
   SCRAPER_LIVE_QUERY_KEY,
@@ -25,6 +26,8 @@ import {
   fetchScraperConfig,
   fetchScraperLive,
   patchScraperConfig,
+  pauseScrapeQueue,
+  resumeScrapeQueue,
   runDistrictRange,
   runDistrictScrape,
   stopScraping,
@@ -88,10 +91,16 @@ export default function KhananConfigPage() {
     const v = data.config.configVersion;
     if (lastServerConfigVersion.current !== undefined && lastServerConfigVersion.current !== v) {
       setDraftPreset(null);
-      setShowCustom(false);
+      setShowCustom(data.config.speedPreset === 'custom');
     }
     lastServerConfigVersion.current = v;
   }, [data?.config]);
+
+  useEffect(() => {
+    if (data?.config?.speedPreset === 'custom') {
+      setShowCustom(true);
+    }
+  }, [data?.config?.speedPreset]);
 
   useEffect(() => {
     if (!justSaved) return;
@@ -106,7 +115,7 @@ export default function KhananConfigPage() {
       setJustSaved(true);
       setDraft(res.config);
       setDraftPreset(null);
-      setShowCustom(false);
+      setShowCustom(res.config.speedPreset === 'custom');
       queryClient.setQueryData(SCRAPER_CONFIG_QUERY_KEY, res);
     },
     onError: (e: Error) => setSaveError(e.message),
@@ -149,7 +158,10 @@ export default function KhananConfigPage() {
       scheduleReportDateMode: draft.scheduleReportDateMode,
       allowDataWipe: draft.allowDataWipe,
     };
-    if (draftPreset) body.speedPreset = draftPreset;
+    const savingCustom = showCustom || draft.speedPreset === 'custom';
+    if (draftPreset && !savingCustom) {
+      body.speedPreset = draftPreset;
+    }
     saveMutation.mutate(body);
   };
 
@@ -202,6 +214,8 @@ export default function KhananConfigPage() {
         onRunDistrictRange={(from, to, confirmLargeRange) =>
           runAction(() => runDistrictRange(from, to, confirmLargeRange))
         }
+        onPause={() => runAction(() => pauseScrapeQueue())}
+        onResume={() => runAction(() => resumeScrapeQueue())}
         onStop={() => runAction(() => stopScraping())}
       />
 
@@ -216,6 +230,16 @@ export default function KhananConfigPage() {
         onSelectPreset={(p) => {
           setDraftPreset(p);
           setShowCustom(false);
+          setDraft((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  ...SCRAPER_SPEED_PRESETS[p],
+                  speedPreset: p,
+                }
+              : prev,
+          );
+          setJustSaved(false);
         }}
         onToggleCustom={() => setShowCustom((v) => !v)}
         onChange={patchDraft}

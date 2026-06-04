@@ -30,7 +30,6 @@ interface ConsigneeTableProps {
   sortDir?: ConsigneeSortDir;
   onSort?: (key: ConsigneeSortKey) => void;
   getChalaanHref?: (row: EpassChallanRowDto) => string | null;
-  onSaveGhatNumber?: (rowId: string, ghatNumber: string) => Promise<void> | void;
 }
 
 export function ConsigneeTable({
@@ -39,7 +38,6 @@ export function ConsigneeTable({
   sortDir = 'asc',
   onSort,
   getChalaanHref,
-  onSaveGhatNumber,
 }: ConsigneeTableProps) {
   const sortable = Boolean(onSort);
 
@@ -87,7 +85,6 @@ export function ConsigneeTable({
               meta={
                 <>
                   <Chip tone="indigo">{normalizeMineralLabel(row.mineral)}</Chip>
-                  <Chip>{row.ghatNumber ?? 'Ghat NA'}</Chip>
                 </>
               }
               action={
@@ -119,7 +116,6 @@ export function ConsigneeTable({
                 />
                 <DataField label="Qty" value={formatQty(row.dispatchedQty)} />
                 <DataField className="col-span-2" label="Unit" value={row.unit ?? '—'} />
-                <DataField className="col-span-2" label="Ghat No." value={row.ghatNumber ?? '—'} />
               </div>
             </MobileDataCard>
           );
@@ -134,7 +130,6 @@ export function ConsigneeTable({
                 <SortHeader label="Report date" columnKey="date" />
                 <SortHeader label="Consignee" columnKey="consignee" />
                 <SortHeader label="Mineral" columnKey="mineral" />
-                <th className="px-4 py-3">Ghat Number</th>
                 <SortHeader label="Passes" columnKey="passes" align="right" />
                 <SortHeader label="Qty" columnKey="qty" align="right" />
                 <th className="px-4 py-3">Unit</th>
@@ -155,20 +150,6 @@ export function ConsigneeTable({
                     </td>
                     <td className="px-4 py-2.5 font-medium text-white">{row.consigneeName}</td>
                     <td className="px-4 py-2.5">{normalizeMineralLabel(row.mineral)}</td>
-                    <td className="px-4 py-2.5">
-                      {row.operatorType === 'lessee' && onSaveGhatNumber ? (
-                        <input
-                          type="text"
-                          defaultValue={row.ghatNumber ?? ''}
-                          onBlur={(e) => {
-                            void onSaveGhatNumber(row.id, e.currentTarget.value);
-                          }}
-                          className="h-9 w-32 rounded-lg border border-border-default bg-surface-deep px-2 text-sm text-white outline-none focus:border-indigo-400"
-                        />
-                      ) : (
-                        <span>{row.ghatNumber ?? '—'}</span>
-                      )}
-                    </td>
                     <td className="px-4 py-2.5 text-right">
                       {chalaanHref ? (
                         <Link

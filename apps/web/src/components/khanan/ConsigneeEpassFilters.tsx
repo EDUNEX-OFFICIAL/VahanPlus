@@ -16,6 +16,10 @@ interface ConsigneeEpassFiltersProps {
   values: EpassBrowseFilterValues;
   onApply: (next: EpassBrowseFilterValues) => void;
   onClear: () => void;
+  /** Show challan number search (Chalaan page only). */
+  showChallanSearch?: boolean;
+  /** Show destination search (Chalaan + Consignee; pass-level field). */
+  showDestinationSearch?: boolean;
 }
 
 const inputClass =
@@ -55,6 +59,7 @@ export function buildConsigneeFilterChips(values: EpassBrowseFilterValues): stri
   if (values.consignerSearch.trim()) chips.push(values.consignerSearch.trim());
   if (values.consigneeSearch.trim()) chips.push(`Consignee: ${values.consigneeSearch.trim()}`);
   if (values.destination.trim()) chips.push(`Destination: ${values.destination.trim()}`);
+  if (values.challanSearch.trim()) chips.push(`Chalaan: ${values.challanSearch.trim()}`);
   if (values.hideZeroPasses) chips.push('No zero passes');
   return chips;
 }
@@ -66,6 +71,8 @@ export function ConsigneeEpassFilters({
   values,
   onApply,
   onClear,
+  showChallanSearch = false,
+  showDestinationSearch = false,
 }: ConsigneeEpassFiltersProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<EpassBrowseFilterValues>(values);
@@ -361,6 +368,25 @@ export function ConsigneeEpassFilters({
                   </div>
                 </div>
 
+                {showChallanSearch ? (
+                  <div>
+                    <label
+                      className="text-xs uppercase tracking-wider text-text-secondary"
+                      htmlFor="chalaan-number-search"
+                    >
+                      Chalaan
+                    </label>
+                    <input
+                      id="chalaan-number-search"
+                      type="search"
+                      value={draft.challanSearch}
+                      onChange={(e) => patch({ challanSearch: e.target.value })}
+                      placeholder="Challan number"
+                      className={inputClass}
+                    />
+                  </div>
+                ) : null}
+
                 <div>
                   <label
                     className="text-xs uppercase tracking-wider text-text-secondary"
@@ -378,22 +404,24 @@ export function ConsigneeEpassFilters({
                   />
                 </div>
 
-                <div>
-                  <label
-                    className="text-xs uppercase tracking-wider text-text-secondary"
-                    htmlFor="consignee-destination-search"
-                  >
-                    Destination
-                  </label>
-                  <input
-                    id="consignee-destination-search"
-                    type="search"
-                    value={draft.destination}
-                    onChange={(e) => patch({ destination: e.target.value })}
-                    placeholder="Search destination"
-                    className={inputClass}
-                  />
-                </div>
+                {showDestinationSearch ? (
+                  <div>
+                    <label
+                      className="text-xs uppercase tracking-wider text-text-secondary"
+                      htmlFor="consignee-destination-search"
+                    >
+                      Destination
+                    </label>
+                    <input
+                      id="consignee-destination-search"
+                      type="search"
+                      value={draft.destination}
+                      onChange={(e) => patch({ destination: e.target.value })}
+                      placeholder="Search destination"
+                      className={inputClass}
+                    />
+                  </div>
+                ) : null}
 
                 <div>
                   <label

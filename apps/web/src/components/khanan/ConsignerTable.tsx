@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
+import { GhatStatusCell } from '@/components/khanan/GhatStatusCell';
 import { formatInt } from '@/lib/epass-aggregate';
 import { buildConsigneeHref } from '@/lib/epass-filter-params';
 import { formatOperatorType } from '@/lib/operator';
@@ -47,6 +48,7 @@ interface ConsignerTableProps {
   compact?: boolean;
   /** Preserve epass filters when linking to consignee page */
   linkSearchParams?: URLSearchParams;
+  onSaveGhatNumber?: (consignerRowId: string, ghatNumber: string) => Promise<void> | void;
 }
 
 export function ConsignerTable({
@@ -59,6 +61,7 @@ export function ConsignerTable({
   onSort,
   compact = false,
   linkSearchParams,
+  onSaveGhatNumber,
 }: ConsignerTableProps) {
   const showDistrictCols = showDmo && !hideDistrictColumns;
   const sortable = Boolean(onSort);
@@ -115,7 +118,7 @@ export function ConsignerTable({
               meta={
                 <>
                   <Chip tone="indigo">{row.mineral ?? 'Mineral NA'}</Chip>
-                  <Chip>{row.mineralType ?? 'Type NA'}</Chip>
+                  {row.ghatNumber ? <Chip tone="cyan">Ghat</Chip> : null}
                   {showDistrictCols && hasDmo(row) ? (
                     <Chip tone="cyan">{formatOperatorType(row.operatorType ?? row.role)}</Chip>
                   ) : null}
@@ -163,7 +166,7 @@ export function ConsignerTable({
                 <SortHeader label="Sl" columnKey="slNo" />
                 <SortHeader label="Consigner" columnKey="consigner" />
                 <SortHeader label="Mineral" columnKey="mineral" />
-                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Ghat</th>
                 <SortHeader label="Challan lines" columnKey="challans" align="right" />
               </tr>
             </thead>
@@ -192,7 +195,17 @@ export function ConsignerTable({
                     <td className="px-4 py-2.5 tabular-nums text-text-secondary">{index + 1}</td>
                     <td className="px-4 py-2.5 font-medium text-white">{row.consignerName}</td>
                     <td className="px-4 py-2.5">{row.mineral ?? '—'}</td>
-                    <td className="px-4 py-2.5">{row.mineralType ?? '—'}</td>
+                    <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <GhatStatusCell
+                        consignerRowId={row.id}
+                        ghatNumber={row.ghatNumber}
+                        editable={row.operatorType === 'lessee' && Boolean(onSaveGhatNumber)}
+                        onSave={(id, value) => {
+                          if (!onSaveGhatNumber) return;
+                          return onSaveGhatNumber(id, value);
+                        }}
+                      />
+                    </td>
                     <td className="px-4 py-2.5 text-right">
                       {row.challanCount > 0 ? (
                         <Link

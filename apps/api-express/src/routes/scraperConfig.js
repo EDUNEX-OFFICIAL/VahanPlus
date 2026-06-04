@@ -366,6 +366,16 @@ router.post('/actions/run-district-range', async (req, res) => {
     return res.status(400).json({ error: err instanceof Error ? err.message : 'Enqueue failed' });
   }
 
+  await prisma.khananScraperConfig.update({
+    where: { id: CONFIG_ID },
+    data: {
+      districtRangeFrom: from,
+      districtRangeTo: to,
+      defaultDistrictDate: to,
+    },
+  });
+  clearKhananConfigCache();
+
   res.status(201).json({
     enqueued,
     from,
@@ -460,15 +470,17 @@ router.post('/actions/resume-queue', async (_req, res) => {
  */
 async function stopScrapingQueue(prisma) {
   const queue = getScrapeQueue();
-  const { removedFromQueue } = await stopScrapeQueue(queue);
+  const queueResult = await stopScrapeQueue(queue);
   const cancelled = await prisma.scrapeJob.updateMany({
     where: { status: { in: ['pending', 'active'] } },
     data: { status: 'failed', error: 'Stopped by operator' },
   });
   return {
-    removedFromQueue,
+    removedFromQueue: queueResult.removedFromQueue,
     cancelledJobs: cancelled.count,
-    message: `Stopped. Cleared ${removedFromQueue} queue job(s); cancelled ${cancelled.count} scrape job(s). Use Run scrapper to start again.`,
+    queueReady: queueResult.queueReady,
+    queueRemaining: queueResult.queueRemaining,
+    message: `Stopped. Cleared ${queueResult.removedFromQueue} queue job(s); cancelled ${cancelled.count} scrape job(s). Use Run scrapper to start again.`,
   };
 }
 

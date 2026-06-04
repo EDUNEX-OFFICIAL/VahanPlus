@@ -11,7 +11,10 @@ export async function enqueueScrapeJob(prisma, payload) {
     data: { type, target, status: 'pending' },
   });
 
-  const bullJob = await getScrapeQueue().add(
+  const queue = getScrapeQueue();
+  await queue.resume();
+
+  const bullJob = await queue.add(
     'scrape',
     { jobId: job.id, type, target, metadata },
     { jobId: job.id },

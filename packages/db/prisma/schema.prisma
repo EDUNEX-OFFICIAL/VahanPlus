@@ -69,6 +69,8 @@ model KhananScraperConfig {
   scheduleCron             String?
   scheduleTimezone         String   @default("Asia/Kolkata")
   defaultDistrictDate      String?
+  districtRangeFrom        String?
+  districtRangeTo          String?
   scheduleReportDateMode   String   @default("yesterday")
   allowDataWipe            Boolean  @default(false)
   configVersion            Int      @default(1)
@@ -185,6 +187,7 @@ model EpassConsignerRow {
   challanDetailUrl String?
   leaseId          String?
   mineralId        String?
+  ghatNumber       String?
   scrapedAt        DateTime          @default(now())
   challans         EpassChallanRow[]
 

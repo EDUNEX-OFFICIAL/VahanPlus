@@ -25,6 +25,7 @@ const PRESERVE_KEYS = [
   'consigner',
   'consignee',
   'destination',
+  'challan',
 ] as const;
 
 export function parseEpassFilterParams(searchParams: URLSearchParams): EpassBrowseFilterValues {
@@ -44,6 +45,7 @@ export function parseEpassFilterParams(searchParams: URLSearchParams): EpassBrow
     hideZeroPasses: searchParams.get('hideZeroPasses') === '1',
     consignerRowId: searchParams.get('consignerRowId') ?? '',
     destination: searchParams.get('destination') ?? '',
+    challanSearch: searchParams.get('challan') ?? '',
   };
 }
 
@@ -68,6 +70,7 @@ export function serializeEpassFilterParams(
     consignee: filters.consigneeSearch.trim() || null,
     consignerRowId: filters.consignerRowId || null,
     destination: filters.destination.trim() || null,
+    challan: filters.challanSearch.trim() || null,
     ...extra,
   };
 }
@@ -174,6 +177,7 @@ export function toChalaanListQueryParams(
     consigner: filters.consignerSearch.trim() || undefined,
     consignee: filters.consigneeSearch.trim() || undefined,
     destination: filters.destination.trim() || undefined,
+    challan: filters.challanSearch.trim() || undefined,
     hideZeroPasses: filters.hideZeroPasses,
     sort: sortKey as ChalaanListParams['sort'],
     dir: sortKey ? sortDir : undefined,

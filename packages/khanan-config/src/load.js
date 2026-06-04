@@ -26,6 +26,8 @@ function rowToConfig(row) {
     scheduleCron: row.scheduleCron,
     scheduleTimezone: row.scheduleTimezone,
     defaultDistrictDate: row.defaultDistrictDate,
+    districtRangeFrom: row.districtRangeFrom ?? null,
+    districtRangeTo: row.districtRangeTo ?? null,
     scheduleReportDateMode: row.scheduleReportDateMode ?? 'yesterday',
     allowDataWipe: row.allowDataWipe ?? false,
     configVersion: row.configVersion,

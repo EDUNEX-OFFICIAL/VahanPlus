@@ -165,19 +165,16 @@ export async function enqueueChallanPassJobs(prisma, challanRows) {
  * @param {import('@vahanplus/db').PrismaClient} prisma
  * @param {string[]} vehicleRegNos
  * @param {string} [parentJobId]
+ * @param {{ refreshAll?: boolean }} [options]
  */
-export async function enqueueVehicleStatusJobs(prisma, vehicleRegNos, parentJobId) {
+export async function enqueueVehicleStatusJobs(prisma, vehicleRegNos, parentJobId, options = {}) {
   const { skipVehicleStatus, mcvVehicleStatusUrl } = await getOrchestratorConfig(prisma);
   if (skipVehicleStatus) {
     return { enqueued: 0, skipped: true };
   }
 
   const normalized = [
-    ...new Set(
-      vehicleRegNos
-        .map((vrn) => normalizeVehicleRegNo(vrn))
-        .filter((vrn) => vrn != null),
-    ),
+    ...new Set(vehicleRegNos.map((vrn) => normalizeVehicleRegNo(vrn)).filter((vrn) => vrn != null)),
   ];
 
   if (normalized.length === 0) {
@@ -189,9 +186,12 @@ export async function enqueueVehicleStatusJobs(prisma, vehicleRegNos, parentJobI
     select: { vehicleRegNo: true },
   });
   const existingSet = new Set(existing.map((r) => r.vehicleRegNo));
-  const missing = normalized.filter((vrn) => !existingSet.has(vrn));
+  const toEnqueue = options.refreshAll
+    ? normalized
+    : normalized.filter((vrn) => !existingSet.has(vrn));
+  const skippedExisting = options.refreshAll ? 0 : normalized.length - toEnqueue.length;
 
-  if (missing.length === 0) {
+  if (toEnqueue.length === 0) {
     return { enqueued: 0, skippedExisting: normalized.length };
   }
 
@@ -200,7 +200,7 @@ export async function enqueueVehicleStatusJobs(prisma, vehicleRegNos, parentJobI
 
   const result = await bulkEnqueueScrapeJobs(prisma, queue, {
     type: 'bihar_mcv_vehicle_status',
-    items: missing,
+    items: toEnqueue,
     getTarget: () => mcvVehicleStatusUrl,
     getMetadata: (vehicleRegNo) => ({
       vehicleRegNo,
@@ -209,7 +209,7 @@ export async function enqueueVehicleStatusJobs(prisma, vehicleRegNos, parentJobI
     getDelayMs,
   });
 
-  return { ...result, skippedExisting: existingSet.size };
+  return { ...result, skippedExisting };
 }
 
 /**

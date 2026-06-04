@@ -1,3 +1,17 @@
+import { normalizeVehicleRegNo } from '@vahanplus/scraper-bihar-epass';
+import {
+  buildKhananPassAnalyzeStats,
+  buildKhananPassMapping,
+  commitKhananPassImport,
+  KHANAN_PASS_ALIASES,
+  KHANAN_PASS_REQUIRED,
+} from './khananPassImport.js';
+
+export { commitKhananPassImport, mapSourceTypeToOperator } from './khananPassImport.js';
+export { parsePortalReportDate } from '@vahanplus/scraper-bihar-epass';
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 const DISTRICT_REQUIRED = ['dmoName'];
 const DISTRICT_ALIASES = {
   dmoName: ['dmoname', 'district', 'dmo name', 'dmo'],
@@ -28,6 +42,31 @@ const VEHICLE_ALIASES = {
 };
 
 /**
+ * @param {string[]} headers
+ */
+export function stripBomFromHeaders(headers) {
+  if (!headers?.length) return headers ?? [];
+  const copy = headers.map(String);
+  copy[0] = copy[0].replace(/^\uFEFF/, '').trim();
+  return copy;
+}
+
+/**
+ * @param {string | undefined} value
+ */
+export function validateReportDate(value) {
+  const trimmed = value?.trim();
+  if (!trimmed || !ISO_DATE_RE.test(trimmed)) {
+    throw new Error('reportDate must be YYYY-MM-DD');
+  }
+  const d = new Date(`${trimmed}T12:00:00.000Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== trimmed) {
+    throw new Error('reportDate must be a valid calendar date');
+  }
+  return trimmed;
+}
+
+/**
  * @param {string} header
  */
 function normalizeHeader(header) {
@@ -35,6 +74,18 @@ function normalizeHeader(header) {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * @param {number} districtScore
+ * @param {number} vehicleScore
+ */
+function buildAmbiguousWarnings(districtScore, vehicleScore) {
+  const warnings = [];
+  if (districtScore >= 3 && vehicleScore >= 2) {
+    warnings.push('File has both district and vehicle columns; importing as district report.');
+  }
+  return warnings;
 }
 
 /**
@@ -65,31 +116,57 @@ function buildMapping(headers, aliases, required) {
 /**
  * @param {string[]} headers
  * @param {Record<string, string>[]} sampleRows
+ * @param {{ totalRowCount?: number, statsRows?: Record<string, string>[] }} [options]
  */
-export function analyzeImportPayload(headers, sampleRows) {
-  if (!headers?.length) {
+export function analyzeImportPayload(headers, sampleRows, options = {}) {
+  const cleanHeaders = stripBomFromHeaders(headers);
+  const rowCount =
+    typeof options.totalRowCount === 'number' && options.totalRowCount >= 0
+      ? options.totalRowCount
+      : (sampleRows?.length ?? 0);
+
+  if (!cleanHeaders?.length) {
     return {
       detectedType: null,
       mapping: {},
       errors: ['No headers found'],
       warnings: [],
-      rowCount: sampleRows?.length ?? 0,
+      rowCount,
     };
   }
 
-  const district = buildMapping(headers, DISTRICT_ALIASES, DISTRICT_REQUIRED);
-  const vehicle = buildMapping(headers, VEHICLE_ALIASES, VEHICLE_REQUIRED);
+  const khanan = buildKhananPassMapping(cleanHeaders, KHANAN_PASS_ALIASES, KHANAN_PASS_REQUIRED);
+  if (khanan.errors.length === 0) {
+    const statsRows =
+      Array.isArray(options.statsRows) && options.statsRows.length > 0
+        ? options.statsRows
+        : sampleRows;
+    const stats = buildKhananPassAnalyzeStats(statsRows ?? [], khanan.mapping);
+    return {
+      detectedType: 'khanan_pass',
+      mapping: khanan.mapping,
+      errors: [],
+      warnings: stats.warnings,
+      rowCount,
+      distinctDates: stats.distinctDates,
+      distinctVrns: stats.distinctVrns,
+    };
+  }
+
+  const district = buildMapping(cleanHeaders, DISTRICT_ALIASES, DISTRICT_REQUIRED);
+  const vehicle = buildMapping(cleanHeaders, VEHICLE_ALIASES, VEHICLE_REQUIRED);
 
   const districtScore = Object.keys(district.mapping).length;
   const vehicleScore = Object.keys(vehicle.mapping).length;
+  const ambiguousWarnings = buildAmbiguousWarnings(districtScore, vehicleScore);
 
   if (districtScore >= 3 && districtScore >= vehicleScore) {
     return {
       detectedType: 'district_snapshot',
       mapping: district.mapping,
       errors: district.errors,
-      warnings: [],
-      rowCount: sampleRows?.length ?? 0,
+      warnings: ambiguousWarnings,
+      rowCount,
     };
   }
 
@@ -98,17 +175,17 @@ export function analyzeImportPayload(headers, sampleRows) {
       detectedType: 'vehicle_status',
       mapping: vehicle.mapping,
       errors: vehicle.errors,
-      warnings: [],
-      rowCount: sampleRows?.length ?? 0,
+      warnings: ambiguousWarnings,
+      rowCount,
     };
   }
 
   return {
     detectedType: null,
     mapping: {},
-    errors: ['Unrecognized CSV format'],
+    errors: ['Unrecognized file format'],
     warnings: [],
-    rowCount: sampleRows?.length ?? 0,
+    rowCount,
   };
 }
 
@@ -137,7 +214,20 @@ function parseNum(value) {
  */
 export async function commitDistrictImport(prisma, input) {
   const { rows, mapping } = input;
-  const reportDate = input.reportDate?.trim() || new Date().toISOString().slice(0, 10);
+  const reportDate = validateReportDate(
+    input.reportDate?.trim() || new Date().toISOString().slice(0, 10),
+  );
+
+  /** @type {ReturnType<typeof pickMapped>[]} */
+  const validRows = [];
+  for (const row of rows) {
+    const m = pickMapped(row, mapping);
+    if (m.dmoName) validRows.push(m);
+  }
+
+  if (validRows.length === 0) {
+    throw new Error('No valid district rows (missing DMO/district name)');
+  }
 
   const snapshot = await prisma.epassSnapshot.create({
     data: {
@@ -149,9 +239,7 @@ export async function commitDistrictImport(prisma, input) {
   });
 
   let slNo = 0;
-  for (const row of rows) {
-    const m = pickMapped(row, mapping);
-    if (!m.dmoName) continue;
+  for (const m of validRows) {
     slNo += 1;
     await prisma.epassDistrictRow.create({
       data: {
@@ -182,12 +270,16 @@ export async function commitDistrictImport(prisma, input) {
 export async function commitVehicleStatusImport(prisma, input) {
   const { rows, mapping } = input;
   let upserted = 0;
+  let skipped = 0;
   const now = new Date();
 
   for (const row of rows) {
     const m = pickMapped(row, mapping);
-    const vehicleRegNo = m.vehicleRegNo?.toUpperCase();
-    if (!vehicleRegNo) continue;
+    const vehicleRegNo = normalizeVehicleRegNo(m.vehicleRegNo);
+    if (!vehicleRegNo) {
+      skipped += 1;
+      continue;
+    }
 
     const foundRaw = (m.found ?? 'true').toLowerCase();
     const found = !['false', '0', 'no', 'n'].includes(foundRaw);
@@ -227,5 +319,9 @@ export async function commitVehicleStatusImport(prisma, input) {
     upserted += 1;
   }
 
-  return { upserted };
+  if (upserted === 0) {
+    throw new Error('No valid vehicle rows (missing or blank VRN)');
+  }
+
+  return { upserted, skipped };
 }

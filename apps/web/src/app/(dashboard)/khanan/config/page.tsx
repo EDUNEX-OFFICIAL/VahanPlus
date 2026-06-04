@@ -12,10 +12,8 @@ import { KhananConfigDangerZone } from '@/components/khanan/config/KhananConfigD
 import { KhananConfigLiveScrape } from '@/components/khanan/config/KhananConfigLiveScrape';
 import { KhananConfigPipeline } from '@/components/khanan/config/KhananConfigPipeline';
 import { KhananConfigSpeed } from '@/components/khanan/config/KhananConfigSpeed';
-import {
-  KhananConfigStatusBar,
-  scrapeQueueInProgress,
-} from '@/components/khanan/config/KhananConfigStatusBar';
+import { KhananConfigStatusBar } from '@/components/khanan/config/KhananConfigStatusBar';
+import { isScraperQueueReady, scrapeQueueInProgress } from '@/lib/scraper-control-mode';
 import type { KhananScraperConfig, KhananScraperConfigPatch } from '@/lib/scraper-config-types';
 import { formatClearDataSummary } from '@/lib/format-clear-data-summary';
 import { SCRAPER_SPEED_PRESETS } from '@/lib/scraper-speed-presets';
@@ -32,6 +30,9 @@ import {
   runDistrictScrape,
   stopScraping,
 } from '@/lib/scraper-config';
+
+const STOP_COOLDOWN_MAX_MS = 15_000;
+const OPTIMISTIC_RUNNING_MAX_MS = 30_000;
 
 const SPEED_FIELDS = new Set([
   'workerConcurrency',
@@ -52,18 +53,57 @@ export default function KhananConfigPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
+  const [stopCooldown, setStopCooldown] = useState(false);
+  const [optimisticRunning, setOptimisticRunning] = useState(false);
+  const stopCooldownStartedAt = useRef<number | null>(null);
+  const optimisticStartedAt = useRef<number | null>(null);
   const lastServerConfigVersion = useRef<number | undefined>(undefined);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: SCRAPER_CONFIG_QUERY_KEY,
     queryFn: () => fetchScraperConfig(),
-    refetchInterval: 10_000,
+    refetchInterval: stopCooldown ? 2_000 : 10_000,
   });
 
   const scrapeActive = useMemo(() => {
     if (!data?.status) return false;
-    return scrapeQueueInProgress(data.status) > 0;
-  }, [data?.status]);
+    if (stopCooldown) return true;
+    return scrapeQueueInProgress(data.status) > 0 || optimisticRunning;
+  }, [data?.status, optimisticRunning, stopCooldown]);
+
+  useEffect(() => {
+    if (!stopCooldown || !data?.status) return;
+
+    const started = stopCooldownStartedAt.current ?? Date.now();
+    if (stopCooldownStartedAt.current == null) {
+      stopCooldownStartedAt.current = started;
+    }
+
+    const elapsed = Date.now() - started;
+    if (elapsed >= STOP_COOLDOWN_MAX_MS || isScraperQueueReady(data.status)) {
+      setStopCooldown(false);
+      stopCooldownStartedAt.current = null;
+    }
+  }, [stopCooldown, data?.status]);
+
+  useEffect(() => {
+    if (!optimisticRunning || !data?.status) return;
+
+    if (scrapeQueueInProgress(data.status) > 0) {
+      setOptimisticRunning(false);
+      optimisticStartedAt.current = null;
+      return;
+    }
+
+    const started = optimisticStartedAt.current ?? Date.now();
+    if (optimisticStartedAt.current == null) {
+      optimisticStartedAt.current = started;
+    }
+    if (Date.now() - started >= OPTIMISTIC_RUNNING_MAX_MS) {
+      setOptimisticRunning(false);
+      optimisticStartedAt.current = null;
+    }
+  }, [optimisticRunning, data?.status]);
 
   const { data: liveData, isLoading: liveLoading } = useQuery({
     queryKey: SCRAPER_LIVE_QUERY_KEY,
@@ -123,6 +163,18 @@ export default function KhananConfigPage() {
 
   const controlsBusy = saveMutation.isPending || actionBusy;
 
+  const persistDistrictRange = useCallback(
+    async (from: string, to: string) => {
+      const res = await patchScraperConfig({
+        districtRangeFrom: from,
+        districtRangeTo: to,
+      });
+      setDraft(res.config);
+      queryClient.setQueryData(SCRAPER_CONFIG_QUERY_KEY, res);
+    },
+    [queryClient],
+  );
+
   const patchDraft = useCallback((patch: Partial<KhananScraperConfig>) => {
     const touchesSpeed = Object.keys(patch).some((k) => SPEED_FIELDS.has(k));
     setDraft((prev) =>
@@ -155,6 +207,8 @@ export default function KhananConfigPage() {
       scheduleCron: draft.scheduleCron,
       scheduleTimezone: draft.scheduleTimezone,
       defaultDistrictDate: draft.defaultDistrictDate,
+      districtRangeFrom: draft.districtRangeFrom,
+      districtRangeTo: draft.districtRangeTo,
       scheduleReportDateMode: draft.scheduleReportDateMode,
       allowDataWipe: draft.allowDataWipe,
     };
@@ -180,6 +234,18 @@ export default function KhananConfigPage() {
     }
   };
 
+  const markOptimisticRunning = () => {
+    setOptimisticRunning(true);
+    optimisticStartedAt.current = Date.now();
+  };
+
+  const beginStopCooldown = () => {
+    setOptimisticRunning(false);
+    optimisticStartedAt.current = null;
+    setStopCooldown(true);
+    stopCooldownStartedAt.current = Date.now();
+  };
+
   if (isLoading || !draft || !data) {
     return (
       <PageStack>
@@ -203,20 +269,46 @@ export default function KhananConfigPage() {
         <h2 className="mt-2 text-2xl font-bold text-white">Bihar portal fetch</h2>
       </Card>
 
-      <KhananConfigStatusBar status={data.status} updatedAt={draft.updatedAt} />
+      <KhananConfigStatusBar
+        status={data.status}
+        updatedAt={draft.updatedAt}
+        stopCooldown={stopCooldown}
+        optimisticRunning={optimisticRunning}
+      />
 
       <KhananConfigActions
         status={data.status}
         defaultDistrictDate={draft.defaultDistrictDate}
+        districtRangeFrom={draft.districtRangeFrom ?? null}
+        districtRangeTo={draft.districtRangeTo ?? null}
         scheduleTimezone={draft.scheduleTimezone}
+        stopCooldown={stopCooldown}
+        optimisticRunning={optimisticRunning}
         busy={controlsBusy}
-        onRunDistrict={(date) => runAction(() => runDistrictScrape(date))}
+        onPersistDistrictRange={persistDistrictRange}
+        onRunDistrict={(date) =>
+          runAction(async () => {
+            const res = await runDistrictScrape(date);
+            if (res.enqueued !== 0) markOptimisticRunning();
+            return res;
+          })
+        }
         onRunDistrictRange={(from, to, confirmLargeRange) =>
-          runAction(() => runDistrictRange(from, to, confirmLargeRange))
+          runAction(async () => {
+            const res = await runDistrictRange(from, to, confirmLargeRange);
+            if (res.enqueued !== 0) markOptimisticRunning();
+            return res;
+          })
         }
         onPause={() => runAction(() => pauseScrapeQueue())}
         onResume={() => runAction(() => resumeScrapeQueue())}
-        onStop={() => runAction(() => stopScraping())}
+        onStop={() =>
+          runAction(async () => {
+            const res = await stopScraping();
+            beginStopCooldown();
+            return res;
+          })
+        }
       />
 
       <KhananConfigSpeed

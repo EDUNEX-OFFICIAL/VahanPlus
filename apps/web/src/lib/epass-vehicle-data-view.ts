@@ -14,6 +14,8 @@ export const VEHICLE_DATA_SORT_KEYS: VehicleDataSortKey[] = [
   'passes',
   'qty',
   'lastDate',
+  'grossWeight',
+  'unladen',
 ];
 
 export function parseVehicleDataSortKey(value: string | null): VehicleDataSortKey | null {

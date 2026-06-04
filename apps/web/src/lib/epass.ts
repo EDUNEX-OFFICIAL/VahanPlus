@@ -127,6 +127,8 @@ export function fetchChalaanPassList(params: ChalaanListParams = {}) {
   if (params.mineral) q.set('mineral', params.mineral);
   if (params.consigner) q.set('consigner', params.consigner);
   if (params.consignee) q.set('consignee', params.consignee);
+  if (params.destination) q.set('destination', params.destination);
+  if (params.challan) q.set('challan', params.challan);
   if (params.hideZeroPasses) q.set('hideZeroPasses', '1');
   if (params.sort) q.set('sort', params.sort);
   if (params.dir) q.set('dir', params.dir);
@@ -140,6 +142,14 @@ export function fetchChalaanPasses(challanRowId: string) {
   return apiFetch<ChalaanPassesResponse>(`/epass/chalaans/${challanRowId}/passes`);
 }
 
+export function updateConsignerGhatNumber(consignerRowId: string, ghatNumber: string) {
+  return apiFetch<{ item: unknown }>(`/epass/consigners/${consignerRowId}/ghat-number`, {
+    method: 'PATCH',
+    body: JSON.stringify({ ghatNumber }),
+  });
+}
+
+/** @deprecated Use updateConsignerGhatNumber */
 export function updateChallanGhatNumber(challanRowId: string, ghatNumber: string) {
   return apiFetch<{ item: unknown }>(`/epass/challans/${challanRowId}/ghat-number`, {
     method: 'PATCH',

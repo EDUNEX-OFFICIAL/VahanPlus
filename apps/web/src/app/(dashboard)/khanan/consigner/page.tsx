@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
@@ -41,6 +41,7 @@ import {
   fetchEpassSnapshots,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
+  updateConsignerGhatNumber,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import { parseOperatorParam } from '@/lib/operator';
@@ -171,6 +172,17 @@ function useConsignerSortHandlers(
   return { sortKey, sortDir, updateParams, handleSort, handleApplyFilters };
 }
 
+function useSaveGhatNumber() {
+  const queryClient = useQueryClient();
+  return useCallback(
+    async (consignerRowId: string, ghatNumber: string) => {
+      await updateConsignerGhatNumber(consignerRowId, ghatNumber);
+      await queryClient.invalidateQueries({ queryKey: ['epass'] });
+    },
+    [queryClient],
+  );
+}
+
 function ConsignerDrillDown({
   districtRowId,
   operatorType,
@@ -180,6 +192,7 @@ function ConsignerDrillDown({
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const onSaveGhatNumber = useSaveGhatNumber();
   const sortKey = parseSortKey(searchParams.get('sort'));
   const sortDir: ConsignerSortDir = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
 
@@ -257,6 +270,7 @@ function ConsignerDrillDown({
           onSort={handleSort}
           consigneeLinkBase="/khanan/consignee"
           linkSearchParams={new URLSearchParams(searchParams.toString())}
+          onSaveGhatNumber={onSaveGhatNumber}
         />
       )}
     </>
@@ -266,6 +280,7 @@ function ConsignerDrillDown({
 function ConsignerBrowse() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const onSaveGhatNumber = useSaveGhatNumber();
   const appliedFilters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
   const offset = Math.max(Number(searchParams.get('offset') || '0'), 0);
   const { sortKey, sortDir, updateParams, handleSort, handleApplyFilters } =
@@ -517,6 +532,7 @@ function ConsignerBrowse() {
                   sortDir={sortDir}
                   onSort={handleSort}
                   linkSearchParams={new URLSearchParams(searchParams.toString())}
+                  onSaveGhatNumber={onSaveGhatNumber}
                 />
               ) : (
                 <ConsignerTable
@@ -527,6 +543,7 @@ function ConsignerBrowse() {
                   onSort={handleSort}
                   consigneeLinkBase="/khanan/consignee"
                   linkSearchParams={new URLSearchParams(searchParams.toString())}
+                  onSaveGhatNumber={onSaveGhatNumber}
                 />
               )}
 

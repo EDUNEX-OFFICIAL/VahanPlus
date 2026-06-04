@@ -1,6 +1,6 @@
 import { apiFetch } from '@/lib/api';
 
-export type ImportDetectedType = 'district_snapshot' | 'vehicle_status';
+export type ImportDetectedType = 'district_snapshot' | 'vehicle_status' | 'khanan_pass';
 
 export interface ImportAnalyzeResult {
   detectedType: ImportDetectedType | null;
@@ -8,6 +8,8 @@ export interface ImportAnalyzeResult {
   errors: string[];
   warnings: string[];
   rowCount: number;
+  distinctDates?: { count: number; sample: string[] };
+  distinctVrns?: number;
 }
 
 export interface ImportCommitResult {
@@ -15,12 +17,24 @@ export interface ImportCommitResult {
   rowsImported?: number;
   reportDate?: string;
   upserted?: number;
+  skipped?: number;
+  batchId?: string;
+  snapshotsCreated?: number;
+  passesImported?: number;
+  vrnsQueued?: number;
+  vrnsSkippedExisting?: number;
+  warnings?: string[];
 }
 
-export function analyzeImport(headers: string[], sampleRows: Record<string, string>[]) {
+export function analyzeImport(
+  headers: string[],
+  sampleRows: Record<string, string>[],
+  totalRowCount?: number,
+  statsRows?: Record<string, string>[],
+) {
   return apiFetch<ImportAnalyzeResult>('/epass/import/analyze', {
     method: 'POST',
-    body: JSON.stringify({ headers, sampleRows }),
+    body: JSON.stringify({ headers, sampleRows, totalRowCount, statsRows }),
   });
 }
 
@@ -29,11 +43,40 @@ export function commitImport(body: {
   mapping: Record<string, string>;
   rows: Record<string, string>[];
   reportDate?: string;
+  replaceExisting?: boolean;
+  refreshVehicleStatus?: boolean;
 }) {
   return apiFetch<ImportCommitResult>('/epass/import/commit', {
     method: 'POST',
     body: JSON.stringify(body),
   });
+}
+
+/** Normalize VRN for duplicate detection (matches server import). */
+function normalizeVrnKey(raw: string): string {
+  return raw.trim().replace(/\s+/g, '').toUpperCase();
+}
+
+/** Warn when the same VRN appears more than once (last row wins on commit). */
+export function buildDuplicateVrnWarnings(
+  rows: Record<string, string>[],
+  mapping: Record<string, string>,
+): string[] {
+  const col = mapping.vehicleRegNo;
+  if (!col) return [];
+
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const raw = row[col]?.trim();
+    if (!raw) continue;
+    const key = normalizeVrnKey(raw);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const duplicateVrns = [...counts.values()].filter((n) => n > 1).length;
+  if (duplicateVrns === 0) return [];
+
+  return [`${duplicateVrns} duplicate VRN(s) in file; last row wins for each.`];
 }
 
 /** Parse CSV text into headers and row objects (first line = headers). */

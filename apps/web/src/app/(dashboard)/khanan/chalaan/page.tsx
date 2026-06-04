@@ -275,6 +275,7 @@ function ChalaanPageContent() {
         hideZeroPasses: false,
         consignerRowId: '',
         destination: '',
+        challanSearch: '',
       }),
       sort: null,
       dir: null,
@@ -310,6 +311,8 @@ function ChalaanPageContent() {
         values={{ ...appliedFilters, consignerRowId: '' }}
         onApply={handleApplyFilters}
         onClear={handleClearFilters}
+        showChallanSearch
+        showDestinationSearch
       />
 
       {browseEmpty ? (

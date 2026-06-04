@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { AmbientBlobs } from './AmbientBlobs';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -9,6 +10,11 @@ import { cn } from '@/lib/utils';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname]);
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">

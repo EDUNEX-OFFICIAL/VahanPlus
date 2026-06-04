@@ -19,6 +19,7 @@ import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import { formatOperatorType } from '@/lib/operator';
 import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import { applyConsigneeFilters, sortConsigneeRows } from '@/lib/epass-consignee-view';
+import { normalizeConsigneeFilterQuery } from '@/lib/epass-query-normalize';
 import {
   buildChalaanHref,
   parseEpassFilterParams,
@@ -33,7 +34,6 @@ import {
   fetchEpassSnapshots,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
-  updateChallanGhatNumber,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import type {
@@ -271,6 +271,7 @@ function ConsigneePageContent() {
       consignee: null,
       hideZeroChallans: null,
       hideZeroPasses: null,
+      destination: null,
       consignerRowId: null,
       snapshotId: latest?.id ?? null,
       reportDate: latest?.reportDate ?? null,
@@ -440,6 +441,9 @@ function ConsigneePageContent() {
                   {formatOperatorType(
                     challansQuery.data.consigner.operatorType ?? challansQuery.data.consigner.role,
                   )}
+                  {challansQuery.data.consigner.ghatNumber?.trim()
+                    ? ` · ${challansQuery.data.consigner.ghatNumber.trim()}`
+                    : ''}
                 </span>
               </h2>
               {displayRows.length > 0 ? (
@@ -465,16 +469,12 @@ function ConsigneePageContent() {
                             ? buildChalaanHref(searchParams, {
                                 district: challansQuery.data!.districtRow.dmoName,
                                 consigner: challansQuery.data!.consigner.consignerName,
-                                consignee: row.consigneeName,
+                                consignee: normalizeConsigneeFilterQuery(row.consigneeName),
                                 snapshotId: resolvedSnapshotId ?? null,
                               })
                             : null
                       : undefined
                   }
-                  onSaveGhatNumber={async (rowId, ghatNumber) => {
-                    await updateChallanGhatNumber(rowId, ghatNumber);
-                    await challansQuery.refetch();
-                  }}
                 />
               )}
               {displayRows.length > 0 ? (

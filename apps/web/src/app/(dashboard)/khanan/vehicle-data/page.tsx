@@ -280,6 +280,7 @@ function VehicleDataPageContent() {
         hideZeroPasses: false,
         consignerRowId: '',
         destination: '',
+        challanSearch: '',
       }),
       q: null,
       sort: null,
@@ -358,6 +359,11 @@ function VehicleDataPageContent() {
             onSort={handleSort}
             detailQueryParams={detailQueryParams}
           />
+          {data.items.some((r) => !r.hasVehicleStatus) ? (
+            <p className="text-xs text-text-secondary">
+              GVW and Unladen come from Vehicle Status (MCV scrape on Khanan Config) or Import Data.
+            </p>
+          ) : null}
           {data.items.length > 0 ? (
             <ResponsivePagination
               total={total}

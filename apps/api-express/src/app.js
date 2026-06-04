@@ -37,7 +37,14 @@ export function createApp() {
     }),
   );
   app.use(cookieParser());
-  app.use(express.json());
+  app.use((req, res, next) => {
+    const isImportCommit =
+      req.method === 'POST' &&
+      (req.path === '/epass/import/commit' ||
+        req.originalUrl.split('?')[0] === '/epass/import/commit');
+    const parser = express.json({ limit: isImportCommit ? '15mb' : '100kb' });
+    parser(req, res, next);
+  });
   app.use(metricsMiddleware);
 
   app.use(healthRoutes);

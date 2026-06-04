@@ -71,6 +71,21 @@ async function runScrape(type, target, metadata) {
   return pool.withPage(async () => scraper.scrape(ctx));
 }
 
+const STOPPED_BY_OPERATOR = 'Stopped by operator';
+
+/**
+ * @param {import('@vahanplus/db').PrismaClient} prisma
+ * @param {string} jobId
+ */
+async function wasJobStoppedByOperator(prisma, jobId) {
+  const row = await prisma.scrapeJob.findUnique({
+    where: { id: jobId },
+    select: { status: true, error: true },
+  });
+  if (!row) return true;
+  return row.status === 'failed' && row.error === STOPPED_BY_OPERATOR;
+}
+
 async function ensureScrapeJobRecord(prisma, job) {
   let { jobId, type, target, metadata } = job.data;
 
@@ -120,40 +135,52 @@ async function processJob(job) {
       },
     });
 
+    const stoppedDuringRun = await wasJobStoppedByOperator(prisma, jobId);
+
     let etlSummary = null;
-    if (result.success && result.data) {
+    if (result.success && result.data && !stoppedDuringRun) {
       if (type === 'bihar_epass') {
         etlSummary = await persistEpassReport(prisma, result.data, jobId);
         if (autoFanout && etlSummary?.snapshotId) {
-          const fanout = await enqueueConsignerJobsForSnapshot(
-            prisma,
-            etlSummary.snapshotId,
-            jobId,
-          );
-          etlSummary = { ...etlSummary, fanout };
+          if (await wasJobStoppedByOperator(prisma, jobId)) {
+            etlSummary = { ...etlSummary, fanout: { enqueued: 0, skipped: true } };
+          } else {
+            const fanout = await enqueueConsignerJobsForSnapshot(
+              prisma,
+              etlSummary.snapshotId,
+              jobId,
+            );
+            etlSummary = { ...etlSummary, fanout };
+          }
         }
       } else if (type === 'bihar_epass_consigner') {
         etlSummary = await persistConsignerReport(prisma, result.data);
         if (autoFanout && etlSummary?.consignerRows?.length) {
-          const challanFanout = await enqueueChallanJobsForConsigners(
-            prisma,
-            etlSummary.consignerRows,
-          );
-          etlSummary = { ...etlSummary, challanFanout };
+          if (!(await wasJobStoppedByOperator(prisma, jobId))) {
+            const challanFanout = await enqueueChallanJobsForConsigners(
+              prisma,
+              etlSummary.consignerRows,
+            );
+            etlSummary = { ...etlSummary, challanFanout };
+          }
         }
       } else if (type === 'bihar_epass_challan') {
         etlSummary = await persistChallanReport(prisma, result.data);
         if (autoFanout && etlSummary?.challanRows?.length) {
-          const passFanout = await enqueueChallanPassJobs(prisma, etlSummary.challanRows);
-          etlSummary = { ...etlSummary, passFanout };
+          if (!(await wasJobStoppedByOperator(prisma, jobId))) {
+            const passFanout = await enqueueChallanPassJobs(prisma, etlSummary.challanRows);
+            etlSummary = { ...etlSummary, passFanout };
+          }
         }
       } else if (type === 'bihar_epass_challan_pass') {
         etlSummary = await persistChallanPassReport(prisma, result.data);
         if (autoFanout && metadata?.challanRowId) {
-          const vrns = await getVehicleRegNosForChallanRow(prisma, String(metadata.challanRowId));
-          if (vrns.length > 0) {
-            const vehicleStatusFanout = await enqueueVehicleStatusJobs(prisma, vrns, jobId);
-            etlSummary = { ...etlSummary, vehicleStatusFanout };
+          if (!(await wasJobStoppedByOperator(prisma, jobId))) {
+            const vrns = await getVehicleRegNosForChallanRow(prisma, String(metadata.challanRowId));
+            if (vrns.length > 0) {
+              const vehicleStatusFanout = await enqueueVehicleStatusJobs(prisma, vrns, jobId);
+              etlSummary = { ...etlSummary, vehicleStatusFanout };
+            }
           }
         }
       } else if (type === 'bihar_mcv_vehicle_status') {
@@ -168,16 +195,19 @@ async function processJob(job) {
             ...result.data,
             ...(etlSummary ? { etl: etlSummary } : {}),
             durationMs: Date.now() - startedAt,
+            ...(stoppedDuringRun ? { cancelledByStop: true } : {}),
           }
         : undefined,
     };
 
+    const finalStatus = stoppedDuringRun ? 'failed' : result.success ? 'completed' : 'failed';
+
     await prisma.scrapeJob.update({
       where: { id: jobId },
       data: {
-        status: result.success ? 'completed' : 'failed',
+        status: finalStatus,
         result: enrichedResult,
-        error: result.error ?? null,
+        error: stoppedDuringRun ? STOPPED_BY_OPERATOR : (result.error ?? null),
       },
     });
 

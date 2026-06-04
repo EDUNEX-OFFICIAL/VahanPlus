@@ -10,6 +10,32 @@ async function countQueuedJobs(queue) {
   );
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Wait until the queue has no waiting/active/delayed/paused jobs (post-obliterate).
+ *
+ * @param {BullQueue} queue
+ * @param {{ maxAttempts?: number; delayMs?: number }} [opts]
+ */
+async function waitForQueueDrained(queue, opts = {}) {
+  const maxAttempts = opts.maxAttempts ?? 5;
+  const delayMs = opts.delayMs ?? 500;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const remaining = await countQueuedJobs(queue);
+    if (remaining === 0) {
+      return { ready: true, remaining: 0 };
+    }
+    await sleep(delayMs);
+  }
+
+  const remaining = await countQueuedJobs(queue);
+  return { ready: remaining === 0, remaining };
+}
+
 /**
  * End scraping: remove all Bull jobs (including active) and leave the queue ready for a new run.
  *
@@ -19,7 +45,8 @@ export async function stopScrapeQueue(queue) {
   const removedFromQueue = await countQueuedJobs(queue);
   await queue.obliterate({ force: true });
   await queue.resume();
-  return { removedFromQueue };
+  const drain = await waitForQueueDrained(queue);
+  return { removedFromQueue, queueReady: drain.ready, queueRemaining: drain.remaining };
 }
 
 /**

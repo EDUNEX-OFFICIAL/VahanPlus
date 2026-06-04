@@ -67,6 +67,8 @@ export interface EpassConsignerRowDto {
   challanDetailUrl: string | null;
   scrapedAt: string;
   challanLineCount: number;
+  ghatNumber: string | null;
+  ghatChallanId: string | null;
 }
 
 export interface EpassChallanRowDto {
@@ -101,6 +103,7 @@ export interface EpassBrowseFilterValues {
   hideZeroPasses: boolean;
   consignerRowId: string;
   destination: string;
+  challanSearch: string;
 }
 
 export type ConsigneeSortKey = 'date' | 'consignee' | 'mineral' | 'passes' | 'qty' | 'slNo';
@@ -197,6 +200,7 @@ export interface ConsignerOptionDto {
   role?: OperatorType;
   challanCount: number;
   challanLineCount: number;
+  ghatNumber?: string | null;
 }
 
 export interface ConsignerOptionsResponse {
@@ -351,6 +355,7 @@ export interface ChalaanListParams {
   consigner?: string;
   consignee?: string;
   destination?: string;
+  challan?: string;
   hideZeroPasses?: boolean;
   sort?: ChalaanSortKey;
   dir?: ChalaanSortDir;
@@ -477,6 +482,8 @@ export interface VehicleDataListItemDto {
   lastTransportedDate: string | null;
   lastScrapedAt: string | null;
   hasVehicleStatus: boolean;
+  grossWeightMt: number | null;
+  unladenWeightMt: number | null;
 }
 
 export interface VehicleDataListResponse {
@@ -495,7 +502,13 @@ export interface VehicleDataDetailResponse {
   vehicleStatus: EpassVehicleStatusListItemDto | null;
 }
 
-export type VehicleDataSortKey = 'vehicle' | 'passes' | 'qty' | 'lastDate';
+export type VehicleDataSortKey =
+  | 'vehicle'
+  | 'passes'
+  | 'qty'
+  | 'lastDate'
+  | 'grossWeight'
+  | 'unladen';
 
 export type VehicleDataSortDir = 'asc' | 'desc';
 

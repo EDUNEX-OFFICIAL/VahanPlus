@@ -15,6 +15,7 @@ interface ConsignerGroupedViewProps {
   sortDir: ConsignerSortDir;
   onSort: (key: ConsignerSortKey) => void;
   linkSearchParams?: URLSearchParams;
+  onSaveGhatNumber?: (consignerRowId: string, ghatNumber: string) => Promise<void> | void;
 }
 
 function operatorColor(type: OperatorType): string {
@@ -27,6 +28,7 @@ export function ConsignerGroupedView({
   sortDir,
   onSort,
   linkSearchParams,
+  onSaveGhatNumber,
 }: ConsignerGroupedViewProps) {
   if (groups.length === 0) {
     return null;
@@ -53,6 +55,7 @@ export function ConsignerGroupedView({
             onSort={onSort}
             compact
             linkSearchParams={linkSearchParams}
+            onSaveGhatNumber={onSaveGhatNumber}
           />
         </section>
       ))}

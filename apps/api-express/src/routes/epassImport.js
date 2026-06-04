@@ -4,7 +4,9 @@ import { requireAuth } from '../middleware/auth.js';
 import {
   analyzeImportPayload,
   commitDistrictImport,
+  commitKhananPassImport,
   commitVehicleStatusImport,
+  stripBomFromHeaders,
 } from '../services/epassImport.js';
 
 const router = express.Router();
@@ -12,9 +14,14 @@ const router = express.Router();
 router.use(requireAuth);
 
 router.post('/analyze', (req, res) => {
-  const headers = Array.isArray(req.body?.headers) ? req.body.headers.map(String) : [];
+  const headers = stripBomFromHeaders(
+    Array.isArray(req.body?.headers) ? req.body.headers.map(String) : [],
+  );
   const sampleRows = Array.isArray(req.body?.sampleRows) ? req.body.sampleRows : [];
-  const result = analyzeImportPayload(headers, sampleRows);
+  const statsRows = Array.isArray(req.body?.statsRows) ? req.body.statsRows : undefined;
+  const totalRowCount =
+    typeof req.body?.totalRowCount === 'number' ? req.body.totalRowCount : undefined;
+  const result = analyzeImportPayload(headers, sampleRows, { totalRowCount, statsRows });
   res.json(result);
 });
 
@@ -47,6 +54,16 @@ router.post('/commit', async (req, res) => {
 
     if (type === 'vehicle_status') {
       const result = await commitVehicleStatusImport(prisma, { rows, mapping });
+      return res.status(201).json(result);
+    }
+
+    if (type === 'khanan_pass') {
+      const result = await commitKhananPassImport(prisma, {
+        rows,
+        mapping,
+        replaceExisting: Boolean(req.body?.replaceExisting),
+        refreshVehicleStatus: Boolean(req.body?.refreshVehicleStatus),
+      });
       return res.status(201).json(result);
     }
 

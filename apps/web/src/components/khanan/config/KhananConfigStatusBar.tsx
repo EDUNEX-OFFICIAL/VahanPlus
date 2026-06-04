@@ -1,13 +1,20 @@
 import { Card } from '@/components/ui/Card';
+import {
+  getScraperControlMode,
+  scrapeQueueInProgress,
+  type ScraperControlMode,
+} from '@/lib/scraper-control-mode';
 import { cn } from '@/lib/utils';
 import type { ScraperConfigStatus } from '@/lib/scraper-config-types';
 
 interface Props {
   status: ScraperConfigStatus;
   updatedAt: string;
+  stopCooldown?: boolean;
+  optimisticRunning?: boolean;
 }
 
-type ScraperRunState = 'paused' | 'stopping' | 'working' | 'ready';
+type ScraperRunState = ScraperControlMode;
 
 interface RunStatus {
   state: ScraperRunState;
@@ -17,51 +24,65 @@ interface RunStatus {
   labelClass: string;
 }
 
-export function scrapeQueueInProgress(status: ScraperConfigStatus): number {
+/** Operator-facing run state for status bar + actions. */
+export function resolveRunStatus(
+  status: ScraperConfigStatus,
+  options?: { stopCooldown?: boolean; optimisticRunning?: boolean },
+): RunStatus {
+  const mode = getScraperControlMode(status, options);
+  const inProgress = scrapeQueueInProgress(status);
   const q = status.queue;
-  return (q.waiting ?? 0) + (q.active ?? 0);
-}
 
-function inProgressCount(status: ScraperConfigStatus): number {
-  return scrapeQueueInProgress(status);
-}
-
-/** Operator-facing run state derived from BullMQ (single source for live backlog). */
-export function resolveRunStatus(status: ScraperConfigStatus): RunStatus {
-  const q = status.queue;
-  const inProgress = inProgressCount(status);
-
-  if (q.isPaused && inProgress > 0) {
-    return {
-      state: 'paused',
-      label: 'Paused',
-      detail: null,
-      dotClass: 'bg-amber-400',
-      labelClass: 'text-amber-300',
-    };
+  switch (mode) {
+    case 'stopping':
+      return {
+        state: 'stopping',
+        label: 'Stopping…',
+        detail: null,
+        dotClass: 'bg-amber-400 animate-pulse',
+        labelClass: 'text-amber-300',
+      };
+    case 'paused':
+      return {
+        state: 'paused',
+        label: 'Paused',
+        detail:
+          inProgress > 0
+            ? `${inProgress} job(s) finishing`
+            : (q.waiting ?? 0) > 0
+              ? `${q.waiting ?? 0} job(s) waiting`
+              : null,
+        dotClass: 'bg-amber-400',
+        labelClass: 'text-amber-300',
+      };
+    case 'running':
+      return {
+        state: 'running',
+        label: 'Running',
+        detail: null,
+        dotClass: 'bg-emerald-400 animate-pulse',
+        labelClass: 'text-emerald-400',
+      };
+    default:
+      return {
+        state: 'idle',
+        label: 'Ready',
+        detail: null,
+        dotClass: 'bg-slate-500',
+        labelClass: 'text-slate-200',
+      };
   }
-
-  if (inProgress > 0) {
-    return {
-      state: 'working',
-      label: 'Running',
-      detail: null,
-      dotClass: 'bg-emerald-400 animate-pulse',
-      labelClass: 'text-emerald-400',
-    };
-  }
-
-  return {
-    state: 'ready',
-    label: 'Ready',
-    detail: null,
-    dotClass: 'bg-slate-500',
-    labelClass: 'text-slate-200',
-  };
 }
 
-export function KhananConfigStatusBar({ status, updatedAt }: Props) {
-  const run = resolveRunStatus(status);
+export { scrapeQueueInProgress };
+
+export function KhananConfigStatusBar({
+  status,
+  updatedAt,
+  stopCooldown,
+  optimisticRunning,
+}: Props) {
+  const run = resolveRunStatus(status, { stopCooldown, optimisticRunning });
   const savedAt = new Date(updatedAt).toLocaleString('en-IN', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -72,8 +93,8 @@ export function KhananConfigStatusBar({ status, updatedAt }: Props) {
       className={cn(
         run.state === 'paused' && 'border-amber-500/40',
         run.state === 'stopping' && 'border-amber-500/40',
-        run.state === 'working' && 'border-emerald-500/25',
-        run.state === 'ready' && 'border-slate-700/50',
+        run.state === 'running' && 'border-emerald-500/25',
+        run.state === 'idle' && 'border-slate-700/50',
       )}
       aria-live="polite"
     >

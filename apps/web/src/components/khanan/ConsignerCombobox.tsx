@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ConsignerOptionDto } from '@/lib/epass-types';
+import { appendGhatSuffix } from '@/lib/consigner-display';
 
 export function formatConsignerOption(o: ConsignerOptionDto): string {
   const op = o.operatorType ?? o.role ?? 'lessee';
-  return `${o.dmoName} · ${op} · ${o.consignerName} (${o.challanCount})`;
+  const base = `${o.dmoName} · ${op} · ${o.consignerName} (${o.challanCount})`;
+  return appendGhatSuffix(base, o.ghatNumber);
 }
 
 function filterOptions(options: ConsignerOptionDto[], query: string): ConsignerOptionDto[] {
@@ -15,7 +17,8 @@ function filterOptions(options: ConsignerOptionDto[], query: string): ConsignerO
     (o) =>
       o.consignerName.toLowerCase().includes(q) ||
       o.dmoName.toLowerCase().includes(q) ||
-      (o.operatorType ?? o.role ?? '').toLowerCase().includes(q),
+      (o.operatorType ?? o.role ?? '').toLowerCase().includes(q) ||
+      (o.ghatNumber ?? '').toLowerCase().includes(q),
   );
 }
 

@@ -14,6 +14,11 @@ import type {
   VehicleDataSortKey,
 } from '@/lib/epass-types';
 
+function formatWeight(value: number | null): string {
+  if (value == null) return '—';
+  return value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function SortIndicator({
   columnKey,
   sortKey,
@@ -138,6 +143,8 @@ export function VehicleDataTable({
                 label="Qty"
                 value={formatVehicleDataQty(row.totalQuantity, row.quantityByUnit)}
               />
+              <DataField label="GVW (MT)" value={formatWeight(row.grossWeightMt)} />
+              <DataField label="Unladen (MT)" value={formatWeight(row.unladenWeightMt)} />
               <DataField label="Last date" value={row.lastTransportedDate ?? '—'} />
               <DataField label="Destination" value={formatVehicleDataPreview(row.destinations)} />
             </div>
@@ -155,6 +162,8 @@ export function VehicleDataTable({
                 <th className="px-4 py-3">Mineral</th>
                 <SortHeader label="Qty" columnKey="qty" align="right" />
                 <SortHeader label="Passes" columnKey="passes" align="right" />
+                <SortHeader label="GVW (MT)" columnKey="grossWeight" align="right" />
+                <SortHeader label="Unladen (MT)" columnKey="unladen" align="right" />
                 <SortHeader label="Last date" columnKey="lastDate" />
                 <th className="w-12 px-2 py-3">
                   <span className="sr-only">View</span>
@@ -192,6 +201,12 @@ export function VehicleDataTable({
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-text-secondary">
                     {row.passCount}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-text-secondary">
+                    {formatWeight(row.grossWeightMt)}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-text-secondary">
+                    {formatWeight(row.unladenWeightMt)}
                   </td>
                   <td className="px-4 py-2.5 text-text-secondary">
                     {row.lastTransportedDate ?? '—'}

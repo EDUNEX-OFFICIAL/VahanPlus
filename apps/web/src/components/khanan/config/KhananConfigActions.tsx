@@ -6,7 +6,11 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { ScraperConfigActionError } from '@/lib/scraper-config';
 import { countIsoDaysInclusive, defaultDistrictDateInput } from '@/lib/scraper-config-default-date';
-import { resolveRunStatus } from '@/components/khanan/config/KhananConfigStatusBar';
+import {
+  canStartScrape,
+  getScraperControlMode,
+  type ScraperControlMode,
+} from '@/lib/scraper-control-mode';
 import type { ScraperConfigStatus } from '@/lib/scraper-config-types';
 
 const LARGE_RANGE_CONFIRM_THRESHOLD = 90;
@@ -14,9 +18,14 @@ const LARGE_RANGE_CONFIRM_THRESHOLD = 90;
 interface Props {
   status: ScraperConfigStatus;
   defaultDistrictDate: string | null;
+  districtRangeFrom: string | null;
+  districtRangeTo: string | null;
   scheduleTimezone: string;
+  stopCooldown?: boolean;
+  optimisticRunning?: boolean;
   onRunDistrict: (date: string) => Promise<string>;
   onRunDistrictRange: (from: string, to: string, confirmLargeRange: boolean) => Promise<string>;
+  onPersistDistrictRange: (from: string, to: string) => Promise<void>;
   onPause: () => Promise<string>;
   onResume: () => Promise<string>;
   onStop: () => Promise<string>;
@@ -26,13 +35,18 @@ interface Props {
 export function KhananConfigActions({
   status,
   defaultDistrictDate,
+  districtRangeFrom,
+  districtRangeTo,
   scheduleTimezone,
+  stopCooldown = false,
+  optimisticRunning = false,
   onRunDistrict,
   onRunDistrictRange,
+  onPersistDistrictRange,
   onPause,
   onResume,
   onStop,
-  busy,
+  busy = false,
 }: Props) {
   const [reportDate, setReportDate] = useState('');
   const [rangeFrom, setRangeFrom] = useState('');
@@ -40,9 +54,35 @@ export function KhananConfigActions({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const mode: ScraperControlMode = getScraperControlMode(status, {
+    stopCooldown,
+    optimisticRunning,
+  });
+
+  const controlsLocked = busy || mode === 'stopping';
+  const canRun = canStartScrape(mode, busy);
+  const showPause = mode === 'running';
+  const showResume = mode === 'paused';
+  const showStop = mode === 'running' || mode === 'paused';
+
   useEffect(() => {
     setReportDate(defaultDistrictDateInput(defaultDistrictDate, scheduleTimezone));
   }, [defaultDistrictDate, scheduleTimezone]);
+
+  useEffect(() => {
+    setRangeFrom(districtRangeFrom ?? '');
+    setRangeTo(districtRangeTo ?? '');
+  }, [districtRangeFrom, districtRangeTo]);
+
+  async function persistRangeIfComplete() {
+    if (!rangeFrom || !rangeTo) return;
+    if (countIsoDaysInclusive(rangeFrom, rangeTo) == null) return;
+    try {
+      await onPersistDistrictRange(rangeFrom, rangeTo);
+    } catch {
+      /* parent surfaces errors if needed */
+    }
+  }
 
   async function run(action: () => Promise<string>, confirmText?: string) {
     if (confirmText && !window.confirm(confirmText)) return;
@@ -96,9 +136,6 @@ export function KhananConfigActions({
 
   const snap = status.latestSnapshot;
   const snapLabel = snap?.reportDate ?? '—';
-  const runStatus = resolveRunStatus(status);
-  const showQueueControls = runStatus.state !== 'ready';
-  const queuePaused = status.queue.isPaused;
 
   return (
     <Card>
@@ -125,13 +162,13 @@ export function KhananConfigActions({
             type="date"
             className="mt-1"
             value={reportDate}
-            disabled={busy}
+            disabled={controlsLocked || !canRun}
             onChange={(e) => setReportDate(e.target.value)}
           />
         </label>
         <Button
           variant="destructive"
-          disabled={busy || !reportDate}
+          disabled={controlsLocked || !canRun || !reportDate}
           onClick={() => run(() => onRunDistrict(reportDate), `Run scrapper for ${reportDate}?`)}
         >
           Run scrapper
@@ -145,8 +182,9 @@ export function KhananConfigActions({
             type="date"
             className="mt-1"
             value={rangeFrom}
-            disabled={busy}
+            disabled={controlsLocked || !canRun}
             onChange={(e) => setRangeFrom(e.target.value)}
+            onBlur={() => void persistRangeIfComplete()}
           />
         </label>
         <label className="text-xs text-text-secondary">
@@ -155,33 +193,35 @@ export function KhananConfigActions({
             type="date"
             className="mt-1"
             value={rangeTo}
-            disabled={busy}
+            disabled={controlsLocked || !canRun}
             onChange={(e) => setRangeTo(e.target.value)}
+            onBlur={() => void persistRangeIfComplete()}
           />
         </label>
         <Button
           variant="secondary"
-          disabled={busy || !rangeFrom || !rangeTo}
+          disabled={controlsLocked || !canRun || !rangeFrom || !rangeTo}
           onClick={() => runRange()}
         >
           Run range
         </Button>
       </div>
 
-      {showQueueControls ? (
+      {showPause || showResume || showStop ? (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-700/50 pt-4">
-          {queuePaused ? (
+          {showResume ? (
             <Button
               variant="success"
-              disabled={busy}
+              disabled={controlsLocked}
               onClick={() => run(() => onResume(), 'Resume scraping queue?')}
             >
               Resume
             </Button>
-          ) : (
+          ) : null}
+          {showPause ? (
             <Button
               variant="warning"
-              disabled={busy}
+              disabled={controlsLocked}
               onClick={() =>
                 run(
                   () => onPause(),
@@ -191,16 +231,18 @@ export function KhananConfigActions({
             >
               Pause
             </Button>
-          )}
-          <Button
-            variant="destructive"
-            disabled={busy}
-            onClick={() =>
-              run(() => onStop(), 'Stop scraping? Work in progress will be cancelled.')
-            }
-          >
-            Stop
-          </Button>
+          ) : null}
+          {showStop ? (
+            <Button
+              variant="destructive"
+              disabled={controlsLocked}
+              onClick={() =>
+                run(() => onStop(), 'Stop scraping? Work in progress will be cancelled.')
+              }
+            >
+              Stop
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </Card>

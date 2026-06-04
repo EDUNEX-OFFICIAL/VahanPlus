@@ -105,7 +105,7 @@ The Bihar district report portal accepts **one date per request** (`txtDate1`). 
 | **Advanced → Scheduled report date** | `yesterday` / `today` / `none` — cron repeatable job passes `metadata.date` for that run                          |
 | Consigner / Chalaan browse filters   | View already-scraped snapshots only; they do not enqueue new portal fetches                                       |
 
-Helpers: `@vahanplus/scraper-bihar-epass` (`isoToPortalDate`, `eachIsoDayInclusive`), `@vahanplus/khanan-config` (`scheduleReportDateIso`).
+Helpers: `@vahanplus/scraper-bihar-epass` (`isoToPortalDate`, `eachIsoDayInclusive`), `@vahanplus/khanan-config` (`scheduleReportDateIso`). `isoToPortalDate` must emit portal calendar format `dd-MMM-yyyy` (e.g. `01-Jun-2026`); numeric `DD/MM/YYYY` is misread as US month/day.
 
 ## Auto vs backfill
 

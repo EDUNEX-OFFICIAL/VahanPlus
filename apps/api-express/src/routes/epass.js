@@ -6,6 +6,11 @@ import {
   enqueueConsignerJobsForSnapshot,
   enqueueMissingVehicleStatusFromPasses,
 } from '@vahanplus/epass-orchestrator';
+import { buildConsignerChallansWhere } from '../services/consignerChallanFilters.js';
+import {
+  normalizeConsigneeFilterQuery,
+  normalizeConsignerFilterQuery,
+} from '../lib/epass-query-normalize.js';
 
 const router = express.Router();
 
@@ -159,6 +164,27 @@ function scrapeStatus(expectedPasses, counts) {
   return 'complete';
 }
 
+const CONSIGNER_GHAT_CHALLAN_INCLUDE = {
+  challans: {
+    take: 1,
+    orderBy: { slNo: 'asc' },
+    select: { id: true, ghatNumber: true },
+  },
+};
+
+function ghatFieldsFromConsigner(row) {
+  if (row.operatorType !== 'lessee') {
+    return { ghatNumber: null, ghatChallanId: null };
+  }
+  const fromConsigner = row.ghatNumber?.trim() || null;
+  const first = row.challans?.[0];
+  const fromChallan = first?.ghatNumber?.trim() || null;
+  return {
+    ghatNumber: fromConsigner ?? fromChallan,
+    ghatChallanId: row.id,
+  };
+}
+
 function mapConsigner(row) {
   const operatorType = row.operatorType;
   return {
@@ -175,6 +201,7 @@ function mapConsigner(row) {
     challanDetailUrl: row.challanDetailUrl,
     scrapedAt: row.scrapedAt.toISOString(),
     challanLineCount: row._count?.challans ?? 0,
+    ...ghatFieldsFromConsigner(row),
   };
 }
 
@@ -298,7 +325,7 @@ function buildConsignerWhereForSnapshots(snapshotIds, query) {
   if (operatorType) {
     where.operatorType = operatorType;
   }
-  const consigner = typeof query.consigner === 'string' ? query.consigner.trim() : '';
+  const consigner = normalizeConsignerFilterQuery(query.consigner);
   if (consigner) {
     where.consignerName = { contains: consigner, mode: 'insensitive' };
   }
@@ -379,7 +406,7 @@ function buildConsignerWhere(snapshotId, query) {
   if (operatorType) {
     where.operatorType = operatorType;
   }
-  const consigner = typeof query.consigner === 'string' ? query.consigner.trim() : '';
+  const consigner = normalizeConsignerFilterQuery(query.consigner);
   if (consigner) {
     where.consignerName = { contains: consigner, mode: 'insensitive' };
   }
@@ -474,7 +501,7 @@ function buildChalaanWhere(snapshotId, query) {
   }
 
   const dmo = typeof query.dmo === 'string' ? query.dmo.trim() : '';
-  const consigner = typeof query.consigner === 'string' ? query.consigner.trim() : '';
+  const consigner = normalizeConsignerFilterQuery(query.consigner);
   const districts = parseDistrictList(query);
 
   if (districts.length > 0) {
@@ -495,7 +522,7 @@ function buildChalaanWhere(snapshotId, query) {
   }
 
   const where = { consignerRow };
-  const consignee = typeof query.consignee === 'string' ? query.consignee.trim() : '';
+  const consignee = normalizeConsigneeFilterQuery(query.consignee);
   if (consignee) {
     where.consigneeName = { contains: consignee, mode: 'insensitive' };
   }
@@ -559,7 +586,7 @@ function buildChalaanPassWhere(snapshotId, query) {
   }
 
   const dmo = typeof query.dmo === 'string' ? query.dmo.trim() : '';
-  const consigner = typeof query.consigner === 'string' ? query.consigner.trim() : '';
+  const consigner = normalizeConsignerFilterQuery(query.consigner);
   const districts = parseDistrictList(query);
 
   if (districts.length > 0) {
@@ -581,13 +608,18 @@ function buildChalaanPassWhere(snapshotId, query) {
 
   const where = { challanRow: { consignerRow } };
 
-  const consignee = typeof query.consignee === 'string' ? query.consignee.trim() : '';
+  const consignee = normalizeConsigneeFilterQuery(query.consignee);
   if (consignee) {
     where.consigneeName = { contains: consignee, mode: 'insensitive' };
   }
   const destination = typeof query.destination === 'string' ? query.destination.trim() : '';
   if (destination) {
     where.destination = { contains: destination, mode: 'insensitive' };
+  }
+
+  const challan = typeof query.challan === 'string' ? query.challan.trim() : '';
+  if (challan) {
+    where.challanNo = { contains: challan, mode: 'insensitive' };
   }
 
   const minerals = parseMineralList(query);
@@ -753,6 +785,16 @@ function sortVehicleDataAggregates(items, sort, dir) {
         const aDate = a.lastTransportedDate ?? '';
         const bDate = b.lastTransportedDate ?? '';
         return mult * aDate.localeCompare(bDate);
+      }
+      case 'grossWeight': {
+        const aW = a.grossWeightMt ?? -1;
+        const bW = b.grossWeightMt ?? -1;
+        return mult * (aW - bW);
+      }
+      case 'unladen': {
+        const aW = a.unladenWeightMt ?? -1;
+        const bW = b.unladenWeightMt ?? -1;
+        return mult * (aW - bW);
       }
       default:
         return mult * a.vehicleRegNo.localeCompare(b.vehicleRegNo);
@@ -995,7 +1037,10 @@ router.get('/district-rows/:id/consigners', async (req, res) => {
   const consigners = await prisma.epassConsignerRow.findMany({
     where: { districtRowId: row.id, operatorType },
     orderBy: { slNo: 'asc' },
-    include: { _count: { select: { challans: true } } },
+    include: {
+      _count: { select: { challans: true } },
+      ...CONSIGNER_GHAT_CHALLAN_INCLUDE,
+    },
   });
 
   res.json({
@@ -1093,24 +1138,29 @@ router.get('/vehicle-data', async (req, res) => {
   }
 
   const allAggs = [...aggMap.values()].map((agg) => mapVehicleDataAggregate(agg, false));
-  sortVehicleDataAggregates(allAggs, sort, dir);
-  const total = allAggs.length;
-  const pageAggs = allAggs.slice(offset, offset + limit);
-
-  const vrnList = pageAggs.map((item) => item.vehicleRegNo);
+  const allVrns = allAggs.map((item) => item.vehicleRegNo);
   const statusRows =
-    vrnList.length > 0
+    allVrns.length > 0
       ? await prisma.epassVehicleStatusRow.findMany({
-          where: { vehicleRegNo: { in: vrnList } },
-          select: { vehicleRegNo: true },
+          where: { vehicleRegNo: { in: allVrns } },
+          select: { vehicleRegNo: true, grossWeightMt: true, unladenWeightMt: true },
         })
       : [];
-  const statusSet = new Set(statusRows.map((r) => r.vehicleRegNo));
+  const statusByVrn = new Map(statusRows.map((r) => [r.vehicleRegNo, r]));
 
-  const items = pageAggs.map((item) => ({
-    ...item,
-    hasVehicleStatus: statusSet.has(item.vehicleRegNo),
-  }));
+  const enriched = allAggs.map((item) => {
+    const status = statusByVrn.get(item.vehicleRegNo);
+    return {
+      ...item,
+      hasVehicleStatus: Boolean(status),
+      grossWeightMt: status?.grossWeightMt != null ? toNumber(status.grossWeightMt) : null,
+      unladenWeightMt: status?.unladenWeightMt != null ? toNumber(status.unladenWeightMt) : null,
+    };
+  });
+
+  sortVehicleDataAggregates(enriched, sort, dir);
+  const total = enriched.length;
+  const items = enriched.slice(offset, offset + limit);
 
   res.json({
     snapshot: {
@@ -1164,7 +1214,20 @@ router.get('/vehicle-data/:vehicleRegNo', async (req, res) => {
     aggregatePassRow(aggMap, row);
   }
   const agg = aggMap.get(vehicleRegNo);
-  const summary = agg ? mapVehicleDataAggregate(agg, Boolean(vehicleStatusRow)) : null;
+  let summary = agg ? mapVehicleDataAggregate(agg, Boolean(vehicleStatusRow)) : null;
+  if (summary && vehicleStatusRow) {
+    summary = {
+      ...summary,
+      grossWeightMt:
+        vehicleStatusRow.grossWeightMt != null ? toNumber(vehicleStatusRow.grossWeightMt) : null,
+      unladenWeightMt:
+        vehicleStatusRow.unladenWeightMt != null
+          ? toNumber(vehicleStatusRow.unladenWeightMt)
+          : null,
+    };
+  } else if (summary) {
+    summary = { ...summary, grossWeightMt: null, unladenWeightMt: null };
+  }
 
   res.json({
     vehicleRegNo,
@@ -1283,6 +1346,7 @@ router.get('/consigners/options', async (req, res) => {
         },
       },
       _count: { select: { challans: true } },
+      ...CONSIGNER_GHAT_CHALLAN_INCLUDE,
     },
   });
 
@@ -1295,15 +1359,19 @@ router.get('/consigners/options', async (req, res) => {
       reportDate: meta.reportDate,
       scrapedAt: meta.scrapedAt.toISOString(),
     },
-    items: deduped.slice(0, 500).map((row) => ({
-      id: row.id,
-      consignerName: row.consignerName,
-      dmoName: row.districtRow.dmoName,
-      operatorType: row.operatorType,
-      role: row.operatorType,
-      challanCount: row.challanCount,
-      challanLineCount: row._count.challans,
-    })),
+    items: deduped.slice(0, 500).map((row) => {
+      const { ghatNumber } = ghatFieldsFromConsigner(row);
+      return {
+        id: row.id,
+        consignerName: row.consignerName,
+        dmoName: row.districtRow.dmoName,
+        operatorType: row.operatorType,
+        role: row.operatorType,
+        challanCount: row.challanCount,
+        challanLineCount: row._count.challans,
+        ghatNumber,
+      };
+    }),
   });
 });
 
@@ -1327,6 +1395,7 @@ router.get('/consigners', async (req, res) => {
     include: {
       districtRow: { select: { dmoName: true, slNo: true } },
       _count: { select: { challans: true } },
+      ...CONSIGNER_GHAT_CHALLAN_INCLUDE,
     },
   });
 
@@ -1381,14 +1450,7 @@ router.get('/consigners/:id/challans', async (req, res) => {
     }
   }
 
-  const challanWhere = { consignerRowId: { in: consignerRowIds } };
-  const consignee = typeof req.query.consignee === 'string' ? req.query.consignee.trim() : '';
-  if (consignee) {
-    challanWhere.consigneeName = { contains: consignee, mode: 'insensitive' };
-  }
-  if (req.query.hideZeroPasses === '1') {
-    challanWhere.challanCount = { gt: 0 };
-  }
+  const challanWhere = buildConsignerChallansWhere(consignerRowIds, req.query);
 
   const challans = await prisma.epassChallanRow.findMany({
     where: challanWhere,
@@ -1416,6 +1478,48 @@ router.get('/consigners/:id/challans', async (req, res) => {
   });
 });
 
+async function updateLesseeGhatNumber(prisma, consignerRowId, ghatNumber) {
+  const consigner = await prisma.epassConsignerRow.findUnique({
+    where: { id: consignerRowId },
+    include: {
+      districtRow: { include: { snapshot: true } },
+      _count: { select: { challans: true } },
+    },
+  });
+  if (!consigner) {
+    return { status: 404, error: 'Consigner row not found' };
+  }
+  if (consigner.operatorType !== 'lessee') {
+    return { status: 400, error: 'Ghat number can be set only for Lessee rows' };
+  }
+
+  const updated = await prisma.epassConsignerRow.update({
+    where: { id: consigner.id },
+    data: { ghatNumber: ghatNumber || null },
+    include: {
+      districtRow: { select: { dmoName: true, slNo: true } },
+      _count: { select: { challans: true } },
+      ...CONSIGNER_GHAT_CHALLAN_INCLUDE,
+    },
+  });
+  return { status: 200, item: mapConsignerListItem(updated) };
+}
+
+router.patch('/consigners/:id/ghat-number', async (req, res) => {
+  const prisma = getPrisma();
+  const rawGhat = typeof req.body?.ghatNumber === 'string' ? req.body.ghatNumber : '';
+  const ghatNumber = rawGhat.trim();
+  if (ghatNumber.length > 64) {
+    return res.status(400).json({ error: 'Ghat number is too long' });
+  }
+
+  const result = await updateLesseeGhatNumber(prisma, req.params.id, ghatNumber);
+  if (result.error) {
+    return res.status(result.status).json({ error: result.error });
+  }
+  return res.json({ item: result.item });
+});
+
 router.patch('/challans/:id/ghat-number', async (req, res) => {
   const prisma = getPrisma();
   const rawGhat = typeof req.body?.ghatNumber === 'string' ? req.body.ghatNumber : '';
@@ -1426,21 +1530,17 @@ router.patch('/challans/:id/ghat-number', async (req, res) => {
 
   const challan = await prisma.epassChallanRow.findUnique({
     where: { id: req.params.id },
-    include: { consignerRow: { select: { operatorType: true } } },
+    select: { consignerRowId: true },
   });
   if (!challan) {
     return res.status(404).json({ error: 'Challan row not found' });
   }
-  if (challan.consignerRow.operatorType !== 'lessee') {
-    return res.status(400).json({ error: 'Ghat number can be set only for Lessee rows' });
-  }
 
-  const updated = await prisma.epassChallanRow.update({
-    where: { id: challan.id },
-    data: { ghatNumber: ghatNumber || null },
-    include: { consignerRow: { include: { districtRow: { include: { snapshot: true } } } } },
-  });
-  return res.json({ item: mapChallan(updated) });
+  const result = await updateLesseeGhatNumber(prisma, challan.consignerRowId, ghatNumber);
+  if (result.error) {
+    return res.status(result.status).json({ error: result.error });
+  }
+  return res.json({ item: result.item });
 });
 
 function buildVehicleStatusWhere(query) {

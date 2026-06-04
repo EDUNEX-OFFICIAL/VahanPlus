@@ -91,6 +91,16 @@ export const KhananScraperConfigPatchSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .nullable()
       .optional(),
+    districtRangeFrom: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable()
+      .optional(),
+    districtRangeTo: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable()
+      .optional(),
     scheduleReportDateMode: z.enum(['yesterday', 'today', 'none']).optional(),
     allowDataWipe: z.boolean().optional(),
     speedPreset: SpeedPresetSchema.optional(),

@@ -20,6 +20,8 @@ export interface KhananScraperConfig {
   scheduleCron: string | null;
   scheduleTimezone: string;
   defaultDistrictDate: string | null;
+  districtRangeFrom: string | null;
+  districtRangeTo: string | null;
   scheduleReportDateMode: 'yesterday' | 'today' | 'none';
   allowDataWipe: boolean;
   configVersion: number;
@@ -65,6 +67,8 @@ export type KhananScraperConfigPatch = Partial<
   maxConsignerJobs?: number | null;
   scheduleCron?: string | null;
   defaultDistrictDate?: string | null;
+  districtRangeFrom?: string | null;
+  districtRangeTo?: string | null;
   scheduleReportDateMode?: 'yesterday' | 'today' | 'none';
 };
 

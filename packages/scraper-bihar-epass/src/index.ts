@@ -12,6 +12,7 @@ export {
   formatIsoDate,
   isoToPortalDate,
   parseIsoDate,
+  parsePortalReportDate,
 } from './date-format.js';
 export { fetchReportHtml } from './fetch.js';
 export { parseDistrictTable, extractMeta } from './parser.js';
@@ -19,10 +20,7 @@ export { validateMvpFixtures, type ValidationResult } from './validate.js';
 export { BiharEpassScraper, biharEpassScraper, type BiharEpassMetadata } from './scraper.js';
 export { parseConsignerTable } from './consigner-parser.js';
 export { parseChallanTable } from './challan-parser.js';
-export {
-  BiharEpassConsignerScraper,
-  biharEpassConsignerScraper,
-} from './consigner-scraper.js';
+export { BiharEpassConsignerScraper, biharEpassConsignerScraper } from './consigner-scraper.js';
 export { BiharEpassChallanScraper, biharEpassChallanScraper } from './challan-scraper.js';
 export { parseChallanPassTable } from './challan-pass-parser.js';
 export {

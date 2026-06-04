@@ -1,9 +1,10 @@
 'use client';
 
 import { Suspense, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
+import { Card } from '@/components/ui/Card';
 import { VehicleStatusFilters } from '@/components/khanan/VehicleStatusFilters';
 import { VehicleStatusMetaBar } from '@/components/khanan/VehicleStatusMetaBar';
 import { VehicleStatusTable } from '@/components/khanan/VehicleStatusTable';
@@ -189,7 +190,27 @@ function VehicleStatusPageContent() {
       <h1 className="text-2xl font-semibold text-white sm:text-3xl">Vehicle Status</h1>
 
       {noRecords ? (
-        <EpassEmptyState message="No vehicle status records found" />
+        <Card className="border border-dashed border-slate-600/50 bg-slate-900/20 px-6 py-10 text-center">
+          <p className="text-sm font-medium text-slate-200">No vehicle status records yet</p>
+          <p className="mt-2 text-sm text-text-secondary">
+            MCV weights and fitness data come from the scraper pipeline (after challan passes) or a
+            vehicle status CSV on Import Data.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/khanan/config"
+              className="rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-4 py-2 text-sm font-medium text-indigo-100 hover:bg-indigo-500/25"
+            >
+              Khanan Config
+            </Link>
+            <Link
+              href="/khanan/import"
+              className="rounded-xl border border-slate-600/50 bg-slate-800/60 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+            >
+              Import Data
+            </Link>
+          </div>
+        </Card>
       ) : (
         <>
           <VehicleStatusMetaBar stats={data?.stats ?? null} />

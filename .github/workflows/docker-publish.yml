@@ -62,8 +62,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           build-args: |
             ${{ matrix.needs_api_url && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || secrets.NEXT_PUBLIC_API_URL || 'https://exp.vahan360.info/api') || '' }}
 

@@ -2,7 +2,6 @@ import { normalizeVehicleRegNo } from '@vahanplus/scraper-bihar-epass';
 import {
   buildKhananPassAnalyzeStats,
   buildKhananPassMapping,
-  commitKhananPassImport,
   KHANAN_PASS_ALIASES,
   KHANAN_PASS_REQUIRED,
 } from './khananPassImport.js';

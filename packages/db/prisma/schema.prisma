@@ -27,6 +27,8 @@ enum ScrapeType {
   bihar_epass_challan
   bihar_epass_challan_pass
   bihar_mcv_vehicle_status
+  khanan_bulk_import
+  khanan_bulk_export
 
   @@schema("ingest")
 }
@@ -104,6 +106,45 @@ model RawCapture {
   createdAt DateTime @default(now())
 
   @@index([jobId])
+  @@schema("ingest")
+}
+
+model KhananImportBatch {
+  id             String    @id @default(cuid())
+  status         JobStatus @default(pending)
+  fileName       String
+  storagePath    String
+  format         String
+  totalBytes     BigInt?
+  bytesReceived  BigInt    @default(0)
+  chunkSize      Int       @default(16777216)
+  expectedChunks Int?
+  rowsProcessed  Int       @default(0)
+  rowsSkipped    Int       @default(0)
+  passesImported Int       @default(0)
+  error          String?
+  options        Json?
+  scrapeJobId    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+  @@schema("ingest")
+}
+
+model KhananExportJob {
+  id          String    @id @default(cuid())
+  status      JobStatus @default(pending)
+  storagePath String?
+  fileName    String?
+  filters     Json?
+  rowCount    Int       @default(0)
+  error       String?
+  scrapeJobId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
   @@schema("ingest")
 }
 

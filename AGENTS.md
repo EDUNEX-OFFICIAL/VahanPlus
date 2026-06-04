@@ -2,18 +2,19 @@
 
 ## Monorepo layout
 
-| Path | Role |
-|------|------|
-| `apps/web` | Next.js dashboard |
-| `apps/api-express` | REST API + queue producers |
-| `apps/worker` | BullMQ consumer + ETL |
-| `packages/contracts` | Shared constants (`QUEUE_NAMES`, etc.) |
-| `packages/db` | Prisma client |
-| `packages/scraper-bihar-epass` | Bihar portal HTTP scrapers |
-| `packages/scraper-core` | `resolveScraper()` registry |
-| `packages/epass-orchestrator` | **Single** fanout/enqueue implementation |
-| `packages/khanan-config` | DB-backed scraper settings loader (cache + presets) |
-| `packages/browser-pool` | Playwright pool (stub default) |
+| Path                           | Role                                                   |
+| ------------------------------ | ------------------------------------------------------ |
+| `apps/web`                     | Next.js dashboard                                      |
+| `apps/api-express`             | REST API + queue producers                             |
+| `apps/worker`                  | BullMQ consumer + ETL                                  |
+| `packages/contracts`           | Shared constants (`QUEUE_NAMES`, etc.)                 |
+| `packages/db`                  | Prisma client                                          |
+| `packages/scraper-bihar-epass` | Bihar portal HTTP scrapers                             |
+| `packages/scraper-core`        | `resolveScraper()` registry                            |
+| `packages/epass-orchestrator`  | **Single** fanout/enqueue implementation               |
+| `packages/khanan-config`       | DB-backed scraper settings loader (cache + presets)    |
+| `packages/khanan-import`       | Bulk JSON/NDJSON import + JSONL export (streaming ETL) |
+| `packages/browser-pool`        | Playwright pool (stub default)                         |
 
 ## Build order
 
@@ -25,6 +26,7 @@ pnpm --filter @vahanplus/scraper-bihar-epass build
 pnpm --filter @vahanplus/scraper-core build
 pnpm --filter @vahanplus/khanan-config build
 pnpm --filter @vahanplus/epass-orchestrator build
+pnpm --filter @vahanplus/khanan-import build
 pnpm --filter @vahanplus/browser-pool build
 pnpm db:generate && pnpm --filter @vahanplus/db build
 ```

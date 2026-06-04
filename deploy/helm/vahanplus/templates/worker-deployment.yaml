@@ -26,6 +26,13 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.worker.khananData.enabled }}
+      volumes:
+        - name: khanan-data
+          hostPath:
+            path: {{ .Values.worker.khananData.hostPath }}
+            type: DirectoryOrCreate
+      {{- end }}
       containers:
         - name: worker
           image: {{ include "vahanplus.image" (dict "Values" .Values "image" .Values.worker.image) }}
@@ -68,6 +75,17 @@ spec:
               value: {{ .Values.worker.fetchRetries | quote }}
             - name: STORE_RAW_CAPTURE
               value: {{ .Values.worker.storeRawCapture | quote }}
+            {{- if .Values.worker.khananData.enabled }}
+            - name: KHANAN_IMPORT_DIR
+              value: {{ .Values.worker.khananData.importDir | quote }}
+            - name: KHANAN_EXPORT_DIR
+              value: {{ .Values.worker.khananData.exportDir | quote }}
+            {{- end }}
+          {{- if .Values.worker.khananData.enabled }}
+          volumeMounts:
+            - name: khanan-data
+              mountPath: /var/lib/vahanplus
+          {{- end }}
           resources:
             {{- toYaml .Values.worker.resources | nindent 12 }}
           livenessProbe:

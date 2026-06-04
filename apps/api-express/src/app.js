@@ -8,6 +8,7 @@ import jobsRoutes from './routes/jobs.js';
 import epassRoutes from './routes/epass.js';
 import scraperConfigRoutes from './routes/scraperConfig.js';
 import epassImportRoutes from './routes/epassImport.js';
+import khananBulkRoutes from './routes/khananBulk.js';
 
 const DEFAULT_CORS_ORIGINS = ['http://localhost:3000'];
 
@@ -39,6 +40,12 @@ export function createApp() {
   app.use(cookieParser());
   app.use((req, res, next) => {
     const path = req.originalUrl.split('?')[0];
+    const isChunkUpload =
+      req.method === 'PUT' && /\/epass\/import\/batches\/[^/]+\/chunks\/\d+$/.test(path);
+    if (isChunkUpload) {
+      express.raw({ limit: '32mb', type: () => true })(req, res, next);
+      return;
+    }
     const isEpassImportPost =
       req.method === 'POST' &&
       (path === '/epass/import/commit' ||
@@ -56,6 +63,7 @@ export function createApp() {
   app.use('/epass', epassRoutes);
   app.use('/epass/scraper-config', scraperConfigRoutes);
   app.use('/epass/import', epassImportRoutes);
+  app.use('/epass/import', khananBulkRoutes);
 
   app.get('/metrics', async (_req, res) => {
     res.set('Content-Type', register.contentType);

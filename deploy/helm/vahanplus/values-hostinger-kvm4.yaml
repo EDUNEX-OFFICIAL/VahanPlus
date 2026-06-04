@@ -16,6 +16,9 @@ global:
 apiExpress:
   replicaCount: 1
   image: vahanplus-api-express:latest
+  khananData:
+    enabled: true
+    hostPath: /var/lib/vahanplus
   # Browser calls /api on the public host; must match ingress host (HTTPS).
   corsOrigins: https://exp.vahan360.info
   resources:
@@ -40,6 +43,9 @@ web:
 worker:
   replicaCount: 1
   image: vahanplus-worker:latest
+  khananData:
+    enabled: true
+    hostPath: /var/lib/vahanplus
   browserPoolStub: true
   resources:
     requests:
@@ -55,7 +61,7 @@ ingress:
   className: nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/proxy-body-size: 20m
+    nginx.ingress.kubernetes.io/proxy-body-size: 32m
   tls:
     enabled: true
     secretName: vahanplus-tls

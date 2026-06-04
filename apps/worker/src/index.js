@@ -28,6 +28,7 @@ import {
   startHealthServer,
   stopHealthServer,
 } from './healthServer.js';
+import { processKhananBulkExport, processKhananBulkImport } from './khananBulkHandlers.js';
 
 const HTTP_ONLY_TYPES = new Set([
   'bihar_epass',
@@ -126,7 +127,14 @@ async function processJob(job) {
   });
 
   try {
-    const result = await runScrape(type, target, metadata);
+    let result;
+    if (type === 'khanan_bulk_import') {
+      result = await processKhananBulkImport(prisma, target);
+    } else if (type === 'khanan_bulk_export') {
+      result = await processKhananBulkExport(prisma, target);
+    } else {
+      result = await runScrape(type, target, metadata);
+    }
 
     await prisma.rawCapture.create({
       data: {

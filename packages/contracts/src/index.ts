@@ -18,6 +18,8 @@ export const ScrapeJobTypeSchema = z.enum([
   'bihar_epass_challan',
   'bihar_epass_challan_pass',
   'bihar_mcv_vehicle_status',
+  'khanan_bulk_import',
+  'khanan_bulk_export',
 ]);
 export type ScrapeJobType = z.infer<typeof ScrapeJobTypeSchema>;
 

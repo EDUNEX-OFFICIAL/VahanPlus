@@ -1,12 +1,14 @@
 'use client';
 
 import { useCallback, useId, useRef, useState } from 'react';
-import { Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
+import { Download, FileJson, Loader2, Upload, X } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
-const ACCEPT =
-  '.csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel';
+const ACCEPT = '.json,.jsonl,.ndjson,application/json';
+
+const SAMPLE_JSON_URL =
+  'https://raw.githubusercontent.com/EDUNEX-OFFICIAL/VahanPlus/main/docs/khanan_sample_5000.json';
 
 interface ImportFileDropzoneProps {
   busy: boolean;
@@ -43,12 +45,14 @@ export function ImportFileDropzone({
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <a
-          href="/khanan-import-template.csv"
-          download
+          href={SAMPLE_JSON_URL}
+          download="khanan_sample_5000.json"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-indigo-500/35 bg-indigo-500/10 px-3 text-sm font-semibold text-indigo-200 hover:bg-indigo-500/20"
         >
           <Download className="h-4 w-4 shrink-0" aria-hidden />
-          Template CSV
+          Sample JSON
         </a>
         {fileName ? (
           <button
@@ -78,7 +82,7 @@ export function ImportFileDropzone({
 
       {fileName && !busy ? (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
-          <FileSpreadsheet className="h-5 w-5 shrink-0 text-emerald-300" aria-hidden />
+          <FileJson className="h-5 w-5 shrink-0 text-emerald-300" aria-hidden />
           <div className="min-w-0 flex-1 text-left">
             <p className="truncate text-sm font-medium text-white">{fileName}</p>
             <p className="text-xs text-text-secondary tabular-nums">{rowCount} rows</p>
@@ -128,7 +132,9 @@ export function ImportFileDropzone({
                 <Upload className="h-6 w-6 text-slate-400" aria-hidden />
               </div>
               <p className="mt-3 text-sm font-medium text-white">Drop file or click to upload</p>
-              <p className="mt-1 text-xs text-text-secondary">CSV, XLSX, XLS · max 10,000 rows</p>
+              <p className="mt-1 text-xs text-text-secondary">
+                JSON array · JSON Lines · max 10,000 rows (small path)
+              </p>
             </>
           )}
         </button>

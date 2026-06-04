@@ -17,6 +17,7 @@
     "@vahanplus/contracts": "workspace:*",
     "@vahanplus/epass-orchestrator": "workspace:*",
     "@vahanplus/khanan-config": "workspace:*",
+    "@vahanplus/khanan-import": "workspace:*",
     "@vahanplus/scraper-bihar-epass": "workspace:*",
     "@vahanplus/db": "workspace:*",
     "bcryptjs": "^3.0.2",

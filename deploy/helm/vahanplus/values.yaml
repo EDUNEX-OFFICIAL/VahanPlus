@@ -121,6 +121,7 @@ ingress:
 migrate:
   enabled: true
   backoffLimit: 3
+  activeDeadlineSeconds: 600
 
 pdb:
   enabled: true

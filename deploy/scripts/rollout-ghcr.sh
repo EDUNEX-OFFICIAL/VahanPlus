@@ -57,7 +57,26 @@ fi
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 
 REG="ghcr.io/${GHCR_ORG}"
-TAG="${IMAGE_TAG}"
+GHCR_ORG_LC="${GHCR_ORG,,}"
+
+resolve_ghcr_tag() {
+  local short="$1"
+  local probe="ghcr.io/${GHCR_ORG_LC}/vahanplus-api-express"
+  local tag
+  for tag in "$short" "sha-${short}" "latest"; do
+    if docker manifest inspect "${probe}:${tag}" >/dev/null 2>&1; then
+      echo "$tag"
+      return 0
+    fi
+  done
+  echo "latest"
+}
+
+TAG="$(resolve_ghcr_tag "${IMAGE_TAG}")"
+if [[ "$TAG" != "${IMAGE_TAG}" ]]; then
+  echo "==> Resolved IMAGE_TAG ${IMAGE_TAG} → ${TAG} on GHCR"
+fi
+REG="ghcr.io/${GHCR_ORG_LC}"
 
 deploy_name() {
   echo "${RELEASE}-vahanplus-${1}"

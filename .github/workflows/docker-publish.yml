@@ -68,28 +68,20 @@ jobs:
   deploy:
     needs: build-and-push
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
-    runs-on: ubuntu-latest
+    # Runs on the VPS (self-hosted). Cloud runners cannot reach :22 (Hostinger firewall).
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: /opt/vahanplus
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Image tag (short SHA)
-        id: tag
-        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy to VPS (Helm rollout)
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -euo pipefail
-            export IMAGE_TAG="${{ steps.tag.outputs.short }}"
-            REPO="${{ vars.DEPLOY_REPO_PATH || '/opt/vahanplus' }}"
-            cd "$REPO"
-            git fetch origin main master 2>/dev/null || true
-            git checkout -q main 2>/dev/null || git checkout -q master 2>/dev/null || true
-            git pull --ff-only 2>/dev/null || true
-            chmod +x deploy/scripts/rollout-ghcr.sh
-            ./deploy/scripts/rollout-ghcr.sh
+      - name: Sync repo and Helm rollout
+        run: |
+          set -euo pipefail
+          export IMAGE_TAG="${GITHUB_SHA::7}"
+          export ENV_FILE=/opt/vahanplus/deploy/env/hostinger.env
+          export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+          git fetch origin main master 2>/dev/null || true
+          git checkout -q main 2>/dev/null || git checkout -q master 2>/dev/null || true
+          git pull --ff-only
+          chmod +x deploy/scripts/rollout-ghcr.sh
+          ./deploy/scripts/rollout-ghcr.sh

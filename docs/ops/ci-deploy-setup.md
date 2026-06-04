@@ -1,6 +1,6 @@
 # CI deploy setup (push → live)
 
-After one-time setup below, **routine deploy = `git push` to `main`**. GitHub builds images and rolls out to k3s on the VPS.
+After one-time setup below, **routine deploy = `git push` to `main`**. GitHub builds images; **deploy runs on the VPS** via a [self-hosted runner](github-self-hosted-runner.md) (no inbound SSH from GitHub — avoids `dial tcp :22: i/o timeout` on Hostinger).
 
 ## What you do manually (one time)
 
@@ -10,42 +10,15 @@ After one-time setup below, **routine deploy = `git push` to `main`**. GitHub bu
 
 | Type     | Name                  | Value                                         |
 | -------- | --------------------- | --------------------------------------------- |
-| Secret   | `DEPLOY_HOST`         | VPS public IP or hostname                     |
-| Secret   | `DEPLOY_USER`         | SSH user (e.g. `root`)                        |
-| Secret   | `DEPLOY_SSH_KEY`      | Private key (full PEM), see step 2            |
 | Variable | `NEXT_PUBLIC_API_URL` | `https://exp.vahan360.info/api` (your domain) |
 
-Optional variable `DEPLOY_REPO_PATH` (default `/opt/vahanplus`).
+`DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_SSH_KEY` are **not used** anymore (SSH deploy removed).
 
 `GHCR_ORG` on the VPS (`hostinger.env`) must match the GitHub org/user that owns the repo (images are `ghcr.io/<repository_owner>/...`).
 
-### 2. SSH key for GitHub Actions → VPS
+### 2. Self-hosted runner on the VPS
 
-On your **laptop** (or anywhere):
-
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/vahanplus-gha-deploy -N ""
-```
-
-On the **VPS**:
-
-```bash
-mkdir -p ~/.ssh
-cat >> ~/.ssh/authorized_keys <<'EOF'
-<paste contents of vahanplus-gha-deploy.pub>
-EOF
-chmod 600 ~/.ssh/authorized_keys
-```
-
-Copy **private** key contents into GitHub secret `DEPLOY_SSH_KEY`.
-
-Test from laptop:
-
-```bash
-ssh -i ~/.ssh/vahanplus-gha-deploy DEPLOY_USER@DEPLOY_HOST 'kubectl get pods -n vahanplus'
-```
-
-Deploy user needs `helm`, `kubectl`, and read access to `/opt/vahanplus` (for `rollout-ghcr.sh`).
+Follow **[github-self-hosted-runner.md](github-self-hosted-runner.md)** — register runner with label **`vahanplus`**, install as a service, confirm **Idle** in GitHub.
 
 ### 3. VPS (already done if site is live)
 
@@ -77,6 +50,6 @@ cd /opt/vahanplus
 On push to `main` / `master`:
 
 1. Build & push `vahanplus-web`, `vahanplus-api-express`, `vahanplus-worker` to GHCR (tag = short git SHA)
-2. SSH to VPS → `deploy/scripts/rollout-ghcr.sh` with that tag
+2. **Self-hosted runner** on VPS → `git pull` + `deploy/scripts/rollout-ghcr.sh` with that tag
 
 `workflow_dispatch` on the workflow can re-run deploy without a new commit.

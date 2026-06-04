@@ -83,9 +83,10 @@ jobs:
           set -euo pipefail
           SHORT="${GITHUB_SHA::7}"
           OWNER="${{ github.repository_owner }}"
+          OWNER="${OWNER,,}"
           for img in vahanplus-web vahanplus-api-express vahanplus-worker; do
             SRC="ghcr.io/${OWNER}/${img}:${SHORT}"
-            echo "==> ${img}:latest <- ${SHORT}"
+            echo "==> ${img}:latest <- ${SRC}"
             docker buildx imagetools create -t "ghcr.io/${OWNER}/${img}:latest" "${SRC}"
           done
 

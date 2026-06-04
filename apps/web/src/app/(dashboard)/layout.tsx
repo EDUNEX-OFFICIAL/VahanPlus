@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { KhananImportJobProvider } from '@/components/khanan/import/KhananImportJobProvider';
 import { AppShell } from '@/components/shell/AppShell';
 import { AuthChecking } from '@/components/shell/AuthChecking';
 import { clearSession, fetchSessionUser } from '@/lib/api';
@@ -39,5 +40,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <AuthChecking />;
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <KhananImportJobProvider>
+      <AppShell>{children}</AppShell>
+    </KhananImportJobProvider>
+  );
 }

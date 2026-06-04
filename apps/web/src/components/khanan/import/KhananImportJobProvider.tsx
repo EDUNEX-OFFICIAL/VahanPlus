@@ -1,0 +1,287 @@
+'use client';
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { EPASS_SNAPSHOTS_QUERY_KEY } from '@/lib/epass';
+import {
+  clearStoredImportJob,
+  expectedRowsFromBatchOptions,
+  readStoredImportJob,
+  writeStoredImportJob,
+  type ImportJobProgress,
+  type StoredImportJob,
+} from '@/lib/khanan-import-job';
+import {
+  getImportBatch,
+  uploadFileInChunks,
+  type KhananImportBatch,
+} from '@/lib/khanan-bulk-upload';
+
+const POLL_MS = 2000;
+
+interface StartBackgroundImportOptions {
+  replaceExisting?: boolean;
+  refreshVehicleStatus?: boolean;
+  expectedRows?: number;
+}
+
+interface KhananImportJobContextValue {
+  job: ImportJobProgress | null;
+  isActive: boolean;
+  successMessage: string | null;
+  errorMessage: string | null;
+  startBackgroundImport: (file: File, options?: StartBackgroundImportOptions) => Promise<void>;
+  clearMessages: () => void;
+}
+
+const KhananImportJobContext = createContext<KhananImportJobContextValue | null>(null);
+
+function bigintFromApi(value: string | null | undefined): number {
+  if (value == null) return 0;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function batchToJob(
+  batch: KhananImportBatch,
+  stored: Partial<StoredImportJob>,
+  phaseOverride?: ImportJobProgress['phase'],
+): ImportJobProgress {
+  const totalBytes = bigintFromApi(batch.totalBytes) || stored.totalBytes || 0;
+  const bytesUploaded = bigintFromApi(batch.bytesReceived) || stored.totalBytes || 0;
+  const expectedRows =
+    batch.expectedRows ?? expectedRowsFromBatchOptions(batch.options) ?? stored.expectedRows;
+
+  let phase: ImportJobProgress['phase'] = phaseOverride ?? 'processing';
+  if (batch.status === 'completed') phase = 'done';
+  else if (batch.status === 'failed') phase = 'failed';
+  else if (batch.status === 'pending' && bytesUploaded < totalBytes) phase = 'upload';
+
+  return {
+    batchId: batch.id,
+    fileName: batch.fileName || stored.fileName || 'import',
+    phase,
+    totalBytes,
+    bytesUploaded: phase === 'upload' ? bytesUploaded : totalBytes,
+    expectedRows,
+    rowsProcessed: batch.rowsProcessed,
+    rowsSkipped: batch.rowsSkipped,
+    passesImported: batch.passesImported,
+    error: batch.error ?? undefined,
+  };
+}
+
+export function KhananImportJobProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const [job, setJob] = useState<ImportJobProgress | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const uploadRunningRef = useRef(false);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rowSamplesRef = useRef<{ t: number; rows: number }[]>([]);
+
+  const stopPoll = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
+  const finishJob = useCallback(
+    async (batch: KhananImportBatch, stored: StoredImportJob) => {
+      stopPoll();
+      clearStoredImportJob();
+      uploadRunningRef.current = false;
+      rowSamplesRef.current = [];
+
+      if (batch.status === 'completed') {
+        const msg = `Imported ${batch.passesImported.toLocaleString()} pass(es) · ${batch.rowsSkipped} row(s) skipped.`;
+        setSuccessMessage(msg);
+        setErrorMessage(null);
+        setJob(batchToJob(batch, stored, 'done'));
+        await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOTS_QUERY_KEY });
+        await queryClient.invalidateQueries({ queryKey: ['epass'] });
+      } else {
+        const err = batch.error ?? 'Import failed';
+        setErrorMessage(err);
+        setSuccessMessage(null);
+        setJob(batchToJob(batch, stored, 'failed'));
+      }
+    },
+    [queryClient, stopPoll],
+  );
+
+  const applyBatchUpdate = useCallback((batch: KhananImportBatch, stored: StoredImportJob) => {
+    const now = Date.now();
+    rowSamplesRef.current.push({ t: now, rows: batch.rowsProcessed });
+    if (rowSamplesRef.current.length > 5) rowSamplesRef.current.shift();
+
+    let etaSeconds: number | undefined;
+    const expectedRows =
+      batch.expectedRows ?? expectedRowsFromBatchOptions(batch.options) ?? stored.expectedRows;
+    if (expectedRows && rowSamplesRef.current.length >= 2) {
+      const first = rowSamplesRef.current[0];
+      const last = rowSamplesRef.current[rowSamplesRef.current.length - 1];
+      const dt = (last.t - first.t) / 1000;
+      const dr = last.rows - first.rows;
+      if (dt > 0 && dr > 0) {
+        const remaining = expectedRows - batch.rowsProcessed;
+        etaSeconds = remaining / (dr / dt);
+      }
+    }
+
+    const next = batchToJob(batch, stored);
+    setJob({ ...next, etaSeconds });
+  }, []);
+
+  const startPoll = useCallback(
+    (batchId: string, stored: StoredImportJob) => {
+      stopPoll();
+      pollTimerRef.current = setInterval(() => {
+        void getImportBatch(batchId)
+          .then(({ batch }) => {
+            applyBatchUpdate(batch, stored);
+            if (batch.status === 'completed' || batch.status === 'failed') {
+              void finishJob(batch, stored);
+            }
+          })
+          .catch((e) => {
+            stopPoll();
+            uploadRunningRef.current = false;
+            clearStoredImportJob();
+            const msg = e instanceof Error ? e.message : 'Status check failed';
+            setErrorMessage(msg);
+            setJob((prev) => (prev ? { ...prev, phase: 'failed', error: msg } : null));
+          });
+      }, POLL_MS);
+    },
+    [applyBatchUpdate, finishJob, stopPoll],
+  );
+
+  const resumeFromStorage = useCallback(async () => {
+    const stored = readStoredImportJob();
+    if (!stored) return;
+
+    try {
+      const { batch } = await getImportBatch(stored.batchId);
+      if (batch.status === 'completed' || batch.status === 'failed') {
+        await finishJob(batch, stored);
+        return;
+      }
+      applyBatchUpdate(batch, stored);
+      startPoll(stored.batchId, stored);
+    } catch {
+      clearStoredImportJob();
+    }
+  }, [applyBatchUpdate, finishJob, startPoll]);
+
+  useEffect(() => {
+    void resumeFromStorage();
+    return () => stopPoll();
+  }, [resumeFromStorage, stopPoll]);
+
+  const startBackgroundImport = useCallback(
+    async (file: File, options: StartBackgroundImportOptions = {}) => {
+      if (uploadRunningRef.current) return;
+      uploadRunningRef.current = true;
+      setSuccessMessage(null);
+      setErrorMessage(null);
+
+      const stored: StoredImportJob = {
+        batchId: '',
+        fileName: file.name,
+        totalBytes: file.size,
+        expectedRows: options.expectedRows,
+      };
+
+      setJob({
+        batchId: '',
+        fileName: file.name,
+        phase: 'upload',
+        totalBytes: file.size,
+        bytesUploaded: 0,
+        expectedRows: options.expectedRows,
+        rowsProcessed: 0,
+        rowsSkipped: 0,
+        passesImported: 0,
+      });
+
+      try {
+        const { batchId } = await uploadFileInChunks(file, {
+          replaceExisting: options.replaceExisting,
+          refreshVehicleStatus: options.refreshVehicleStatus,
+          expectedRows: options.expectedRows,
+          onProgress: ({ batchId: id, bytesUploaded, totalBytes }) => {
+            stored.batchId = id;
+            writeStoredImportJob({ ...stored, batchId: id });
+            setJob((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    batchId: id,
+                    bytesUploaded,
+                    totalBytes,
+                    phase: 'upload',
+                  }
+                : null,
+            );
+          },
+        });
+
+        stored.batchId = batchId;
+        writeStoredImportJob({ ...stored, batchId });
+
+        const { batch: initial } = await getImportBatch(batchId);
+        applyBatchUpdate(initial, stored);
+        startPoll(batchId, stored);
+      } catch (e) {
+        uploadRunningRef.current = false;
+        clearStoredImportJob();
+        stopPoll();
+        const msg = e instanceof Error ? e.message : 'Import failed';
+        setErrorMessage(msg);
+        setJob((prev) => (prev ? { ...prev, phase: 'failed', error: msg } : null));
+      }
+    },
+    [applyBatchUpdate, startPoll, stopPoll],
+  );
+
+  const isActive = job != null && (job.phase === 'upload' || job.phase === 'processing');
+
+  const clearMessages = useCallback(() => {
+    setSuccessMessage(null);
+    setErrorMessage(null);
+  }, []);
+
+  return (
+    <KhananImportJobContext.Provider
+      value={{
+        job,
+        isActive,
+        successMessage,
+        errorMessage,
+        startBackgroundImport,
+        clearMessages,
+      }}
+    >
+      {children}
+    </KhananImportJobContext.Provider>
+  );
+}
+
+export function useKhananImportJob(): KhananImportJobContextValue {
+  const ctx = useContext(KhananImportJobContext);
+  if (!ctx) {
+    throw new Error('useKhananImportJob must be used within KhananImportJobProvider');
+  }
+  return ctx;
+}

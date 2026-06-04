@@ -17,7 +17,14 @@ import { enqueueScrapeJob } from '../services/enqueueScrape.js';
 const router = express.Router();
 router.use(requireAuth);
 
+function expectedRowsFromOptions(options) {
+  if (!options || typeof options !== 'object') return undefined;
+  const n = options.expectedRows;
+  return typeof n === 'number' && n > 0 ? n : undefined;
+}
+
 function serializeBatch(batch) {
+  const expectedRows = expectedRowsFromOptions(batch.options);
   return {
     id: batch.id,
     status: batch.status,
@@ -30,6 +37,7 @@ function serializeBatch(batch) {
     rowsProcessed: batch.rowsProcessed,
     rowsSkipped: batch.rowsSkipped,
     passesImported: batch.passesImported,
+    expectedRows,
     error: batch.error,
     options: batch.options,
     scrapeJobId: batch.scrapeJobId,

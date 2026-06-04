@@ -14,11 +14,19 @@ export interface KhananImportBatch {
   rowsProcessed: number;
   rowsSkipped: number;
   passesImported: number;
+  expectedRows?: number;
   error: string | null;
   options?: Record<string, unknown> | null;
   scrapeJobId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ChunkUploadProgress {
+  batchId: string;
+  pct: number;
+  bytesUploaded: number;
+  totalBytes: number;
 }
 
 export interface KhananExportJob {
@@ -107,8 +115,9 @@ export async function uploadFileInChunks(
   options: {
     replaceExisting?: boolean;
     refreshVehicleStatus?: boolean;
+    expectedRows?: number;
     chunkSize?: number;
-    onProgress?: (pct: number) => void;
+    onProgress?: (progress: ChunkUploadProgress) => void;
     signal?: AbortSignal;
   },
 ): Promise<{ batchId: string }> {
@@ -124,6 +133,7 @@ export async function uploadFileInChunks(
     options: {
       replaceExisting: Boolean(options.replaceExisting),
       refreshVehicleStatus: Boolean(options.refreshVehicleStatus),
+      ...(options.expectedRows != null ? { expectedRows: options.expectedRows } : {}),
     },
   });
 
@@ -133,7 +143,13 @@ export async function uploadFileInChunks(
     const end = Math.min(start + chunkSize, file.size);
     const chunk = file.slice(start, end);
     await uploadImportChunk(batchId, i, chunk, options.signal);
-    options.onProgress?.(Math.round(((i + 1) / expectedChunks) * 100));
+    const bytesUploaded = end;
+    options.onProgress?.({
+      batchId,
+      pct: Math.round((bytesUploaded / file.size) * 100),
+      bytesUploaded,
+      totalBytes: file.size,
+    });
   }
 
   await completeImportBatch(batchId, expectedChunks);

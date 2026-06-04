@@ -6,15 +6,9 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { Input } from '@/components/ui/Input';
+import { useKhananImportJob } from '@/components/khanan/import/KhananImportJobProvider';
 import type { ImportAnalyzeResult } from '@/lib/epass-import';
 import { importTypeChipTone, importTypeLabel } from '@/lib/import-display';
-
-export interface ImportProgressState {
-  phase: 'upload' | 'processing';
-  uploadPct?: number;
-  rowsProcessed?: number;
-  passesImported?: number;
-}
 
 interface ImportReviewPanelProps {
   analysis: ImportAnalyzeResult;
@@ -22,7 +16,6 @@ interface ImportReviewPanelProps {
   replaceExisting: boolean;
   refreshVehicleStatus: boolean;
   busy: boolean;
-  importProgress?: ImportProgressState | null;
   useBackgroundImport?: boolean;
   onReportDateChange: (value: string) => void;
   onReplaceExistingChange: (checked: boolean) => void;
@@ -36,14 +29,15 @@ export function ImportReviewPanel({
   replaceExisting,
   refreshVehicleStatus,
   busy,
-  importProgress,
   useBackgroundImport,
   onReportDateChange,
   onReplaceExistingChange,
   onRefreshVehicleStatusChange,
   onImport,
 }: ImportReviewPanelProps) {
-  const canImport = Boolean(analysis.detectedType) && analysis.errors.length === 0 && !busy;
+  const { isActive: importActive } = useKhananImportJob();
+  const canImport =
+    Boolean(analysis.detectedType) && analysis.errors.length === 0 && !busy && !importActive;
 
   return (
     <Card className="space-y-4">
@@ -69,8 +63,8 @@ export function ImportReviewPanel({
           </p>
           {useBackgroundImport ? (
             <p className="text-xs text-indigo-200/90">
-              {analysis.rowCount.toLocaleString()} rows — Import runs on the server with progress
-              (avoids timeout).
+              {analysis.rowCount.toLocaleString()} rows — server import with byte/row progress; safe
+              to navigate away.
             </p>
           ) : null}
         </>
@@ -150,39 +144,11 @@ export function ImportReviewPanel({
         </div>
       ) : null}
 
-      {busy && importProgress ? (
-        <div className="space-y-2" role="status" aria-live="polite">
-          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-            <div
-              className="h-full rounded-full bg-indigo-500 transition-all duration-300"
-              style={{
-                width:
-                  importProgress.phase === 'upload' && importProgress.uploadPct != null
-                    ? `${importProgress.uploadPct}%`
-                    : importProgress.phase === 'processing'
-                      ? '100%'
-                      : '12%',
-              }}
-            />
-          </div>
-          <p className="flex items-center gap-2 text-sm text-indigo-200">
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
-            {importProgress.phase === 'upload'
-              ? `Uploading… ${importProgress.uploadPct ?? 0}%`
-              : `Processing on server… ${(importProgress.rowsProcessed ?? 0).toLocaleString()} rows${
-                  importProgress.passesImported != null && importProgress.passesImported > 0
-                    ? ` · ${importProgress.passesImported.toLocaleString()} passes`
-                    : ''
-                }`}
-          </p>
-        </div>
-      ) : null}
-
       <Button className="w-full" disabled={!canImport} onClick={onImport}>
         {busy ? (
           <span className="inline-flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            {importProgress ? 'Importing…' : 'Working…'}
+            Starting import…
           </span>
         ) : (
           'Import'

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AmbientBlobs } from './AmbientBlobs';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { ImportJobBanner } from '@/components/khanan/import/ImportJobBanner';
 import { ResponsiveContainer } from '@/components/ui/ResponsiveLayout';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +29,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <Header />
         <main className="flex-1 pb-28 pt-4 sm:pt-5 lg:pt-6 xl:pb-8">
-          <ResponsiveContainer>{children}</ResponsiveContainer>
+          <ResponsiveContainer>
+            <ImportJobBanner />
+            {children}
+          </ResponsiveContainer>
         </main>
       </div>
     </div>

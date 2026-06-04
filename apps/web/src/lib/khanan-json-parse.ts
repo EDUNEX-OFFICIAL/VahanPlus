@@ -4,6 +4,9 @@ const SMALL_JSON_MAX_BYTES = 50 * 1024 * 1024;
 
 export const BULK_UPLOAD_THRESHOLD_BYTES = 8 * 1024 * 1024;
 
+/** Above this row count, Import uses chunked upload + background worker (avoids gateway timeout). */
+export const SMALL_IMPORT_MAX_ROWS = 500;
+
 export function isKhananJsonFile(name: string): boolean {
   const lower = name.toLowerCase();
   return lower.endsWith('.json') || lower.endsWith('.jsonl') || lower.endsWith('.ndjson');
@@ -65,6 +68,15 @@ export async function parseKhananJsonArrayFile(
   return { headers, rows };
 }
 
-export function shouldUseBulkUpload(file: File): boolean {
-  return isNdjsonFile(file.name) || file.size >= BULK_UPLOAD_THRESHOLD_BYTES;
+export function shouldUseBulkUpload(file: File, rowCount?: number): boolean {
+  if (isNdjsonFile(file.name) || file.size >= BULK_UPLOAD_THRESHOLD_BYTES) return true;
+  if (rowCount != null && rowCount > SMALL_IMPORT_MAX_ROWS) return true;
+  return false;
+}
+
+/** Convert parsed rows to an NDJSON file for the bulk import worker. */
+export function rowsToNdjsonFile(rows: Record<string, string>[], sourceName: string): File {
+  const body = rows.map((r) => JSON.stringify(r)).join('\n') + '\n';
+  const name = sourceName.replace(/\.json$/i, '') + '.import.jsonl';
+  return new File([body], name, { type: 'application/x-ndjson' });
 }

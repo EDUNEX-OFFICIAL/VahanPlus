@@ -1,5 +1,6 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -8,12 +9,21 @@ import { Input } from '@/components/ui/Input';
 import type { ImportAnalyzeResult } from '@/lib/epass-import';
 import { importTypeChipTone, importTypeLabel } from '@/lib/import-display';
 
+export interface ImportProgressState {
+  phase: 'upload' | 'processing';
+  uploadPct?: number;
+  rowsProcessed?: number;
+  passesImported?: number;
+}
+
 interface ImportReviewPanelProps {
   analysis: ImportAnalyzeResult;
   reportDate: string;
   replaceExisting: boolean;
   refreshVehicleStatus: boolean;
   busy: boolean;
+  importProgress?: ImportProgressState | null;
+  useBackgroundImport?: boolean;
   onReportDateChange: (value: string) => void;
   onReplaceExistingChange: (checked: boolean) => void;
   onRefreshVehicleStatusChange: (checked: boolean) => void;
@@ -26,6 +36,8 @@ export function ImportReviewPanel({
   replaceExisting,
   refreshVehicleStatus,
   busy,
+  importProgress,
+  useBackgroundImport,
   onReportDateChange,
   onReplaceExistingChange,
   onRefreshVehicleStatusChange,
@@ -47,13 +59,21 @@ export function ImportReviewPanel({
       <p className="text-sm text-text-secondary tabular-nums">{analysis.rowCount} data row(s)</p>
 
       {analysis.detectedType === 'khanan_pass' ? (
-        <p className="text-xs text-text-secondary tabular-nums">
-          {analysis.distinctDates?.count ?? 0} report date(s)
-          {analysis.distinctDates?.sample?.length
-            ? ` · ${analysis.distinctDates.sample.join(', ')}`
-            : ''}
-          · {analysis.distinctVrns ?? 0} distinct VRN(s)
-        </p>
+        <>
+          <p className="text-xs text-text-secondary tabular-nums">
+            {analysis.distinctDates?.count ?? 0} report date(s)
+            {analysis.distinctDates?.sample?.length
+              ? ` · ${analysis.distinctDates.sample.join(', ')}`
+              : ''}
+            · {analysis.distinctVrns ?? 0} distinct VRN(s)
+          </p>
+          {useBackgroundImport ? (
+            <p className="text-xs text-indigo-200/90">
+              {analysis.rowCount.toLocaleString()} rows — Import runs on the server with progress
+              (avoids timeout).
+            </p>
+          ) : null}
+        </>
       ) : null}
 
       {analysis.errors.length > 0 ? (
@@ -130,8 +150,43 @@ export function ImportReviewPanel({
         </div>
       ) : null}
 
+      {busy && importProgress ? (
+        <div className="space-y-2" role="status" aria-live="polite">
+          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+            <div
+              className="h-full rounded-full bg-indigo-500 transition-all duration-300"
+              style={{
+                width:
+                  importProgress.phase === 'upload' && importProgress.uploadPct != null
+                    ? `${importProgress.uploadPct}%`
+                    : importProgress.phase === 'processing'
+                      ? '100%'
+                      : '12%',
+              }}
+            />
+          </div>
+          <p className="flex items-center gap-2 text-sm text-indigo-200">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+            {importProgress.phase === 'upload'
+              ? `Uploading… ${importProgress.uploadPct ?? 0}%`
+              : `Processing on server… ${(importProgress.rowsProcessed ?? 0).toLocaleString()} rows${
+                  importProgress.passesImported != null && importProgress.passesImported > 0
+                    ? ` · ${importProgress.passesImported.toLocaleString()} passes`
+                    : ''
+                }`}
+          </p>
+        </div>
+      ) : null}
+
       <Button className="w-full" disabled={!canImport} onClick={onImport}>
-        Import
+        {busy ? (
+          <span className="inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            {importProgress ? 'Importing…' : 'Working…'}
+          </span>
+        ) : (
+          'Import'
+        )}
       </Button>
     </Card>
   );

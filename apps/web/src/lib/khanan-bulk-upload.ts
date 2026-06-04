@@ -160,3 +160,19 @@ export async function getKhananExportJob(jobId: string) {
 export function khananExportDownloadUrl(jobId: string): string {
   return `${API_URL}/epass/import/export/jobs/${jobId}/download`;
 }
+
+/** Poll batch until completed or failed. */
+export async function pollImportBatchUntilDone(
+  batchId: string,
+  onUpdate?: (batch: KhananImportBatch) => void,
+  intervalMs = 2000,
+): Promise<KhananImportBatch> {
+  for (;;) {
+    const { batch } = await getImportBatch(batchId);
+    onUpdate?.(batch);
+    if (batch.status === 'completed' || batch.status === 'failed') {
+      return batch;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+}

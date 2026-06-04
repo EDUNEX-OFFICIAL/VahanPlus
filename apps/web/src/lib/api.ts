@@ -77,6 +77,10 @@ export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Prom
     if (res.status === 413) {
       msg = 'File too large (max 10,000 rows). Try a smaller export or split the file.';
     }
+    if (res.status === 504) {
+      msg =
+        'Import timed out at the gateway. Large files are processed in the background automatically — try Import again, or use a JSON Lines (.jsonl) file.';
+    }
     throw new Error(msg);
   }
 

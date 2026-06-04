@@ -6,7 +6,10 @@ import { Card } from '@/components/ui/Card';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { BulkJsonUploader } from '@/components/khanan/import/BulkJsonUploader';
 import { ImportFileDropzone } from '@/components/khanan/import/ImportFileDropzone';
-import { ImportReviewPanel } from '@/components/khanan/import/ImportReviewPanel';
+import {
+  ImportReviewPanel,
+  type ImportProgressState,
+} from '@/components/khanan/import/ImportReviewPanel';
 import { KhananExportPanel } from '@/components/khanan/import/KhananExportPanel';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { EPASS_SNAPSHOTS_QUERY_KEY } from '@/lib/epass';
@@ -18,10 +21,13 @@ import {
   type ImportAnalyzeResult,
   type ImportDetectedType,
 } from '@/lib/epass-import';
+import { pollImportBatchUntilDone, uploadFileInChunks } from '@/lib/khanan-bulk-upload';
 import {
   isKhananJsonFile,
   parseKhananJsonArrayFile,
+  rowsToNdjsonFile,
   shouldUseBulkUpload,
+  SMALL_IMPORT_MAX_ROWS,
 } from '@/lib/khanan-json-parse';
 
 export default function ImportDataPage() {
@@ -37,6 +43,7 @@ export default function ImportDataPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
 
   const clearFile = useCallback(() => {
     setFileName(null);
@@ -46,6 +53,7 @@ export default function ImportDataPage() {
     setBulkFile(null);
     setError(null);
     setMessage(null);
+    setImportProgress(null);
   }, []);
 
   const handleSmallJsonFile = useCallback(async (file: File) => {
@@ -113,6 +121,32 @@ export default function ImportDataPage() {
     [handleSmallJsonFile],
   );
 
+  async function handleKhananPassBackgroundImport() {
+    const ndjson = rowsToNdjsonFile(rows, fileName ?? 'import.json');
+    setImportProgress({ phase: 'upload', uploadPct: 0 });
+
+    const { batchId } = await uploadFileInChunks(ndjson, {
+      replaceExisting,
+      refreshVehicleStatus,
+      onProgress: (pct) => setImportProgress({ phase: 'upload', uploadPct: pct }),
+    });
+
+    setImportProgress({ phase: 'processing', rowsProcessed: 0 });
+    const batch = await pollImportBatchUntilDone(batchId, (b) => {
+      setImportProgress({
+        phase: 'processing',
+        rowsProcessed: b.rowsProcessed,
+        passesImported: b.passesImported,
+      });
+    });
+
+    if (batch.status === 'failed') {
+      throw new Error(batch.error ?? 'Bulk import failed');
+    }
+
+    return batch;
+  }
+
   async function handleImport() {
     if (!analysis?.detectedType) {
       setError('No recognized format');
@@ -120,35 +154,54 @@ export default function ImportDataPage() {
     }
     setBusy(true);
     setError(null);
+    setImportProgress(null);
+    setMessage(null);
+
+    const useBackground =
+      analysis.detectedType === 'khanan_pass' && rows.length > SMALL_IMPORT_MAX_ROWS;
+
     try {
-      const result = await commitImport({
-        type: analysis.detectedType as ImportDetectedType,
-        mapping: analysis.mapping,
-        rows,
-        reportDate: analysis.detectedType === 'district_snapshot' ? reportDate : undefined,
-        replaceExisting: analysis.detectedType === 'khanan_pass' ? replaceExisting : undefined,
-        refreshVehicleStatus:
-          analysis.detectedType === 'khanan_pass' ? refreshVehicleStatus : undefined,
-      });
-      await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOTS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ['epass'] });
-      if (result.passesImported != null) {
-        const queueNote =
-          result.vrnsQueued != null && result.vrnsQueued > 0
-            ? ` · ${result.vrnsQueued} MCV job(s) queued`
-            : '';
+      if (useBackground) {
+        const batch = await handleKhananPassBackgroundImport();
+        await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOTS_QUERY_KEY });
+        await queryClient.invalidateQueries({ queryKey: ['epass'] });
         setMessage(
-          `Imported ${result.passesImported} pass(es) across ${result.snapshotsCreated ?? 0} snapshot(s)${queueNote}.`,
+          `Imported ${batch.passesImported.toLocaleString()} pass(es) · ${batch.rowsSkipped} row(s) skipped.`,
         );
       } else {
-        setMessage('Import complete.');
+        const result = await commitImport({
+          type: analysis.detectedType as ImportDetectedType,
+          mapping: analysis.mapping,
+          rows,
+          reportDate: analysis.detectedType === 'district_snapshot' ? reportDate : undefined,
+          replaceExisting: analysis.detectedType === 'khanan_pass' ? replaceExisting : undefined,
+          refreshVehicleStatus:
+            analysis.detectedType === 'khanan_pass' ? refreshVehicleStatus : undefined,
+        });
+        await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOTS_QUERY_KEY });
+        await queryClient.invalidateQueries({ queryKey: ['epass'] });
+        if (result.passesImported != null) {
+          const queueNote =
+            result.vrnsQueued != null && result.vrnsQueued > 0
+              ? ` · ${result.vrnsQueued} MCV job(s) queued`
+              : '';
+          setMessage(
+            `Imported ${result.passesImported} pass(es) across ${result.snapshotsCreated ?? 0} snapshot(s)${queueNote}.`,
+          );
+        } else {
+          setMessage('Import complete.');
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Import failed');
     } finally {
       setBusy(false);
+      setImportProgress(null);
     }
   }
+
+  const useBackgroundImport =
+    analysis?.detectedType === 'khanan_pass' && rows.length > SMALL_IMPORT_MAX_ROWS;
 
   return (
     <PageStack>
@@ -216,6 +269,8 @@ export default function ImportDataPage() {
           replaceExisting={replaceExisting}
           refreshVehicleStatus={refreshVehicleStatus}
           busy={busy}
+          importProgress={importProgress}
+          useBackgroundImport={useBackgroundImport}
           onReportDateChange={setReportDate}
           onReplaceExistingChange={setReplaceExisting}
           onRefreshVehicleStatusChange={setRefreshVehicleStatus}

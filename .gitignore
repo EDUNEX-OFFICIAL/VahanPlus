@@ -11,3 +11,4 @@ deploy/env/hostinger.env
 .DS_Store
 playwright-report
 test-results
+actions-runner/

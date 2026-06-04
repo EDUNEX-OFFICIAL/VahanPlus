@@ -21,6 +21,9 @@ export interface StoredImportJob {
   fileName: string;
   totalBytes: number;
   expectedRows?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  distinctDateCount?: number;
 }
 
 export function readStoredImportJob(): StoredImportJob | null {

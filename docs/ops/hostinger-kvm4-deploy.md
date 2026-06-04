@@ -119,20 +119,21 @@ Then run `./deploy/scripts/hostinger/deploy.sh` (migrate Job is idempotent for a
 
 ## Updates (new release)
 
-**UI-only change (fast — rebuilds web image only):**
+**Recommended (fast):** push to `main` — GitHub Actions builds images and runs `deploy/scripts/rollout-ghcr.sh` on this VPS. One-time setup: [`ci-deploy-setup.md`](ci-deploy-setup.md).
+
+**Emergency / CI down (slow — builds on VPS):**
 
 ```bash
 cd /opt/vahanplus
-git pull
+./deploy/scripts/redeploy-live.sh          # full
 ./deploy/scripts/redeploy-live.sh --web-only
 ```
 
-**App + worker + API change (full rebuild on VPS):**
+**Manual rollout** (images already on GHCR from CI):
 
 ```bash
-cd /opt/vahanplus
-git pull
-./deploy/scripts/redeploy-live.sh
+export IMAGE_TAG=<short-git-sha>
+./deploy/scripts/rollout-ghcr.sh
 ```
 
 Equivalent legacy script: `./deploy/scripts/hostinger/rebuild-and-rollout.sh`

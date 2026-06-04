@@ -8,6 +8,7 @@ import { BulkJsonUploader } from '@/components/khanan/import/BulkJsonUploader';
 import { ImportFileDropzone } from '@/components/khanan/import/ImportFileDropzone';
 import { ImportProgressCard } from '@/components/khanan/import/ImportProgressCard';
 import { ImportReviewPanel } from '@/components/khanan/import/ImportReviewPanel';
+import { ImportSuccessCard } from '@/components/khanan/import/ImportSuccessCard';
 import { KhananExportPanel } from '@/components/khanan/import/KhananExportPanel';
 import { useKhananImportJob } from '@/components/khanan/import/KhananImportJobProvider';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
@@ -19,6 +20,7 @@ import {
   commitImport,
   type ImportAnalyzeResult,
   type ImportDetectedType,
+  type ImportSuccessSummary,
 } from '@/lib/epass-import';
 import {
   isKhananJsonFile,
@@ -34,6 +36,7 @@ export default function ImportDataPage() {
     job: importJob,
     isActive: importActive,
     successMessage: importSuccess,
+    importSuccessSummary,
     errorMessage: importError,
     startBackgroundImport,
     clearMessages,
@@ -48,11 +51,13 @@ export default function ImportDataPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [localSuccessSummary, setLocalSuccessSummary] = useState<ImportSuccessSummary | null>(null);
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
 
   const displayError = error ?? importError;
   const displayMessage = message ?? importSuccess;
+  const displaySuccessSummary = localSuccessSummary ?? importSuccessSummary;
 
   const clearFile = useCallback(() => {
     if (importActive) return;
@@ -63,6 +68,7 @@ export default function ImportDataPage() {
     setBulkFile(null);
     setError(null);
     setMessage(null);
+    setLocalSuccessSummary(null);
     clearMessages();
   }, [importActive, clearMessages]);
 
@@ -97,6 +103,8 @@ export default function ImportDataPage() {
           ...(khananStats
             ? {
                 distinctDates: khananStats.distinctDates,
+                dateFrom: khananStats.dateFrom,
+                dateTo: khananStats.dateTo,
                 distinctVrns: khananStats.distinctVrns,
               }
             : {}),
@@ -147,6 +155,7 @@ export default function ImportDataPage() {
     setError(null);
     clearMessages();
     setMessage(null);
+    setLocalSuccessSummary(null);
 
     const useBackground =
       analysis.detectedType === 'khanan_pass' && rows.length > SMALL_IMPORT_MAX_ROWS;
@@ -158,6 +167,9 @@ export default function ImportDataPage() {
           expectedRows: rows.length,
           replaceExisting,
           refreshVehicleStatus,
+          dateFrom: analysis.dateFrom,
+          dateTo: analysis.dateTo,
+          distinctDateCount: analysis.distinctDates?.count,
         });
       } else {
         const result = await commitImport({
@@ -179,6 +191,14 @@ export default function ImportDataPage() {
           setMessage(
             `Imported ${result.passesImported} pass(es) across ${result.snapshotsCreated ?? 0} snapshot(s)${queueNote}.`,
           );
+          setLocalSuccessSummary({
+            passesImported: result.passesImported,
+            rowsSkipped: result.skipped ?? 0,
+            snapshotsCreated: result.snapshotsCreated,
+            dateFrom: analysis.dateFrom,
+            dateTo: analysis.dateTo,
+            distinctDateCount: analysis.distinctDates?.count,
+          });
         } else {
           setMessage('Import complete.');
         }
@@ -255,9 +275,7 @@ export default function ImportDataPage() {
       {displayError ? <DataErrorCard message={displayError} /> : null}
 
       {displayMessage ? (
-        <Card className="border-emerald-500/30 bg-emerald-500/5">
-          <p className="text-sm text-emerald-100">{displayMessage}</p>
-        </Card>
+        <ImportSuccessCard message={displayMessage} summary={displaySuccessSummary} />
       ) : null}
 
       {analysis && !importActive ? (

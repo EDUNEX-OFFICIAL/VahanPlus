@@ -10,7 +10,18 @@ export interface ImportAnalyzeResult {
   warnings: string[];
   rowCount: number;
   distinctDates?: { count: number; sample: string[] };
+  dateFrom?: string;
+  dateTo?: string;
   distinctVrns?: number;
+}
+
+export interface ImportSuccessSummary {
+  passesImported: number;
+  rowsSkipped: number;
+  snapshotsCreated?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  distinctDateCount?: number;
 }
 
 export interface ImportCommitResult {
@@ -51,7 +62,10 @@ function parseImportDateToIso(value: string): string | null {
 export function buildKhananPassAnalyzeStatsClient(
   rows: Record<string, string>[],
   mapping: Record<string, string>,
-): Pick<ImportAnalyzeResult, 'distinctDates' | 'distinctVrns' | 'warnings'> {
+): Pick<
+  ImportAnalyzeResult,
+  'distinctDates' | 'dateFrom' | 'dateTo' | 'distinctVrns' | 'warnings'
+> {
   const dateCol = mapping.date;
   const vrnCol = mapping.vehicleRegNo;
   const dates = new Set<string>();
@@ -83,6 +97,8 @@ export function buildKhananPassAnalyzeStatsClient(
   const dateList = [...dates].sort();
   return {
     distinctDates: { count: dates.size, sample: dateList.slice(0, 5) },
+    dateFrom: dateList[0],
+    dateTo: dateList.length > 0 ? dateList[dateList.length - 1] : undefined,
     distinctVrns: vrns.size,
     warnings,
   };
@@ -126,8 +142,22 @@ export function buildDuplicateVrnWarnings(
   const duplicateVrns = [...counts.values()].filter((n) => n > 1).length;
   if (duplicateVrns === 0) return [];
 
-  return [`${duplicateVrns} duplicate VRN(s) in file; last row wins for each.`];
+  return [
+    `${duplicateVrns} duplicate vehicle registration (VRN) in file; each row still imports as a separate pass.`,
+  ];
 }
+
+/** URL to browse consigners across an imported report-date range. */
+export function consignerBrowseDateRangeUrl(dateFrom: string, dateTo: string): string {
+  const q = new URLSearchParams({
+    dateMode: 'range',
+    dateFrom,
+    dateTo,
+  });
+  return `/khanan/consigner?${q.toString()}`;
+}
+
+export const MULTI_DATE_IMPORT_HINT_THRESHOLD = 10;
 
 /** Parse CSV text into headers and row objects (first line = headers). */
 export function parseCsv(text: string): { headers: string[]; rows: Record<string, string>[] } {

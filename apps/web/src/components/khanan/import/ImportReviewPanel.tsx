@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/Chip';
 import { Input } from '@/components/ui/Input';
 import { useKhananImportJob } from '@/components/khanan/import/KhananImportJobProvider';
 import type { ImportAnalyzeResult } from '@/lib/epass-import';
+import { MULTI_DATE_IMPORT_HINT_THRESHOLD } from '@/lib/epass-import';
 import { importTypeChipTone, importTypeLabel } from '@/lib/import-display';
 
 interface ImportReviewPanelProps {
@@ -39,6 +40,10 @@ export function ImportReviewPanel({
   const canImport =
     Boolean(analysis.detectedType) && analysis.errors.length === 0 && !busy && !importActive;
 
+  const vrnWarnings = analysis.warnings.filter((w) => w.includes('vehicle registration'));
+  const otherWarnings = analysis.warnings.filter((w) => !w.includes('vehicle registration'));
+  const multiDateCount = analysis.distinctDates?.count ?? 0;
+
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -67,6 +72,16 @@ export function ImportReviewPanel({
               to navigate away.
             </p>
           ) : null}
+          {multiDateCount > MULTI_DATE_IMPORT_HINT_THRESHOLD ? (
+            <Alert type="info">
+              This file spans <strong>{multiDateCount.toLocaleString()}</strong> report dates.
+              Import creates <strong>one snapshot per date</strong>. Browse pages show one date at a
+              time — use <strong>Date range</strong> in Consigner filters after import to see more.
+              {analysis.dateFrom && analysis.dateTo
+                ? ` Range in file: ${analysis.dateFrom} – ${analysis.dateTo}.`
+                : ''}
+            </Alert>
+          ) : null}
         </>
       ) : null}
 
@@ -80,10 +95,21 @@ export function ImportReviewPanel({
         </Alert>
       ) : null}
 
-      {analysis.warnings.length > 0 ? (
+      {vrnWarnings.length > 0 ? (
+        <Alert type="warning">
+          <p className="mb-1 font-medium">Duplicate vehicle registrations (VRN)</p>
+          <ul className="list-inside list-disc space-y-1">
+            {vrnWarnings.map((warn) => (
+              <li key={warn}>{warn}</li>
+            ))}
+          </ul>
+        </Alert>
+      ) : null}
+
+      {otherWarnings.length > 0 ? (
         <Alert type="warning">
           <ul className="list-inside list-disc space-y-1">
-            {analysis.warnings.map((warn) => (
+            {otherWarnings.map((warn) => (
               <li key={warn}>{warn}</li>
             ))}
           </ul>

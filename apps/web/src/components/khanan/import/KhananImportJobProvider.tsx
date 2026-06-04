@@ -24,6 +24,11 @@ import {
   uploadFileInChunks,
   type KhananImportBatch,
 } from '@/lib/khanan-bulk-upload';
+import {
+  dateRangeFromBatchOptions,
+  importSummaryFromBatchOptions,
+} from '@/lib/khanan-import-options';
+import type { ImportSuccessSummary } from '@/lib/epass-import';
 
 const POLL_MS = 2000;
 
@@ -31,15 +36,58 @@ interface StartBackgroundImportOptions {
   replaceExisting?: boolean;
   refreshVehicleStatus?: boolean;
   expectedRows?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  distinctDateCount?: number;
 }
 
 interface KhananImportJobContextValue {
   job: ImportJobProgress | null;
   isActive: boolean;
   successMessage: string | null;
+  importSuccessSummary: ImportSuccessSummary | null;
   errorMessage: string | null;
   startBackgroundImport: (file: File, options?: StartBackgroundImportOptions) => Promise<void>;
   clearMessages: () => void;
+}
+
+function buildSuccessFromBatch(
+  batch: KhananImportBatch,
+  stored: Partial<StoredImportJob>,
+): { message: string; summary: ImportSuccessSummary } {
+  const fromOpts = dateRangeFromBatchOptions(batch.options);
+  const importSummary = importSummaryFromBatchOptions(batch.options);
+  const dateFrom = batch.dateFrom ?? fromOpts.dateFrom ?? stored.dateFrom;
+  const dateTo = batch.dateTo ?? fromOpts.dateTo ?? stored.dateTo;
+  const distinctDateCount =
+    batch.distinctDateCount ?? fromOpts.distinctDateCount ?? stored.distinctDateCount;
+  const snapshotsCreated =
+    batch.snapshotsCreated ??
+    importSummary?.snapshotsCreated ??
+    (distinctDateCount && distinctDateCount > 0 ? distinctDateCount : undefined);
+
+  const summary: ImportSuccessSummary = {
+    passesImported: batch.passesImported,
+    rowsSkipped: batch.rowsSkipped,
+    snapshotsCreated,
+    dateFrom,
+    dateTo,
+    distinctDateCount,
+  };
+
+  let message = `Imported ${batch.passesImported.toLocaleString()} pass(es)`;
+  if (snapshotsCreated != null && snapshotsCreated > 0) {
+    message += ` across ${snapshotsCreated.toLocaleString()} report-date snapshot(s)`;
+  }
+  if (dateFrom && dateTo) {
+    message += ` (${dateFrom} – ${dateTo})`;
+  }
+  if (batch.rowsSkipped > 0) {
+    message += ` · ${batch.rowsSkipped.toLocaleString()} row(s) skipped`;
+  }
+  message += '.';
+
+  return { message, summary };
 }
 
 const KhananImportJobContext = createContext<KhananImportJobContextValue | null>(null);
@@ -83,6 +131,9 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [job, setJob] = useState<ImportJobProgress | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [importSuccessSummary, setImportSuccessSummary] = useState<ImportSuccessSummary | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const uploadRunningRef = useRef(false);
@@ -104,8 +155,9 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
       rowSamplesRef.current = [];
 
       if (batch.status === 'completed') {
-        const msg = `Imported ${batch.passesImported.toLocaleString()} pass(es) · ${batch.rowsSkipped} row(s) skipped.`;
-        setSuccessMessage(msg);
+        const { message, summary } = buildSuccessFromBatch(batch, stored);
+        setSuccessMessage(message);
+        setImportSuccessSummary(summary);
         setErrorMessage(null);
         setJob(batchToJob(batch, stored, 'done'));
         await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOTS_QUERY_KEY });
@@ -114,6 +166,7 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
         const err = batch.error ?? 'Import failed';
         setErrorMessage(err);
         setSuccessMessage(null);
+        setImportSuccessSummary(null);
         setJob(batchToJob(batch, stored, 'failed'));
       }
     },
@@ -194,6 +247,7 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
       if (uploadRunningRef.current) return;
       uploadRunningRef.current = true;
       setSuccessMessage(null);
+      setImportSuccessSummary(null);
       setErrorMessage(null);
 
       const stored: StoredImportJob = {
@@ -201,6 +255,9 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
         fileName: file.name,
         totalBytes: file.size,
         expectedRows: options.expectedRows,
+        dateFrom: options.dateFrom,
+        dateTo: options.dateTo,
+        distinctDateCount: options.distinctDateCount,
       };
 
       setJob({
@@ -220,6 +277,9 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
           replaceExisting: options.replaceExisting,
           refreshVehicleStatus: options.refreshVehicleStatus,
           expectedRows: options.expectedRows,
+          dateFrom: options.dateFrom,
+          dateTo: options.dateTo,
+          distinctDateCount: options.distinctDateCount,
           onProgress: ({ batchId: id, bytesUploaded, totalBytes }) => {
             stored.batchId = id;
             writeStoredImportJob({ ...stored, batchId: id });
@@ -259,6 +319,7 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
 
   const clearMessages = useCallback(() => {
     setSuccessMessage(null);
+    setImportSuccessSummary(null);
     setErrorMessage(null);
   }, []);
 
@@ -268,6 +329,7 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
         job,
         isActive,
         successMessage,
+        importSuccessSummary,
         errorMessage,
         startBackgroundImport,
         clearMessages,

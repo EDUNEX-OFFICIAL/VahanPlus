@@ -23,8 +23,29 @@ function expectedRowsFromOptions(options) {
   return typeof n === 'number' && n > 0 ? n : undefined;
 }
 
+function optionString(options, key) {
+  if (!options || typeof options !== 'object') return undefined;
+  const v = options[key];
+  return typeof v === 'string' && v ? v : undefined;
+}
+
+function optionNumber(options, key) {
+  if (!options || typeof options !== 'object') return undefined;
+  const v = options[key];
+  return typeof v === 'number' && v > 0 ? v : undefined;
+}
+
+function importSummaryFromOptions(options) {
+  if (!options || typeof options !== 'object') return undefined;
+  const raw = options.importSummary;
+  if (!raw || typeof raw !== 'object') return undefined;
+  return raw;
+}
+
 function serializeBatch(batch) {
-  const expectedRows = expectedRowsFromOptions(batch.options);
+  const opts = batch.options;
+  const expectedRows = expectedRowsFromOptions(opts);
+  const importSummary = importSummaryFromOptions(opts);
   return {
     id: batch.id,
     status: batch.status,
@@ -38,6 +59,10 @@ function serializeBatch(batch) {
     rowsSkipped: batch.rowsSkipped,
     passesImported: batch.passesImported,
     expectedRows,
+    dateFrom: optionString(opts, 'dateFrom'),
+    dateTo: optionString(opts, 'dateTo'),
+    distinctDateCount: optionNumber(opts, 'distinctDateCount'),
+    snapshotsCreated: importSummary?.snapshotsCreated,
     error: batch.error,
     options: batch.options,
     scrapeJobId: batch.scrapeJobId,

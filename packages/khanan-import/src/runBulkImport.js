@@ -34,6 +34,15 @@ export async function runKhananBulkImport(prisma, batch) {
 
   const result = await session.finalize();
 
+  const mergedOptions = {
+    ...options,
+    importSummary: {
+      snapshotsCreated: result.snapshotsCreated,
+      passesImported: result.passesImported,
+      rowsSkipped: stats.rowsSkipped,
+    },
+  };
+
   await prisma.khananImportBatch.update({
     where: { id: batch.id },
     data: {
@@ -41,6 +50,7 @@ export async function runKhananBulkImport(prisma, batch) {
       rowsSkipped: stats.rowsSkipped,
       passesImported: result.passesImported,
       status: 'completed',
+      options: mergedOptions,
     },
   });
 

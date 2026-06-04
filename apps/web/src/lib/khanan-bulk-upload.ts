@@ -15,6 +15,10 @@ export interface KhananImportBatch {
   rowsSkipped: number;
   passesImported: number;
   expectedRows?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  distinctDateCount?: number;
+  snapshotsCreated?: number;
   error: string | null;
   options?: Record<string, unknown> | null;
   scrapeJobId: string | null;
@@ -116,6 +120,9 @@ export async function uploadFileInChunks(
     replaceExisting?: boolean;
     refreshVehicleStatus?: boolean;
     expectedRows?: number;
+    dateFrom?: string;
+    dateTo?: string;
+    distinctDateCount?: number;
     chunkSize?: number;
     onProgress?: (progress: ChunkUploadProgress) => void;
     signal?: AbortSignal;
@@ -134,6 +141,11 @@ export async function uploadFileInChunks(
       replaceExisting: Boolean(options.replaceExisting),
       refreshVehicleStatus: Boolean(options.refreshVehicleStatus),
       ...(options.expectedRows != null ? { expectedRows: options.expectedRows } : {}),
+      ...(options.dateFrom ? { dateFrom: options.dateFrom } : {}),
+      ...(options.dateTo ? { dateTo: options.dateTo } : {}),
+      ...(options.distinctDateCount != null
+        ? { distinctDateCount: options.distinctDateCount }
+        : {}),
     },
   });
 

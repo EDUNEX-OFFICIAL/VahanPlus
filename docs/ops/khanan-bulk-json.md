@@ -39,6 +39,46 @@ gzip -k huge.jsonl
 - **Large / JSON Lines**: chunked upload → BullMQ `khanan_bulk_import` worker
 - **Export**: date filters → async job → download `.jsonl.gz`
 
+### Multi-date Mongo exports
+
+Many historical exports put a different **`date`** (report date) on each row. Import ETL creates **one `EpassSnapshot` per distinct report date** (`sourceUrl: import`), not one giant snapshot for the whole file.
+
+| Effect                               | What operators see                                                                                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| After import                         | Pass count ≈ row count; snapshot count ≈ distinct dates in file                                                                                                        |
+| Consigner / challan browse (default) | **One snapshot** (usually latest `scrapedAt`) — often only **1–2 consigners** if that day had few rows                                                                 |
+| See full import                      | Use **Date range** on Consigner (or pick a busier report date). Post-import success links **Browse date range** when analyze stored `dateFrom` / `dateTo` on the batch |
+
+**Duplicate VRN warnings** count plates that appear on more than one row (multiple challans/dates). They are **not** duplicate challan lines and do not block import.
+
+Pre-import review shows an info alert when the file spans **>10** report dates.
+
+## Verify import in Postgres
+
+After a large import completes:
+
+```sql
+-- latest batch
+SELECT id, status, "passesImported", "rowsProcessed", options
+FROM ingest."KhananImportBatch"
+ORDER BY "createdAt" DESC
+LIMIT 1;
+
+SELECT COUNT(*) AS import_snapshots
+FROM processed."EpassSnapshot"
+WHERE "sourceUrl" = 'import';
+
+SELECT COUNT(*) AS import_pass_rows
+FROM processed."EpassChallanPassRow" p
+JOIN processed."EpassChallanRow" c ON c.id = p."challanRowId"
+JOIN processed."EpassConsignerRow" g ON g.id = c."consignerRowId"
+JOIN processed."EpassDistrictRow" d ON d.id = g."districtRowId"
+JOIN processed."EpassSnapshot" s ON s.id = d."snapshotId"
+WHERE s."sourceUrl" = 'import';
+```
+
+For `docs/khanan_sample_5000.json` (~5000 rows, ~1869 dates): expect ~1869 import snapshots and ~5000 pass rows when status is `completed`.
+
 ## API
 
 | Method | Path                                      | Purpose                   |

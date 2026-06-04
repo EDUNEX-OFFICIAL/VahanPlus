@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Build Docker images on this VPS, push to GHCR, and roll out to k3s (Helm).
+# Prefer: git push main → GitHub Actions (see docs/ops/ci-deploy-setup.md).
 #
 # Run from repo root on the Hostinger / k3s server:
 #   ./deploy/scripts/redeploy-live.sh
@@ -138,39 +139,9 @@ else
   echo "==> Keeping worker image:     ${WORKER_IMAGE_SET}"
 fi
 
-HELM_ARGS=(
-  upgrade --install "$RELEASE" "$ROOT/deploy/helm/vahanplus"
-  --namespace "$NAMESPACE"
-  --create-namespace
-  --reset-values
-  -f "$VALUES_FILE"
-  --set "global.imageRegistry=${REG}"
-  --set "global.imagePullPolicy=Always"
-  --set "apiExpress.image=${API_IMAGE_SET}"
-  --set "web.image=${WEB_IMAGE_SET}"
-  --set "worker.image=${WORKER_IMAGE_SET}"
-  --set "ingress.host=${VAHANPLUS_DOMAIN}"
-  --set "apiExpress.corsOrigins=https://${VAHANPLUS_DOMAIN}"
-)
-
-if [[ "$HELM_WAIT" == "true" ]]; then
-  HELM_ARGS+=(--wait --timeout 15m)
-fi
-
-echo "==> Helm rollout"
-helm "${HELM_ARGS[@]}"
-
-# Same image tag can skip a pod recreate; always restart web so new layers load.
-if [[ "$BUILD_MODE" == "web" || "$BUILD_MODE" == "all" ]]; then
-  echo "==> Restart web pods (force pull with imagePullPolicy=Always)"
-  kubectl rollout restart "deployment/$(deploy_name web)" -n "$NAMESPACE"
-fi
-
-echo ""
-echo "==> Rollout complete (tag ${TAG}, mode ${BUILD_MODE})"
-kubectl rollout status "deployment/$(deploy_name web)" -n "$NAMESPACE" --timeout=5m || true
-kubectl get pods -n "$NAMESPACE" -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase \
-  | grep "^${RELEASE}-vahanplus" || kubectl get pods -n "$NAMESPACE"
-echo ""
-echo "  https://${VAHANPLUS_DOMAIN}/"
+export IMAGE_TAG="$TAG"
+export BUILD_MODE
+export HELM_WAIT
+chmod +x "$ROOT/deploy/scripts/rollout-ghcr.sh"
+"$ROOT/deploy/scripts/rollout-ghcr.sh" $([[ "$BUILD_MODE" == "web" ]] && echo --web-only) $([[ "$HELM_WAIT" == "false" ]] && echo --no-wait)
 echo "  https://${VAHANPLUS_DOMAIN}/khanan/config"

@@ -106,6 +106,8 @@ Same streaming ETL as the worker; no browser upload.
 
 Job types: `khanan_bulk_import`, `khanan_bulk_export` on the scrape queue. Import concurrency should stay **1** for heavy files to protect Postgres and portal fanout.
 
+**Complete endpoint order:** the API writes `storagePath` to Postgres **before** enqueueing the worker job so the worker never reads an empty path (race that previously left imports stuck at 0 rows).
+
 ## Package
 
 Shared logic: `@vahanplus/khanan-import` (normalize, ETL session, storage, stream parse).

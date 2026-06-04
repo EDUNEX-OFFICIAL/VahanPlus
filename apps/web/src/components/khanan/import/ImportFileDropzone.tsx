@@ -12,6 +12,7 @@ const SAMPLE_JSON_URL =
 
 interface ImportFileDropzoneProps {
   busy: boolean;
+  importActive?: boolean;
   fileName: string | null;
   rowCount: number;
   onFile: (file: File) => void;
@@ -20,6 +21,7 @@ interface ImportFileDropzoneProps {
 
 export function ImportFileDropzone({
   busy,
+  importActive = false,
   fileName,
   rowCount,
   onFile,
@@ -28,10 +30,11 @@ export function ImportFileDropzone({
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const disabled = busy || importActive;
 
   const pickFile = useCallback(() => {
-    if (!busy) inputRef.current?.click();
-  }, [busy]);
+    if (!disabled) inputRef.current?.click();
+  }, [disabled]);
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
@@ -57,12 +60,12 @@ export function ImportFileDropzone({
         {fileName ? (
           <button
             type="button"
-            disabled={busy}
+            disabled={disabled}
             onClick={onClear}
             className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-600/50 px-3 text-sm text-text-secondary hover:text-white disabled:opacity-50"
           >
             <X className="h-4 w-4" aria-hidden />
-            Clear
+            {importActive ? 'Stop import' : 'Clear'}
           </button>
         ) : null}
       </div>
@@ -73,14 +76,14 @@ export function ImportFileDropzone({
         type="file"
         accept={ACCEPT}
         className="sr-only"
-        disabled={busy}
+        disabled={disabled}
         onChange={(e) => {
           handleFiles(e.target.files);
           e.target.value = '';
         }}
       />
 
-      {fileName && !busy ? (
+      {fileName && !busy && !importActive ? (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
           <FileJson className="h-5 w-5 shrink-0 text-emerald-300" aria-hidden />
           <div className="min-w-0 flex-1 text-left">
@@ -91,12 +94,12 @@ export function ImportFileDropzone({
       ) : (
         <button
           type="button"
-          disabled={busy}
+          disabled={disabled}
           onClick={pickFile}
           onDragEnter={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (!busy) setDragOver(true);
+            if (!disabled) setDragOver(true);
           }}
           onDragOver={(e) => {
             e.preventDefault();
@@ -111,20 +114,27 @@ export function ImportFileDropzone({
             e.preventDefault();
             e.stopPropagation();
             setDragOver(false);
-            if (!busy) handleFiles(e.dataTransfer.files);
+            if (!disabled) handleFiles(e.dataTransfer.files);
           }}
           className={cn(
             'flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 transition',
             dragOver
               ? 'border-indigo-400/60 bg-indigo-500/10'
               : 'border-slate-600/50 bg-slate-900/25 hover:border-indigo-500/40 hover:bg-indigo-500/5',
-            busy && 'pointer-events-none opacity-70',
+            disabled && 'pointer-events-none opacity-70',
           )}
         >
           {busy ? (
             <>
               <Loader2 className="h-8 w-8 animate-spin text-indigo-300" aria-hidden />
-              <p className="mt-3 text-sm font-medium text-indigo-200">Analyzing…</p>
+              <p className="mt-3 text-sm font-medium text-indigo-200">Analyzing file…</p>
+            </>
+          ) : importActive ? (
+            <>
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-300" aria-hidden />
+              <p className="mt-3 text-sm font-medium text-indigo-200">
+                Import running — see progress above
+              </p>
             </>
           ) : (
             <>

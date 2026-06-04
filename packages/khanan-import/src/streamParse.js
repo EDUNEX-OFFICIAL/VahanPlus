@@ -4,7 +4,7 @@ import Parser from 'stream-json/Parser.js';
 import StreamArray from 'stream-json/streamers/StreamArray.js';
 import { normalizeKhananMongoRecord } from './mongoNormalize.js';
 
-const PROGRESS_EVERY = 500;
+const PROGRESS_EVERY = 50;
 
 /**
  * @param {string} filePath
@@ -17,7 +17,8 @@ export async function streamKhananRecords(filePath, format, onRecord, hooks = {}
   let rowsSkipped = 0;
 
   const tick = async () => {
-    if (hooks.onProgress && rowsProcessed % PROGRESS_EVERY === 0 && rowsProcessed > 0) {
+    if (!hooks.onProgress) return;
+    if (rowsProcessed === 1 || rowsProcessed % PROGRESS_EVERY === 0) {
       await hooks.onProgress(rowsProcessed, rowsSkipped);
     }
   };

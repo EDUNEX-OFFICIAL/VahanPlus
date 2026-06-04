@@ -138,8 +138,11 @@ router.put('/batches/:id/chunks/:index', async (req, res) => {
   const prisma = getPrisma();
   const batch = await prisma.khananImportBatch.findUnique({ where: { id: batchId } });
   if (!batch) return res.status(404).json({ error: 'Batch not found' });
-  if (batch.status === 'completed' || batch.status === 'active') {
+  if (batch.status === 'completed' || batch.status === 'active' || batch.status === 'failed') {
     return res.status(409).json({ error: 'Batch is no longer accepting chunks' });
+  }
+  if (batch.storagePath) {
+    return res.status(409).json({ error: 'Batch upload already completed' });
   }
 
   await ensureDir(batchDir(batchId));
@@ -169,28 +172,55 @@ router.post('/batches/:id/complete', async (req, res) => {
     return res.status(400).json({ error: 'expectedChunks is required' });
   }
 
+  if (batch.status === 'completed') {
+    return res.status(409).json({ error: 'Batch already completed' });
+  }
+  if (batch.status === 'active') {
+    return res.status(409).json({ error: 'Batch is already processing' });
+  }
+  if (batch.status === 'failed') {
+    return res.status(409).json({ error: batch.error ?? 'Batch failed' });
+  }
+  if (batch.storagePath && batch.scrapeJobId) {
+    return res.status(202).json({
+      batch: serializeBatch(batch),
+      scrapeJobId: batch.scrapeJobId,
+    });
+  }
+
   try {
-    const storagePath = await assembleChunks(batchId, batch.fileName, chunks);
+    const storagePath =
+      batch.storagePath || (await assembleChunks(batchId, batch.fileName, chunks));
     const stat = await fs.promises.stat(storagePath);
 
-    const scrapeJob = await enqueueScrapeJob(prisma, {
-      type: 'khanan_bulk_import',
-      target: batchId,
-      metadata: { batchId },
-    });
-
-    const updated = await prisma.khananImportBatch.update({
+    // Persist assembled path before enqueue so the worker never reads an empty storagePath.
+    const ready = await prisma.khananImportBatch.update({
       where: { id: batchId },
       data: {
         storagePath,
         expectedChunks: chunks,
         totalBytes: BigInt(stat.size),
-        scrapeJobId: scrapeJob.id,
         status: 'pending',
+        error: null,
       },
     });
 
-    res.status(202).json({ batch: serializeBatch(updated), scrapeJobId: scrapeJob.id });
+    let scrapeJobId = ready.scrapeJobId;
+    if (!scrapeJobId) {
+      const scrapeJob = await enqueueScrapeJob(prisma, {
+        type: 'khanan_bulk_import',
+        target: batchId,
+        metadata: { batchId },
+      });
+      scrapeJobId = scrapeJob.id;
+      await prisma.khananImportBatch.update({
+        where: { id: batchId },
+        data: { scrapeJobId },
+      });
+    }
+
+    const updated = await prisma.khananImportBatch.findUnique({ where: { id: batchId } });
+    res.status(202).json({ batch: serializeBatch(updated), scrapeJobId });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Assembly failed';
     await prisma.khananImportBatch.update({
@@ -201,10 +231,32 @@ router.post('/batches/:id/complete', async (req, res) => {
   }
 });
 
+/** If the scrape job failed but the batch row was never updated, sync status for polling clients. */
+async function syncBatchFromScrapeJob(prisma, batch) {
+  if (!batch?.scrapeJobId || batch.status === 'completed' || batch.status === 'failed') {
+    return batch;
+  }
+
+  const scrapeJob = await prisma.scrapeJob.findUnique({
+    where: { id: batch.scrapeJobId },
+    select: { status: true, error: true },
+  });
+  if (!scrapeJob || scrapeJob.status !== 'failed') {
+    return batch;
+  }
+
+  const error = scrapeJob.error ?? 'Import worker failed';
+  return prisma.khananImportBatch.update({
+    where: { id: batch.id },
+    data: { status: 'failed', error },
+  });
+}
+
 router.get('/batches/:id', async (req, res) => {
   const prisma = getPrisma();
-  const batch = await prisma.khananImportBatch.findUnique({ where: { id: req.params.id } });
+  let batch = await prisma.khananImportBatch.findUnique({ where: { id: req.params.id } });
   if (!batch) return res.status(404).json({ error: 'Batch not found' });
+  batch = await syncBatchFromScrapeJob(prisma, batch);
   res.json({ batch: serializeBatch(batch) });
 });
 
@@ -213,7 +265,19 @@ router.post('/batches/:id/cancel', async (req, res) => {
   const batch = await prisma.khananImportBatch.findUnique({ where: { id: req.params.id } });
   if (!batch) return res.status(404).json({ error: 'Batch not found' });
 
-  await removeBatchDir(req.params.id);
+  if (batch.status === 'completed') {
+    return res.status(409).json({ error: 'Cannot cancel a completed import' });
+  }
+
+  await removeBatchDir(req.params.id).catch(() => {});
+
+  if (batch.scrapeJobId) {
+    await prisma.scrapeJob.updateMany({
+      where: { id: batch.scrapeJobId, status: { in: ['pending', 'active'] } },
+      data: { status: 'failed', error: 'Cancelled by operator' },
+    });
+  }
+
   const updated = await prisma.khananImportBatch.update({
     where: { id: req.params.id },
     data: { status: 'failed', error: 'Cancelled by operator' },

@@ -39,6 +39,7 @@ export default function ImportDataPage() {
     importSuccessSummary,
     errorMessage: importError,
     startBackgroundImport,
+    cancelBackgroundImport,
     clearMessages,
   } = useKhananImportJob();
 
@@ -60,7 +61,9 @@ export default function ImportDataPage() {
   const displaySuccessSummary = localSuccessSummary ?? importSuccessSummary;
 
   const clearFile = useCallback(() => {
-    if (importActive) return;
+    if (importActive) {
+      void cancelBackgroundImport();
+    }
     setFileName(null);
     setRows([]);
     setAnalysis(null);
@@ -69,8 +72,8 @@ export default function ImportDataPage() {
     setError(null);
     setMessage(null);
     setLocalSuccessSummary(null);
-    clearMessages();
-  }, [importActive, clearMessages]);
+    if (!importActive) clearMessages();
+  }, [importActive, cancelBackgroundImport, clearMessages]);
 
   const handleSmallJsonFile = useCallback(
     async (file: File) => {
@@ -228,7 +231,8 @@ export default function ImportDataPage() {
       ) : null}
 
       <ImportFileDropzone
-        busy={busy || importActive}
+        busy={busy}
+        importActive={importActive}
         fileName={fileName}
         rowCount={rows.length}
         onFile={(file) => void handleFile(file)}

@@ -226,6 +226,17 @@ async function processJob(job) {
       where: { id: jobId },
       data: { status: 'failed', error: message },
     });
+    if (type === 'khanan_bulk_import' && target) {
+      await prisma.khananImportBatch.updateMany({
+        where: { id: String(target), status: { notIn: ['completed', 'failed'] } },
+        data: { status: 'failed', error: message },
+      });
+    } else if (type === 'khanan_bulk_export' && target) {
+      await prisma.khananExportJob.updateMany({
+        where: { id: String(target), status: { notIn: ['completed', 'failed'] } },
+        data: { status: 'failed', error: message },
+      });
+    }
     throw err;
   }
 }

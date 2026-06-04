@@ -16,8 +16,10 @@ function phaseLabel(job: ImportJobProgress): string {
       return 'Uploading file';
     case 'assembling':
       return 'Finishing upload';
+    case 'queued':
+      return 'Waiting for worker';
     case 'processing':
-      return 'Processing on server';
+      return 'Processing rows';
     case 'done':
       return 'Complete';
     case 'failed':
@@ -28,7 +30,7 @@ function phaseLabel(job: ImportJobProgress): string {
 function fileUploadDetail(job: ImportJobProgress): string {
   const pct = importFileUploadPct(job);
   const uploaded =
-    job.phase === 'processing' || job.phase === 'done'
+    job.phase === 'processing' || job.phase === 'queued' || job.phase === 'done'
       ? job.totalBytes
       : Math.min(job.bytesUploaded, job.totalBytes);
   const total = job.totalBytes;
@@ -48,10 +50,12 @@ export function ImportProgressCard({ job, compact = false }: ImportProgressCardP
   const showFileBar =
     job.phase === 'upload' ||
     job.phase === 'assembling' ||
+    job.phase === 'queued' ||
     job.phase === 'processing' ||
     job.phase === 'done';
   const showRowBar = job.phase === 'processing' && rowPct != null;
-  const fileBarPct = job.phase === 'processing' || job.phase === 'done' ? 100 : filePct;
+  const fileBarPct =
+    job.phase === 'processing' || job.phase === 'queued' || job.phase === 'done' ? 100 : filePct;
 
   let processingDetail = '';
   if (job.phase === 'processing') {
@@ -64,6 +68,11 @@ export function ImportProgressCard({ job, compact = false }: ImportProgressCardP
     const leftPart = rowsLeft != null ? ` · ${rowsLeft.toLocaleString()} rows left` : '';
     const eta = formatEta(job.etaSeconds);
     processingDetail = `${rowPart}${passPart}${leftPart}${eta ? ` · ${eta}` : ''}`;
+  } else if (job.phase === 'queued') {
+    processingDetail =
+      job.expectedRows != null
+        ? `File ready · ${job.expectedRows.toLocaleString()} rows queued — worker will start shortly`
+        : 'File ready — waiting for import worker';
   } else if (job.phase === 'assembling') {
     processingDetail = 'All chunks received — assembling file before import starts…';
   } else if (job.phase === 'done') {
@@ -120,7 +129,10 @@ export function ImportProgressCard({ job, compact = false }: ImportProgressCardP
       ) : null}
 
       {!showRowBar &&
-      (job.phase === 'assembling' || job.phase === 'done' || job.phase === 'failed') ? (
+      (job.phase === 'assembling' ||
+        job.phase === 'queued' ||
+        job.phase === 'done' ||
+        job.phase === 'failed') ? (
         <p
           className={`flex items-start gap-2 tabular-nums ${compact ? 'text-xs text-indigo-200/90' : 'text-sm text-indigo-200'}`}
         >

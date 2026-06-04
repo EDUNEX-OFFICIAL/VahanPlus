@@ -22,6 +22,7 @@ import {
   type StoredImportJob,
 } from '@/lib/khanan-import-job';
 import {
+  cancelImportBatch,
   getImportBatch,
   uploadFileInChunks,
   type KhananImportBatch,
@@ -50,6 +51,7 @@ interface KhananImportJobContextValue {
   importSuccessSummary: ImportSuccessSummary | null;
   errorMessage: string | null;
   startBackgroundImport: (file: File, options?: StartBackgroundImportOptions) => Promise<void>;
+  cancelBackgroundImport: () => Promise<void>;
   clearMessages: () => void;
 }
 
@@ -330,9 +332,31 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
     [applyBatchUpdate, startPoll, stopPoll],
   );
 
+  const cancelBackgroundImport = useCallback(async () => {
+    const batchId = job?.batchId || readStoredImportJob()?.batchId;
+    stopPoll();
+    uploadRunningRef.current = false;
+    rowSamplesRef.current = [];
+    clearStoredImportJob();
+
+    if (batchId) {
+      try {
+        await cancelImportBatch(batchId);
+      } catch {
+        // Batch may already be finished or missing — still reset UI.
+      }
+    }
+
+    setJob(null);
+    setErrorMessage(null);
+  }, [job?.batchId, stopPoll]);
+
   const isActive =
     job != null &&
-    (job.phase === 'upload' || job.phase === 'assembling' || job.phase === 'processing');
+    (job.phase === 'upload' ||
+      job.phase === 'assembling' ||
+      job.phase === 'queued' ||
+      job.phase === 'processing');
 
   const clearMessages = useCallback(() => {
     setSuccessMessage(null);
@@ -349,6 +373,7 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
         importSuccessSummary,
         errorMessage,
         startBackgroundImport,
+        cancelBackgroundImport,
         clearMessages,
       }}
     >

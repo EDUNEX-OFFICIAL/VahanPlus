@@ -1,6 +1,6 @@
 export const KHANAN_IMPORT_JOB_STORAGE_KEY = 'vahanplus.khananImportJob';
 
-export type ImportJobPhase = 'upload' | 'assembling' | 'processing' | 'done' | 'failed';
+export type ImportJobPhase = 'upload' | 'assembling' | 'queued' | 'processing' | 'done' | 'failed';
 
 export interface ImportJobProgress {
   batchId: string;
@@ -69,7 +69,7 @@ export function importFileUploadPct(job: ImportJobProgress): number {
     return job.phase === 'done' ? 100 : 0;
   }
   const uploaded =
-    job.phase === 'processing' || job.phase === 'done'
+    job.phase === 'processing' || job.phase === 'queued' || job.phase === 'done'
       ? job.totalBytes
       : Math.min(job.bytesUploaded, job.totalBytes);
   return Math.min(100, Math.round((uploaded / job.totalBytes) * 100));
@@ -85,7 +85,9 @@ export function importRowPct(job: ImportJobProgress): number | null {
 export function importOverallPct(job: ImportJobProgress): number {
   if (job.phase === 'done') return 100;
   if (job.phase === 'failed') return 0;
-  if (job.phase === 'upload' || job.phase === 'assembling') return importFileUploadPct(job);
+  if (job.phase === 'upload' || job.phase === 'assembling' || job.phase === 'queued') {
+    return importFileUploadPct(job);
+  }
   const rowPct = importRowPct(job);
   if (rowPct != null) return rowPct;
   return importFileUploadPct(job) || 8;
@@ -100,5 +102,6 @@ export function deriveImportPhase(
   if (batch.status === 'failed') return 'failed';
   if (batch.status === 'active') return 'processing';
   if (totalBytes > 0 && bytesReceived < totalBytes) return 'upload';
+  if (batch.status === 'pending') return 'queued';
   return 'processing';
 }

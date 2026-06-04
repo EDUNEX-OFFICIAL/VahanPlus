@@ -405,6 +405,7 @@ export interface EpassVehicleStatusListItemDto {
   rcDaysLeft: number | null;
   fitnessDaysLeft: number | null;
   scrapedAt: string;
+  inCrm?: boolean;
 }
 
 export interface VehicleStatusStatsDto {
@@ -470,6 +471,7 @@ export interface VehicleStatusListParams {
   dir?: VehicleStatusSortDir;
   limit?: number;
   offset?: number;
+  includeCrm?: boolean;
 }
 
 export interface VehicleStatusScrapeMissingResponse {

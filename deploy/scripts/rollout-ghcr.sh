@@ -141,8 +141,12 @@ fi
 echo "==> Helm upgrade"
 helm "${HELM_ARGS[@]}"
 
-echo "==> Restart web pods"
+echo "==> Restart app pods (pick up new images)"
 kubectl rollout restart "deployment/$(deploy_name web)" -n "$NAMESPACE"
+if [[ "$BUILD_MODE" != "web" ]]; then
+  kubectl rollout restart "deployment/$(deploy_name api-express)" -n "$NAMESPACE"
+  kubectl rollout restart "deployment/$(deploy_name worker)" -n "$NAMESPACE"
+fi
 
 echo ""
 echo "==> Rollout complete (tag ${TAG})"

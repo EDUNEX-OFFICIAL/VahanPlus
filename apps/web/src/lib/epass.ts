@@ -231,6 +231,7 @@ export function fetchVehicleStatusList(params: VehicleStatusListParams = {}) {
   if (params.dir) q.set('dir', params.dir);
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
+  if (params.includeCrm) q.set('includeCrm', '1');
   const qs = q.toString();
   return apiFetch<VehicleStatusListResponse>(`/epass/vehicle-status${qs ? `?${qs}` : ''}`);
 }

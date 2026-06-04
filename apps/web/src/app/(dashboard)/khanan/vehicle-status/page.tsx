@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useCallback, useMemo } from 'react';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { VehicleStatusFilters } from '@/components/khanan/VehicleStatusFilters';
 import { VehicleStatusMetaBar } from '@/components/khanan/VehicleStatusMetaBar';
@@ -15,6 +15,7 @@ import {
   parseVehicleStatusFilters,
   serializeVehicleStatusFoundFilter,
 } from '@/lib/epass-vehicle-status-view';
+import { addVehicleToCrmExpiry } from '@/lib/crm';
 import { fetchVehicleStatusList } from '@/lib/epass';
 import type {
   VehicleStatusFilterValues,
@@ -49,6 +50,9 @@ function parseSortKey(raw: string | null): VehicleStatusSortKey | null {
 function VehicleStatusPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const [addingToCrmRegNo, setAddingToCrmRegNo] = useState<string | null>(null);
+  const [addToCrmError, setAddToCrmError] = useState<string | null>(null);
   const appliedFilters = useMemo(() => parseVehicleStatusFilters(searchParams), [searchParams]);
   const offset = Math.max(Number(searchParams.get('offset') || '0'), 0);
   const pageSize = Math.max(Number(searchParams.get('limit') || String(PAGE_SIZE)), 10);
@@ -83,8 +87,32 @@ function VehicleStatusPageContent() {
       dir: sortDir,
       limit: pageSize,
       offset,
+      includeCrm: true,
     }),
     [appliedFilters, sortKey, sortDir, pageSize, offset],
+  );
+
+  const addToCrmMutation = useMutation({
+    mutationFn: (vehicleRegNo: string) => addVehicleToCrmExpiry(vehicleRegNo),
+    onSuccess: async () => {
+      setAddToCrmError(null);
+      await queryClient.invalidateQueries({ queryKey: VEHICLE_STATUS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: ['crm', 'vehicle-expiry'] });
+    },
+    onError: (e: Error) => setAddToCrmError(e.message),
+  });
+
+  const handleAddToCrm = useCallback(
+    async (vehicleRegNo: string) => {
+      setAddingToCrmRegNo(vehicleRegNo);
+      setAddToCrmError(null);
+      try {
+        await addToCrmMutation.mutateAsync(vehicleRegNo);
+      } finally {
+        setAddingToCrmRegNo(null);
+      }
+    },
+    [addToCrmMutation],
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -207,6 +235,12 @@ function VehicleStatusPageContent() {
             onClear={handleClearFilters}
           />
 
+          {addToCrmError ? (
+            <p className="text-sm text-rose-300" role="alert">
+              {addToCrmError}
+            </p>
+          ) : null}
+
           {data ? (
             <>
               <VehicleStatusTable
@@ -214,6 +248,8 @@ function VehicleStatusPageContent() {
                 sortKey={activeSortKey}
                 sortDir={sortDir}
                 onSort={handleSort}
+                onAddToCrm={(vrn) => void handleAddToCrm(vrn)}
+                addingToCrmRegNo={addingToCrmRegNo}
               />
               {data.items.length > 0 ? (
                 <ResponsivePagination

@@ -3,23 +3,21 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatDateDmy, normalizeReportDate } from '@/lib/epass-report-date';
-import type {
-  EpassVehicleStatusListItemDto,
-  VehicleStatusSortDir,
-  VehicleStatusSortKey,
-} from '@/lib/epass-types';
+import { daysLeftTone, formatDaysLeft } from '@/lib/crm-expiry-view';
+import type { CrmExpirySortKey, CrmVehicleExpiryListItemDto } from '@/lib/crm-types';
+import type { VehicleStatusSortDir } from '@/lib/epass-types';
 
 function SortIndicator({
   columnKey,
   sortKey,
   sortDir,
 }: {
-  columnKey: VehicleStatusSortKey;
-  sortKey: VehicleStatusSortKey | null;
+  columnKey: CrmExpirySortKey;
+  sortKey: CrmExpirySortKey | null;
   sortDir: VehicleStatusSortDir;
 }) {
   if (sortKey !== columnKey) {
@@ -28,33 +26,62 @@ function SortIndicator({
   return <span className="ml-1 text-indigo-300">{sortDir === 'asc' ? '↑' : '↓'}</span>;
 }
 
-function formatWeight(value: number | null): string {
-  if (value == null) return '—';
-  return value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function sourceLabel(source: CrmVehicleExpiryListItemDto['crmSource']): string {
+  if (source === 'both') return 'Auto + Manual';
+  if (source === 'manual') return 'Manual';
+  return 'Auto';
 }
 
-interface VehicleStatusTableProps {
-  rows: EpassVehicleStatusListItemDto[];
-  sortKey?: VehicleStatusSortKey | null;
+function formatScrapedAt(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return formatDateDmy(d);
+}
+
+function DaysLeftCell({ value }: { value: number | null }) {
+  return <span className={`tabular-nums ${daysLeftTone(value)}`}>{formatDaysLeft(value)}</span>;
+}
+
+function sourceTone(
+  source: CrmVehicleExpiryListItemDto['crmSource'],
+): 'indigo' | 'emerald' | 'amber' {
+  if (source === 'manual') return 'emerald';
+  if (source === 'both') return 'amber';
+  return 'indigo';
+}
+
+interface CrmExpiryTableProps {
+  rows: CrmVehicleExpiryListItemDto[];
+  sortKey?: CrmExpirySortKey | null;
   sortDir?: VehicleStatusSortDir;
-  onSort?: (key: VehicleStatusSortKey) => void;
-  onAddToCrm?: (vehicleRegNo: string) => void;
-  addingToCrmRegNo?: string | null;
+  onSort?: (key: CrmExpirySortKey) => void;
+  selected: Set<string>;
+  onToggleRow: (vehicleRegNo: string) => void;
+  onToggleAll: () => void;
+  allSelected: boolean;
+  onRemove: (vehicleRegNo: string) => void;
+  removingRegNo?: string | null;
+  showRemove?: boolean;
 }
 
-export function VehicleStatusTable({
+export function CrmExpiryTable({
   rows,
   sortKey = null,
   sortDir = 'asc',
   onSort,
-  onAddToCrm,
-  addingToCrmRegNo = null,
-}: VehicleStatusTableProps) {
-  const showCrm = Boolean(onAddToCrm);
+  selected,
+  onToggleRow,
+  onToggleAll,
+  allSelected,
+  onRemove,
+  removingRegNo = null,
+  showRemove = true,
+}: CrmExpiryTableProps) {
   const sortable = Boolean(onSort);
+  const showSelection = showRemove;
 
   if (rows.length === 0) {
-    return <EmptyStateCard message="No matching records" />;
+    return <EmptyStateCard message="No vehicles in queue" />;
   }
 
   function SortHeader({
@@ -63,7 +90,7 @@ export function VehicleStatusTable({
     align,
   }: {
     label: string;
-    columnKey: VehicleStatusSortKey;
+    columnKey: CrmExpirySortKey;
     align?: 'right';
   }) {
     if (!sortable || !onSort) {
@@ -88,7 +115,7 @@ export function VehicleStatusTable({
       <div className="space-y-3 md:hidden">
         {rows.map((row) => (
           <MobileDataCard
-            key={row.id}
+            key={row.vehicleRegNo}
             eyebrow={row.ksRegNo ?? 'KS NA'}
             title={
               <Link
@@ -101,77 +128,98 @@ export function VehicleStatusTable({
             subtitle={row.vehicleClass ?? 'Vehicle class NA'}
             meta={
               <>
+                <Chip tone={sourceTone(row.crmSource)}>{sourceLabel(row.crmSource)}</Chip>
                 <Chip tone={row.found ? 'emerald' : 'amber'}>
-                  {row.found ? 'On portal' : 'No data on portal'}
+                  {row.found ? 'On portal' : 'No data'}
                 </Chip>
-                <Chip tone="indigo">{row.esimValidity ?? 'ESIM NA'}</Chip>
               </>
             }
           >
             <div className="grid grid-cols-2 gap-2">
               <DataField
-                label="RC Fit"
-                value={row.rcFitUpTo ? normalizeReportDate(row.rcFitUpTo) : '—'}
+                label="Insurance days"
+                value={<DaysLeftCell value={row.insuranceDaysLeft} />}
               />
+              <DataField label="RC days" value={<DaysLeftCell value={row.rcDaysLeft} />} />
               <DataField
-                label="Insurance"
-                value={row.insuranceUpTo ? normalizeReportDate(row.insuranceUpTo) : '—'}
+                label="Fitness days"
+                value={<DaysLeftCell value={row.fitnessDaysLeft} />}
               />
-              <DataField label="RC Days" value={row.rcDaysLeft ?? '—'} />
-              <DataField label="Insurance Days" value={row.insuranceDaysLeft ?? '—'} />
-              <DataField label="Fitness Days" value={row.fitnessDaysLeft ?? '—'} />
-              <DataField label="Gross WT" value={formatWeight(row.grossWeightMt)} />
-              <DataField label="Unladen WT" value={formatWeight(row.unladenWeightMt)} />
-              <DataField className="col-span-2" label="IMEI" value={row.imeiNo ?? '—'} />
             </div>
-            {showCrm ? (
+            {showSelection ? (
+              <label className="mt-3 flex items-center gap-2 text-sm text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={selected.has(row.vehicleRegNo)}
+                  onChange={() => onToggleRow(row.vehicleRegNo)}
+                />
+                Select for bulk remove
+              </label>
+            ) : null}
+            {showRemove ? (
               <Button
                 variant="secondary"
                 className="mt-3 w-full text-sm"
-                disabled={Boolean(row.inCrm) || addingToCrmRegNo === row.vehicleRegNo}
-                onClick={() => onAddToCrm?.(row.vehicleRegNo)}
+                disabled={removingRegNo === row.vehicleRegNo}
+                onClick={() => onRemove(row.vehicleRegNo)}
               >
-                {row.inCrm ? 'In CRM' : 'Add to CRM'}
+                Remove
               </Button>
             ) : null}
           </MobileDataCard>
         ))}
       </div>
+
       <Card className="hidden overflow-hidden p-0 md:block">
         <div className="max-h-[min(68vh,760px)] overflow-auto overscroll-contain scrollbar-thin">
           <table className="w-full min-w-[1280px] border-collapse text-left text-sm">
             <thead className="sticky top-0 z-10 bg-surface-primary">
               <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
+                {showSelection ? (
+                  <th className="w-10 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={onToggleAll}
+                      aria-label="Select all on page"
+                    />
+                  </th>
+                ) : null}
                 <th className="px-4 py-3">S.No.</th>
+                <SortHeader label="Source" columnKey="crmSource" />
                 <SortHeader label="KS Reg No" columnKey="ksRegNo" />
                 <SortHeader label="Vehicle Reg No" columnKey="vehicleRegNo" />
                 <SortHeader label="Vehicle Class" columnKey="vehicleClass" />
+                <SortHeader label="Insurance Days" columnKey="insuranceDaysLeft" align="right" />
+                <SortHeader label="RC Days" columnKey="rcDaysLeft" align="right" />
+                <SortHeader label="Fitness Days" columnKey="fitnessDaysLeft" align="right" />
                 <SortHeader label="Rc Fit Up To" columnKey="rcFitUpTo" />
-                <SortHeader label="Rc Tax Up To" columnKey="rcTaxUpTo" />
                 <SortHeader label="Insurance Upto" columnKey="insuranceUpTo" />
-                <SortHeader
-                  label="Insurance Days Left"
-                  columnKey="insuranceDaysLeft"
-                  align="right"
-                />
-                <SortHeader label="RC Days Left" columnKey="rcDaysLeft" align="right" />
-                <SortHeader label="Fitness Days Left" columnKey="fitnessDaysLeft" align="right" />
-                <SortHeader label="PUCC Upto" columnKey="puccUpTo" />
-                <SortHeader label="Gross Wt (MT)" columnKey="grossWeightMt" align="right" />
-                <SortHeader label="Unladen Wt (MT)" columnKey="unladenWeightMt" align="right" />
-                <SortHeader label="IMEI No" columnKey="imeiNo" />
-                <SortHeader label="ESIM Validity" columnKey="esimValidity" />
+                <SortHeader label="Rc Tax Up To" columnKey="rcTaxUpTo" />
                 <SortHeader label="Scraped" columnKey="scrapedAt" />
-                {showCrm ? <th className="px-4 py-3">CRM</th> : null}
+                {showRemove ? <th className="px-4 py-3">Action</th> : null}
               </tr>
             </thead>
             <tbody>
               {rows.map((row, index) => (
                 <tr
-                  key={row.id}
+                  key={row.vehicleRegNo}
                   className={`border-b border-border-default/60 ${row.found ? '' : 'opacity-60'}`}
                 >
+                  {showSelection ? (
+                    <td className="w-10 px-4 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(row.vehicleRegNo)}
+                        onChange={() => onToggleRow(row.vehicleRegNo)}
+                        aria-label={`Select ${row.vehicleRegNo}`}
+                      />
+                    </td>
+                  ) : null}
                   <td className="px-4 py-2.5 tabular-nums text-text-secondary">{index + 1}</td>
+                  <td className="px-4 py-2.5">
+                    <Chip tone={sourceTone(row.crmSource)}>{sourceLabel(row.crmSource)}</Chip>
+                  </td>
                   <td className="px-4 py-2.5 font-mono text-sm text-indigo-200">
                     {row.ksRegNo ?? '—'}
                   </td>
@@ -184,45 +232,36 @@ export function VehicleStatusTable({
                     </Link>
                   </td>
                   <td className="px-4 py-2.5 text-white">{row.vehicleClass ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    <DaysLeftCell value={row.insuranceDaysLeft} />
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <DaysLeftCell value={row.rcDaysLeft} />
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <DaysLeftCell value={row.fitnessDaysLeft} />
+                  </td>
                   <td className="px-4 py-2.5 text-text-secondary">
                     {row.rcFitUpTo ? normalizeReportDate(row.rcFitUpTo) : '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-text-secondary">
+                    {row.insuranceUpTo ? normalizeReportDate(row.insuranceUpTo) : '—'}
                   </td>
                   <td className="px-4 py-2.5 text-text-secondary">
                     {row.rcTaxUpTo ? normalizeReportDate(row.rcTaxUpTo) : '—'}
                   </td>
                   <td className="px-4 py-2.5 text-text-secondary">
-                    {row.insuranceUpTo ? normalizeReportDate(row.insuranceUpTo) : '—'}
+                    {formatScrapedAt(row.scrapedAt)}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {row.insuranceDaysLeft ?? '—'}
-                  </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">{row.rcDaysLeft ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {row.fitnessDaysLeft ?? '—'}
-                  </td>
-                  <td className="px-4 py-2.5 text-text-secondary">
-                    {row.puccUpTo ? normalizeReportDate(row.puccUpTo) : '—'}
-                  </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {formatWeight(row.grossWeightMt)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {formatWeight(row.unladenWeightMt)}
-                  </td>
-                  <td className="px-4 py-2.5 text-white">{row.imeiNo ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-white">{row.esimValidity ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-text-secondary">
-                    {formatDateDmy(new Date(row.scrapedAt))}
-                  </td>
-                  {showCrm ? (
+                  {showRemove ? (
                     <td className="px-4 py-2.5">
                       <Button
                         variant="secondary"
                         className="text-xs"
-                        disabled={Boolean(row.inCrm) || addingToCrmRegNo === row.vehicleRegNo}
-                        onClick={() => onAddToCrm?.(row.vehicleRegNo)}
+                        disabled={removingRegNo === row.vehicleRegNo}
+                        onClick={() => onRemove(row.vehicleRegNo)}
                       >
-                        {row.inCrm ? 'In CRM' : 'Add to CRM'}
+                        Remove
                       </Button>
                     </td>
                   ) : null}

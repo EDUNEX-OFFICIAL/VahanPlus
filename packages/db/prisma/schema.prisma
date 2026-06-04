@@ -306,3 +306,18 @@ model EpassVehicleStatusRow {
   @@index([ksRegNo])
   @@schema("processed")
 }
+
+model CrmVehicleExpiryEntry {
+  id                String   @id @default(cuid())
+  vehicleRegNo      String   @unique
+  source            String
+  status            String
+  addedByUsername   String?
+  removedByUsername String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status])
+  @@schema("processed")
+}

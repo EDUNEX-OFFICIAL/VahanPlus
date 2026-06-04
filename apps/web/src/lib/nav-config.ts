@@ -52,7 +52,7 @@ export const navItems: NavItem[] = [
     label: 'CRM',
     prefix: '/crm',
     icon: 'crm',
-    children: [],
+    children: [{ label: 'Vehicle Expiry', href: '/crm/vehicle-expiry', icon: 'status' }],
   },
 ];
 

@@ -11,6 +11,12 @@ import {
   normalizeConsigneeFilterQuery,
   normalizeConsignerFilterQuery,
 } from '../lib/epass-query-normalize.js';
+import { parseDateFlexible, parseReportDate } from '../utils/epassDates.js';
+import {
+  buildVehicleStatusOrderBy,
+  buildVehicleStatusWhere,
+  mapVehicleStatusListItem,
+} from '../services/vehicleStatusList.js';
 
 const router = express.Router();
 
@@ -57,45 +63,6 @@ function formatDateDmy(date) {
     'Dec',
   ];
   return `${String(date.getDate()).padStart(2, '0')}-${months[date.getMonth()]}-${date.getFullYear()}`;
-}
-
-function parseDateFlexible(value) {
-  const source = String(value ?? '').trim();
-  if (!source) return null;
-  const report = parseReportDate(source);
-  if (report) return report;
-  const dmyDash = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(source);
-  if (dmyDash) {
-    const day = Number(dmyDash[1]);
-    const month = Number(dmyDash[2]) - 1;
-    const year = Number(dmyDash[3]);
-    const parsed = new Date(year, month, day);
-    if (parsed.getFullYear() === year && parsed.getMonth() === month && parsed.getDate() === day) {
-      return parsed;
-    }
-  }
-  const dmySlash = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(source);
-  if (dmySlash) {
-    const day = Number(dmySlash[1]);
-    const month = Number(dmySlash[2]) - 1;
-    const year = Number(dmySlash[3]);
-    const parsed = new Date(year, month, day);
-    if (parsed.getFullYear() === year && parsed.getMonth() === month && parsed.getDate() === day) {
-      return parsed;
-    }
-  }
-  const timestamp = Date.parse(source);
-  if (!Number.isNaN(timestamp)) return new Date(timestamp);
-  return null;
-}
-
-function daysLeftFromDate(value) {
-  const parsed = parseDateFlexible(value);
-  if (!parsed) return null;
-  const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const target = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-  return Math.ceil((target.getTime() - start.getTime()) / 86400000);
 }
 
 function parseOperatorFromQuery(query) {
@@ -246,33 +213,6 @@ async function resolveSnapshot(prisma, snapshotId) {
     return prisma.epassSnapshot.findUnique({ where: { id: snapshotId } });
   }
   return prisma.epassSnapshot.findFirst({ orderBy: { scrapedAt: 'desc' } });
-}
-
-const REPORT_MONTHS = {
-  jan: 0,
-  feb: 1,
-  mar: 2,
-  apr: 3,
-  may: 4,
-  jun: 5,
-  jul: 6,
-  aug: 7,
-  sep: 8,
-  oct: 9,
-  nov: 10,
-  dec: 11,
-};
-
-function parseReportDate(value) {
-  const m = /^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/.exec(String(value).trim());
-  if (!m) return null;
-  const month = REPORT_MONTHS[m[2].toLowerCase()];
-  const day = Number(m[1]);
-  const year = Number(m[3]);
-  if (month == null || !Number.isFinite(day) || !Number.isFinite(year)) return null;
-  const d = new Date(year, month, day);
-  if (d.getFullYear() !== year || d.getMonth() !== month || d.getDate() !== day) return null;
-  return d;
 }
 
 function parseIsoDateInput(value) {
@@ -1588,84 +1528,6 @@ router.patch('/challans/:id/ghat-number', async (req, res) => {
   return res.json({ item: result.item });
 });
 
-function buildVehicleStatusWhere(query) {
-  const where = {};
-  const q = typeof query.q === 'string' ? query.q.trim() : '';
-  if (q) {
-    where.OR = [
-      { vehicleRegNo: { contains: q, mode: 'insensitive' } },
-      { ksRegNo: { contains: q, mode: 'insensitive' } },
-    ];
-  }
-  if (query.found === '0' || query.found === 'false') {
-    where.found = false;
-  } else if (query.found === '1' || query.found === 'true') {
-    where.found = true;
-  }
-  const vehicleClass = typeof query.vehicleClass === 'string' ? query.vehicleClass.trim() : '';
-  if (vehicleClass) {
-    where.vehicleClass = { contains: vehicleClass, mode: 'insensitive' };
-  }
-  const esimValidity = typeof query.esimValidity === 'string' ? query.esimValidity.trim() : '';
-  if (esimValidity) {
-    where.esimValidity = { contains: esimValidity, mode: 'insensitive' };
-  }
-  const grossWeightMin = Number(query.grossWeightMin);
-  const grossWeightMax = Number(query.grossWeightMax);
-  if (Number.isFinite(grossWeightMin) || Number.isFinite(grossWeightMax)) {
-    where.grossWeightMt = {
-      ...(Number.isFinite(grossWeightMin) ? { gte: grossWeightMin } : {}),
-      ...(Number.isFinite(grossWeightMax) ? { lte: grossWeightMax } : {}),
-    };
-  }
-  return where;
-}
-
-function buildVehicleStatusOrderBy(query) {
-  const dir = query.dir === 'desc' ? 'desc' : 'asc';
-  const sort = typeof query.sort === 'string' ? query.sort : 'vehicleRegNo';
-  const map = {
-    vehicleRegNo: { vehicleRegNo: dir },
-    ksRegNo: { ksRegNo: dir },
-    vehicleClass: { vehicleClass: dir },
-    rcFitUpTo: { rcFitUpTo: dir },
-    rcTaxUpTo: { rcTaxUpTo: dir },
-    insuranceUpTo: { insuranceUpTo: dir },
-    insuranceDaysLeft: { insuranceUpTo: dir },
-    rcDaysLeft: { rcTaxUpTo: dir },
-    fitnessDaysLeft: { rcFitUpTo: dir },
-    puccUpTo: { puccUpTo: dir },
-    imeiNo: { imeiNo: dir },
-    esimValidity: { esimValidity: dir },
-    grossWeightMt: { grossWeightMt: dir },
-    unladenWeightMt: { unladenWeightMt: dir },
-    scrapedAt: { scrapedAt: dir },
-  };
-  return map[sort] ?? { vehicleRegNo: dir };
-}
-
-function mapVehicleStatusListItem(row) {
-  return {
-    id: row.id,
-    vehicleRegNo: row.vehicleRegNo,
-    ksRegNo: row.ksRegNo,
-    vehicleClass: row.vehicleClass,
-    rcFitUpTo: row.rcFitUpTo,
-    rcTaxUpTo: row.rcTaxUpTo,
-    insuranceUpTo: row.insuranceUpTo,
-    puccUpTo: row.puccUpTo,
-    imeiNo: row.imeiNo,
-    esimValidity: row.esimValidity,
-    grossWeightMt: row.grossWeightMt != null ? toNumber(row.grossWeightMt) : null,
-    unladenWeightMt: row.unladenWeightMt != null ? toNumber(row.unladenWeightMt) : null,
-    found: row.found,
-    insuranceDaysLeft: daysLeftFromDate(row.insuranceUpTo),
-    rcDaysLeft: daysLeftFromDate(row.rcTaxUpTo),
-    fitnessDaysLeft: daysLeftFromDate(row.rcFitUpTo),
-    scrapedAt: row.scrapedAt.toISOString(),
-  };
-}
-
 router.get('/vehicle-status', async (req, res) => {
   const prisma = getPrisma();
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
@@ -1683,7 +1545,41 @@ router.get('/vehicle-status', async (req, res) => {
       select: { scrapedAt: true },
     }),
   ]);
-  let mapped = rows.map(mapVehicleStatusListItem);
+  const includeCrm = req.query.includeCrm === '1' || req.query.includeCrm === 'true';
+  let crmManualActive = null;
+  let crmSuppressed = null;
+  if (includeCrm) {
+    const crmRows = await prisma.crmVehicleExpiryEntry.findMany({
+      where: {
+        OR: [{ status: 'active', source: 'manual' }, { status: 'removed' }],
+      },
+      select: { vehicleRegNo: true, status: true, source: true },
+    });
+    crmManualActive = new Set();
+    crmSuppressed = new Set();
+    for (const entry of crmRows) {
+      if (entry.status === 'removed') crmSuppressed.add(entry.vehicleRegNo);
+      if (entry.status === 'active' && entry.source === 'manual') {
+        crmManualActive.add(entry.vehicleRegNo);
+      }
+    }
+  }
+
+  let mapped = rows.map((row) => {
+    const item = mapVehicleStatusListItem(row);
+    if (!includeCrm) return item;
+    const inCrmManual = crmManualActive.has(row.vehicleRegNo);
+    const suppressed = crmSuppressed.has(row.vehicleRegNo);
+    const autoQualifies =
+      !suppressed &&
+      ((item.insuranceDaysLeft != null && item.insuranceDaysLeft <= 30) ||
+        (item.rcDaysLeft != null && item.rcDaysLeft <= 30) ||
+        (item.fitnessDaysLeft != null && item.fitnessDaysLeft <= 30));
+    return {
+      ...item,
+      inCrm: inCrmManual || autoQualifies,
+    };
+  });
   const insuranceExpiryDays = Number(req.query.insuranceExpiryDays);
   const rcExpiryDays = Number(req.query.rcExpiryDays);
   const fitnessExpiryDays = Number(req.query.fitnessExpiryDays);

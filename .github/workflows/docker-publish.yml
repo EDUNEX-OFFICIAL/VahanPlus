@@ -51,7 +51,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
-            type=sha,format=short
+            type=sha,format=short,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
@@ -77,7 +77,8 @@ jobs:
       - name: Sync repo and Helm rollout
         run: |
           set -euo pipefail
-          export IMAGE_TAG="${GITHUB_SHA::7}"
+          # metadata-action default prefix is "sha-"; match until all images use prefix=
+          export IMAGE_TAG="sha-${GITHUB_SHA::7}"
           export ENV_FILE=/opt/vahanplus/deploy/env/hostinger.env
           export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
           git fetch origin main master 2>/dev/null || true

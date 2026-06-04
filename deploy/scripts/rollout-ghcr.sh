@@ -2,7 +2,7 @@
 # Roll out pre-built GHCR images to k3s (Helm only — no docker build).
 #
 # Used by GitHub Actions after docker-publish, or manually on the VPS:
-#   export IMAGE_TAG=abc1234   # must match GHCR tag (short git SHA)
+#   export IMAGE_TAG=abc1234   # short git SHA, or sha-abc1234 if built with metadata default prefix
 #   ./deploy/scripts/rollout-ghcr.sh
 #
 # Options:

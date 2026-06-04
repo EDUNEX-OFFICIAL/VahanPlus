@@ -123,13 +123,13 @@ function normalizeVrnKey(raw: string): string {
   return raw.trim().replace(/\s+/g, '').toUpperCase();
 }
 
-/** Warn when the same VRN appears more than once (last row wins on commit). */
-export function buildDuplicateVrnWarnings(
+/** Plates (VRN keys) that appear on 2+ rows — normal for multiple challans/dates, not duplicate challans. */
+export function countVrnsOnMultipleRows(
   rows: Record<string, string>[],
   mapping: Record<string, string>,
-): string[] {
+): { platesOnMultipleRows: number; uniqueVrns: number } | null {
   const col = mapping.vehicleRegNo;
-  if (!col) return [];
+  if (!col) return null;
 
   const counts = new Map<string, number>();
   for (const row of rows) {
@@ -139,11 +139,22 @@ export function buildDuplicateVrnWarnings(
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
 
-  const duplicateVrns = [...counts.values()].filter((n) => n > 1).length;
-  if (duplicateVrns === 0) return [];
+  const platesOnMultipleRows = [...counts.values()].filter((n) => n > 1).length;
+  if (platesOnMultipleRows === 0) return null;
+
+  return { platesOnMultipleRows, uniqueVrns: counts.size };
+}
+
+/** Info when the same VRN appears on multiple rows (all rows still import as separate passes). */
+export function buildDuplicateVrnWarnings(
+  rows: Record<string, string>[],
+  mapping: Record<string, string>,
+): string[] {
+  const stats = countVrnsOnMultipleRows(rows, mapping);
+  if (!stats) return [];
 
   return [
-    `${duplicateVrns} duplicate vehicle registration (VRN) in file; each row still imports as a separate pass.`,
+    `${stats.platesOnMultipleRows} plate(s) appear on more than one row (${stats.uniqueVrns} unique VRNs in ${rows.length} rows). Same vehicle with multiple challans or dates is normal — all rows import; this is not duplicate challans.`,
   ];
 }
 

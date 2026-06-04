@@ -32,7 +32,7 @@ export function buildVehicleStatusFilterChips(values: VehicleStatusFilterValues)
   const chips: string[] = [];
   if (values.search) chips.push(values.search);
   if (values.found === 'found') chips.push('Found on portal');
-  if (values.found === 'notFound') chips.push('Not found on portal');
+  if (values.found === 'notFound') chips.push('No data on portal');
   if (values.insuranceExpiryDays) chips.push(`Insurance <= ${values.insuranceExpiryDays}d`);
   if (values.rcExpiryDays) chips.push(`RC <= ${values.rcExpiryDays}d`);
   if (values.fitnessExpiryDays) chips.push(`Fitness <= ${values.fitnessExpiryDays}d`);

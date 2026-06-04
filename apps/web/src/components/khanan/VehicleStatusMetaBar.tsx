@@ -40,7 +40,7 @@ export function VehicleStatusMetaBar({ stats, isLoading = false }: VehicleStatus
           </p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wider text-text-secondary">Not found</p>
+          <p className="text-xs uppercase tracking-wider text-text-secondary">No portal data</p>
           <p className="mt-1 font-semibold tabular-nums text-amber-300">
             {stats.notFound.toLocaleString('en-IN')}
           </p>

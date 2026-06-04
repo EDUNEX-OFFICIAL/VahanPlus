@@ -470,6 +470,8 @@ export interface VehicleStatusScrapeMissingResponse {
   skippedExisting?: number;
 }
 
+export type McvPortalStatus = 'on_portal' | 'no_portal_data' | 'not_checked';
+
 export interface VehicleDataListItemDto {
   vehicleRegNo: string;
   passCount: number;
@@ -481,7 +483,9 @@ export interface VehicleDataListItemDto {
   destinations: string[];
   lastTransportedDate: string | null;
   lastScrapedAt: string | null;
+  /** True when MCV scrape found this VRN on the portal (`mcvPortalStatus === 'on_portal'`). */
   hasVehicleStatus: boolean;
+  mcvPortalStatus: McvPortalStatus;
   grossWeightMt: number | null;
   unladenWeightMt: number | null;
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { Alert } from '@/components/ui/Alert';
 import { AdaptiveDialog } from '@/components/ui/AdaptiveDialog';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -137,11 +138,11 @@ export function VehicleDataDetailDialog({
             </div>
           ) : null}
 
-          {status ? (
-            <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                MCV status
-              </p>
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">
+              MCV portal status
+            </p>
+            {status?.found ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 <DetailField label="KS reg no" value={status.ksRegNo ?? '—'} />
                 <DetailField label="Class" value={status.vehicleClass ?? '—'} />
@@ -158,8 +159,19 @@ export function VehicleDataDetailDialog({
                 />
                 <DetailField label="Scraped at" value={formatScrapedAt(status.scrapedAt)} wide />
               </div>
-            </div>
-          ) : null}
+            ) : status && !status.found ? (
+              <Alert type="info">
+                MCV scrape ran for this registration, but the Bihar portal returned no status data
+                (not on portal or empty response). Pass import data is still shown below.
+              </Alert>
+            ) : (
+              <Alert type="info">
+                Portal status not checked yet for this VRN. Run MCV scrape from Khanan Config, use
+                Import option &quot;Queue MCV status scrape&quot;, or open Vehicle Status after
+                scrape.
+              </Alert>
+            )}
+          </div>
 
           {data.passes.length > 0 ? (
             <div>

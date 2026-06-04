@@ -96,7 +96,7 @@ export function VehicleStatusTable({
             meta={
               <>
                 <Chip tone={row.found ? 'emerald' : 'amber'}>
-                  {row.found ? 'Found' : 'Not found'}
+                  {row.found ? 'On portal' : 'No data on portal'}
                 </Chip>
                 <Chip tone="indigo">{row.esimValidity ?? 'ESIM NA'}</Chip>
               </>

@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react';
 import { Upload } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { ImportProgressCard } from '@/components/khanan/import/ImportProgressCard';
 import { useKhananImportJob } from '@/components/khanan/import/KhananImportJobProvider';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +17,7 @@ export function BulkJsonUploader({
   replaceExisting,
   refreshVehicleStatus,
 }: BulkJsonUploaderProps) {
-  const { job, isActive, startBackgroundImport } = useKhananImportJob();
+  const { isActive, startBackgroundImport } = useKhananImportJob();
   const startedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -37,8 +36,10 @@ export function BulkJsonUploader({
       <p className="text-sm font-medium text-white">Large file (JSON Lines or big JSON array)</p>
       {file ? <p className="truncate text-xs text-text-secondary">{file.name}</p> : null}
 
-      {isActive && job ? (
-        <ImportProgressCard job={job} />
+      {isActive ? (
+        <p className="text-xs text-indigo-200/90">
+          Upload and import progress are shown at the top of this page.
+        </p>
       ) : (
         <label
           className={cn(

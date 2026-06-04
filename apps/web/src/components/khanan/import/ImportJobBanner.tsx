@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImportProgressCard } from '@/components/khanan/import/ImportProgressCard';
 import { useKhananImportJob } from '@/components/khanan/import/KhananImportJobProvider';
+import { importOverallPct } from '@/lib/khanan-import-job';
 
 export function ImportJobBanner() {
   const pathname = usePathname();
@@ -13,12 +14,7 @@ export function ImportJobBanner() {
     return null;
   }
 
-  const pct =
-    job.phase === 'upload' && job.totalBytes > 0
-      ? Math.round((job.bytesUploaded / job.totalBytes) * 100)
-      : job.expectedRows && job.expectedRows > 0
-        ? Math.round((job.rowsProcessed / job.expectedRows) * 100)
-        : 0;
+  const pct = importOverallPct(job);
 
   return (
     <div className="mb-4 rounded-xl border border-indigo-500/35 bg-indigo-500/10 px-4 py-3">

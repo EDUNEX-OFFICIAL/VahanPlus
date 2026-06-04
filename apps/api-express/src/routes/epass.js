@@ -1143,16 +1143,23 @@ router.get('/vehicle-data', async (req, res) => {
     allVrns.length > 0
       ? await prisma.epassVehicleStatusRow.findMany({
           where: { vehicleRegNo: { in: allVrns } },
-          select: { vehicleRegNo: true, grossWeightMt: true, unladenWeightMt: true },
+          select: {
+            vehicleRegNo: true,
+            grossWeightMt: true,
+            unladenWeightMt: true,
+            found: true,
+          },
         })
       : [];
   const statusByVrn = new Map(statusRows.map((r) => [r.vehicleRegNo, r]));
 
   const enriched = allAggs.map((item) => {
     const status = statusByVrn.get(item.vehicleRegNo);
+    const mcvPortalStatus = !status ? 'not_checked' : status.found ? 'on_portal' : 'no_portal_data';
     return {
       ...item,
-      hasVehicleStatus: Boolean(status),
+      mcvPortalStatus,
+      hasVehicleStatus: mcvPortalStatus === 'on_portal',
       grossWeightMt: status?.grossWeightMt != null ? toNumber(status.grossWeightMt) : null,
       unladenWeightMt: status?.unladenWeightMt != null ? toNumber(status.unladenWeightMt) : null,
     };

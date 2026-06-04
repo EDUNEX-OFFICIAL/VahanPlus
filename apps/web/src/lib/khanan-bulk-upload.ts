@@ -31,6 +31,7 @@ export interface ChunkUploadProgress {
   pct: number;
   bytesUploaded: number;
   totalBytes: number;
+  phase?: 'upload' | 'assembling';
 }
 
 export interface KhananExportJob {
@@ -128,9 +129,21 @@ export async function uploadFileInChunks(
     signal?: AbortSignal;
   },
 ): Promise<{ batchId: string }> {
+  if (file.size <= 0) {
+    throw new Error('File is empty — choose a JSON or JSON Lines file with data.');
+  }
+
   const chunkSize = options.chunkSize ?? DEFAULT_CHUNK_BYTES;
   const expectedChunks = Math.ceil(file.size / chunkSize) || 1;
   const format = file.name.toLowerCase().endsWith('.json') ? 'json_array' : 'ndjson';
+
+  options.onProgress?.({
+    batchId: '',
+    pct: 0,
+    bytesUploaded: 0,
+    totalBytes: file.size,
+    phase: 'upload',
+  });
 
   const { batchId } = await createImportBatch({
     fileName: file.name,
@@ -161,8 +174,17 @@ export async function uploadFileInChunks(
       pct: Math.round((bytesUploaded / file.size) * 100),
       bytesUploaded,
       totalBytes: file.size,
+      phase: 'upload',
     });
   }
+
+  options.onProgress?.({
+    batchId,
+    pct: 100,
+    bytesUploaded: file.size,
+    totalBytes: file.size,
+    phase: 'assembling',
+  });
 
   await completeImportBatch(batchId, expectedChunks);
   return { batchId };

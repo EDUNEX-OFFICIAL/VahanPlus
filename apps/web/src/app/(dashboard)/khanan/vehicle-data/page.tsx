@@ -364,9 +364,18 @@ function VehicleDataPageContent() {
             onSort={handleSort}
             detailQueryParams={detailQueryParams}
           />
-          {data.items.some((r) => !r.hasVehicleStatus) ? (
+          {data.items.some(
+            (r) =>
+              (r.mcvPortalStatus ?? (r.hasVehicleStatus ? 'on_portal' : 'not_checked')) !==
+              'on_portal',
+          ) ? (
             <p className="text-xs text-text-secondary">
-              GVW and Unladen come from Vehicle Status (MCV scrape on Khanan Config) or Import Data.
+              Portal status: <strong className="font-medium text-white">On portal</strong> = MCV
+              data found;{' '}
+              <strong className="font-medium text-amber-200/90">No data on portal</strong> = scrape
+              ran but portal had no status;{' '}
+              <strong className="font-medium text-text-secondary">Not checked</strong> = not scraped
+              yet. GVW/Unladen use portal weights when available.
             </p>
           ) : null}
           {data.items.length > 0 ? (

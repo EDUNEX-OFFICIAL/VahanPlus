@@ -103,7 +103,7 @@ export function VehicleStatusFilters({ values, onApply, onClear }: VehicleStatus
                         [
                           { value: 'all' as const, label: 'All' },
                           { value: 'found' as const, label: 'Found' },
-                          { value: 'notFound' as const, label: 'Not found' },
+                          { value: 'notFound' as const, label: 'No data on portal' },
                         ] as const
                       ).map(({ value, label }) => (
                         <Button

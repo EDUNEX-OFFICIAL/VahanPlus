@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { useKhananImportJob } from '@/components/khanan/import/KhananImportJobProvider';
 import type { ImportAnalyzeResult } from '@/lib/epass-import';
 import { MULTI_DATE_IMPORT_HINT_THRESHOLD } from '@/lib/epass-import';
+import { VRN_REPEAT_WARNING_MARK } from '@/lib/mcv-portal-status';
 import { importTypeChipTone, importTypeLabel } from '@/lib/import-display';
 
 interface ImportReviewPanelProps {
@@ -40,8 +41,8 @@ export function ImportReviewPanel({
   const canImport =
     Boolean(analysis.detectedType) && analysis.errors.length === 0 && !busy && !importActive;
 
-  const vrnWarnings = analysis.warnings.filter((w) => w.includes('vehicle registration'));
-  const otherWarnings = analysis.warnings.filter((w) => !w.includes('vehicle registration'));
+  const vrnWarnings = analysis.warnings.filter((w) => w.includes(VRN_REPEAT_WARNING_MARK));
+  const otherWarnings = analysis.warnings.filter((w) => !w.includes(VRN_REPEAT_WARNING_MARK));
   const multiDateCount = analysis.distinctDates?.count ?? 0;
 
   return (
@@ -96,8 +97,8 @@ export function ImportReviewPanel({
       ) : null}
 
       {vrnWarnings.length > 0 ? (
-        <Alert type="warning">
-          <p className="mb-1 font-medium">Duplicate vehicle registrations (VRN)</p>
+        <Alert type="info">
+          <p className="mb-1 font-medium">Same VRN on multiple rows (not duplicate challans)</p>
           <ul className="list-inside list-disc space-y-1">
             {vrnWarnings.map((warn) => (
               <li key={warn}>{warn}</li>

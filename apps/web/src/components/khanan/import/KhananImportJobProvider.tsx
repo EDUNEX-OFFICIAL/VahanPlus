@@ -13,7 +13,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { EPASS_SNAPSHOTS_QUERY_KEY } from '@/lib/epass';
 import {
   clearStoredImportJob,
+  deriveImportPhase,
   expectedRowsFromBatchOptions,
+  parseBatchBigInt,
   readStoredImportJob,
   writeStoredImportJob,
   type ImportJobProgress,
@@ -92,33 +94,27 @@ function buildSuccessFromBatch(
 
 const KhananImportJobContext = createContext<KhananImportJobContextValue | null>(null);
 
-function bigintFromApi(value: string | null | undefined): number {
-  if (value == null) return 0;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
 function batchToJob(
   batch: KhananImportBatch,
   stored: Partial<StoredImportJob>,
   phaseOverride?: ImportJobProgress['phase'],
 ): ImportJobProgress {
-  const totalBytes = bigintFromApi(batch.totalBytes) || stored.totalBytes || 0;
-  const bytesUploaded = bigintFromApi(batch.bytesReceived) || stored.totalBytes || 0;
+  const totalBytes = parseBatchBigInt(batch.totalBytes) || stored.totalBytes || 0;
+  const bytesUploaded = Math.min(
+    parseBatchBigInt(batch.bytesReceived),
+    totalBytes > 0 ? totalBytes : parseBatchBigInt(batch.bytesReceived),
+  );
   const expectedRows =
     batch.expectedRows ?? expectedRowsFromBatchOptions(batch.options) ?? stored.expectedRows;
 
-  let phase: ImportJobProgress['phase'] = phaseOverride ?? 'processing';
-  if (batch.status === 'completed') phase = 'done';
-  else if (batch.status === 'failed') phase = 'failed';
-  else if (batch.status === 'pending' && bytesUploaded < totalBytes) phase = 'upload';
+  const phase = phaseOverride ?? deriveImportPhase(batch, totalBytes, bytesUploaded);
 
   return {
     batchId: batch.id,
     fileName: batch.fileName || stored.fileName || 'import',
     phase,
     totalBytes,
-    bytesUploaded: phase === 'upload' ? bytesUploaded : totalBytes,
+    bytesUploaded,
     expectedRows,
     rowsProcessed: batch.rowsProcessed,
     rowsSkipped: batch.rowsSkipped,
@@ -230,6 +226,22 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
         await finishJob(batch, stored);
         return;
       }
+
+      const totalBytes = parseBatchBigInt(batch.totalBytes) || stored.totalBytes || 0;
+      const bytesReceived = parseBatchBigInt(batch.bytesReceived);
+      if (
+        batch.status === 'pending' &&
+        totalBytes > 0 &&
+        bytesReceived < totalBytes &&
+        !uploadRunningRef.current
+      ) {
+        clearStoredImportJob();
+        setErrorMessage(
+          'Upload was interrupted (browser closed or connection lost). Select the file again to restart.',
+        );
+        return;
+      }
+
       applyBatchUpdate(batch, stored);
       startPoll(stored.batchId, stored);
     } catch {
@@ -280,17 +292,20 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
           dateFrom: options.dateFrom,
           dateTo: options.dateTo,
           distinctDateCount: options.distinctDateCount,
-          onProgress: ({ batchId: id, bytesUploaded, totalBytes }) => {
-            stored.batchId = id;
-            writeStoredImportJob({ ...stored, batchId: id });
+          onProgress: (progress) => {
+            const { batchId: id, bytesUploaded, totalBytes, phase = 'upload' } = progress;
+            if (id) {
+              stored.batchId = id;
+              writeStoredImportJob({ ...stored, batchId: id });
+            }
             setJob((prev) =>
               prev
                 ? {
                     ...prev,
-                    batchId: id,
+                    batchId: id || prev.batchId,
                     bytesUploaded,
                     totalBytes,
-                    phase: 'upload',
+                    phase,
                   }
                 : null,
             );
@@ -315,7 +330,9 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
     [applyBatchUpdate, startPoll, stopPoll],
   );
 
-  const isActive = job != null && (job.phase === 'upload' || job.phase === 'processing');
+  const isActive =
+    job != null &&
+    (job.phase === 'upload' || job.phase === 'assembling' || job.phase === 'processing');
 
   const clearMessages = useCallback(() => {
     setSuccessMessage(null);

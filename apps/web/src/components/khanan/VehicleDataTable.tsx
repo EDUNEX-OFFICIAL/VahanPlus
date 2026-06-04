@@ -7,12 +7,26 @@ import { Chip } from '@/components/ui/Chip';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatVehicleDataPreview, formatVehicleDataQty } from '@/lib/epass-vehicle-data-view';
+import { mcvPortalStatusChipTone, mcvPortalStatusLabel } from '@/lib/mcv-portal-status';
 import type {
+  McvPortalStatus,
   VehicleDataListItemDto,
   VehicleDataListParams,
   VehicleDataSortDir,
   VehicleDataSortKey,
 } from '@/lib/epass-types';
+
+function PortalStatusChip({ status }: { status: McvPortalStatus }) {
+  return (
+    <Chip tone={mcvPortalStatusChipTone(status)} className="text-[10px]">
+      {mcvPortalStatusLabel(status)}
+    </Chip>
+  );
+}
+
+function resolveMcvPortalStatus(row: VehicleDataListItemDto): McvPortalStatus {
+  return row.mcvPortalStatus ?? (row.hasVehicleStatus ? 'on_portal' : 'not_checked');
+}
 
 function formatWeight(value: number | null): string {
   if (value == null) return '—';
@@ -124,7 +138,7 @@ export function VehicleDataTable({
             meta={
               <>
                 <Chip tone="indigo">{formatVehicleDataPreview(row.minerals, 1)}</Chip>
-                {row.hasVehicleStatus ? <Chip tone="cyan">Status</Chip> : null}
+                <PortalStatusChip status={resolveMcvPortalStatus(row)} />
               </>
             }
             action={
@@ -162,6 +176,7 @@ export function VehicleDataTable({
                 <th className="px-4 py-3">Mineral</th>
                 <SortHeader label="Qty" columnKey="qty" align="right" />
                 <SortHeader label="Passes" columnKey="passes" align="right" />
+                <th className="px-4 py-3">Portal status</th>
                 <SortHeader label="GVW (MT)" columnKey="grossWeight" align="right" />
                 <SortHeader label="Unladen (MT)" columnKey="unladen" align="right" />
                 <SortHeader label="Last date" columnKey="lastDate" />
@@ -178,14 +193,7 @@ export function VehicleDataTable({
                   onClick={() => openDetail(row)}
                 >
                   <td className="px-4 py-2.5 font-mono text-sm text-white">
-                    <span className="inline-flex items-center gap-2">
-                      {row.vehicleRegNo}
-                      {row.hasVehicleStatus ? (
-                        <Chip tone="cyan" className="text-[10px]">
-                          Status
-                        </Chip>
-                      ) : null}
-                    </span>
+                    <span className="font-mono">{row.vehicleRegNo}</span>
                   </td>
                   <td className="px-4 py-2.5 text-white">
                     {formatVehicleDataPreview(row.dmoNames)}
@@ -201,6 +209,9 @@ export function VehicleDataTable({
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-text-secondary">
                     {row.passCount}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <PortalStatusChip status={resolveMcvPortalStatus(row)} />
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-text-secondary">
                     {formatWeight(row.grossWeightMt)}

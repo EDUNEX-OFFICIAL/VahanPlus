@@ -145,7 +145,7 @@ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ./deploy/scripts/hostinger/deploy.sh
 ```
 
-Pin image tags in `values-hostinger-kvm4.yaml` to a git SHA instead of `:latest` when ready.
+Production rollouts pin **git SHA tags** (not `:latest`). Verify with `./deploy/scripts/verify-live-images.sh <sha>`.
 
 ## Rollback
 
@@ -160,6 +160,10 @@ Revert DNS if you changed it during a failed cutover.
 - All app replicas = **1**; HPA off
 - `worker.browserPoolStub: true` until a Playwright worker image is built for Linux
 - Monitor: `kubectl top pods -n vahanplus`
+
+## Docker Compose on the same VPS
+
+k3s serves production traffic. [`docker-compose.yml`](../../docker-compose.yml) is for **local dev** (API on port 3001). Do not confuse `vahanplus-api-express-1` in `docker ps` with k3s pods. See [docker-compose-vs-k3s.md](docker-compose-vs-k3s.md).
 
 ## Related docs
 

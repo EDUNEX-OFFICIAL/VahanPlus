@@ -37,6 +37,17 @@ git push origin main
 
 Watch **Actions → Docker Publish** → build jobs green → **deploy** job green → check site.
 
+### Verify images after deploy
+
+On the VPS (or any host with `kubectl`):
+
+```bash
+cd /opt/vahanplus
+./deploy/scripts/verify-live-images.sh "$(git rev-parse --short=7 HEAD)"
+```
+
+CI runs the same check at the end of the **deploy** job (`EXPECTED_IMAGE_TAG` = short commit SHA). Production uses the **SHA tag**, not floating `:latest` (see [docker-compose-vs-k3s.md](docker-compose-vs-k3s.md)).
+
 Emergency (CI broken):
 
 ```bash

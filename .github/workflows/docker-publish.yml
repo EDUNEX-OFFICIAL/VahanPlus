@@ -65,8 +65,32 @@ jobs:
           build-args: |
             ${{ matrix.needs_api_url && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || secrets.NEXT_PUBLIC_API_URL || 'https://exp.vahan360.info/api') || '' }}
 
-  deploy:
+  sync-latest-tags:
     needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Point :latest at commit SHA tag
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA::7}"
+          OWNER="${{ github.repository_owner }}"
+          for img in vahanplus-web vahanplus-api-express vahanplus-worker; do
+            SRC="ghcr.io/${OWNER}/${img}:${SHORT}"
+            echo "==> ${img}:latest <- ${SHORT}"
+            docker buildx imagetools create -t "ghcr.io/${OWNER}/${img}:latest" "${SRC}"
+          done
+
+  deploy:
+    needs: [build-and-push, sync-latest-tags]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
     # Runs on the VPS (self-hosted). Cloud runners cannot reach :22 (Hostinger firewall).
     runs-on: self-hosted
@@ -83,5 +107,6 @@ jobs:
           git fetch origin main master 2>/dev/null || true
           git checkout -q main 2>/dev/null || git checkout -q master 2>/dev/null || true
           git pull --ff-only
-          chmod +x deploy/scripts/rollout-ghcr.sh
+          chmod +x deploy/scripts/rollout-ghcr.sh deploy/scripts/verify-live-images.sh
           ./deploy/scripts/rollout-ghcr.sh
+          EXPECTED_IMAGE_TAG="${GITHUB_SHA::7}" ./deploy/scripts/verify-live-images.sh

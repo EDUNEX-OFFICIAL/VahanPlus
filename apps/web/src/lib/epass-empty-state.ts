@@ -33,3 +33,37 @@ export function epassBrowseEmptyMessage<T extends { reportDate: string }>(
   if (reason === 'date-range') return 'No reports for this date range';
   return 'No data available';
 }
+
+export type EpassBrowseEmptyAction = {
+  label: string;
+  href: string;
+  variant?: 'primary' | 'secondary';
+};
+
+export function epassBrowseEmptyActions(
+  reason: EpassBrowseEmptyReason | null,
+): EpassBrowseEmptyAction[] | undefined {
+  if (reason !== 'no-reports') return undefined;
+  return [
+    { label: 'Import Data', href: '/khanan/import', variant: 'primary' },
+    { label: 'Khanan Config', href: '/khanan/config', variant: 'secondary' },
+  ];
+}
+
+export function epassBrowseEmptyIcon(
+  reason: EpassBrowseEmptyReason | null,
+): 'database' | 'calendar' {
+  return reason === 'date-range' ? 'calendar' : 'database';
+}
+
+export function getEpassBrowseEmptyState<T extends { reportDate: string }>(
+  snapshots: T[] | undefined,
+  filters: EpassDateFilterInput,
+) {
+  const reason = epassBrowseEmptyReason(snapshots, filters);
+  return {
+    message: epassBrowseEmptyMessage(snapshots, filters),
+    icon: epassBrowseEmptyIcon(reason),
+    actions: epassBrowseEmptyActions(reason),
+  };
+}

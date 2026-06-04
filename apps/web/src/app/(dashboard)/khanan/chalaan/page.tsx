@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { Card } from '@/components/ui/Card';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
-import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { getEpassBrowseEmptyState, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
@@ -139,6 +139,11 @@ function ChalaanPageContent() {
 
   const browseEmpty = useMemo(
     () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
+    [snapshotsData?.items, dateFilterInput],
+  );
+
+  const browseEmptyState = useMemo(
+    () => getEpassBrowseEmptyState(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
   );
 
@@ -316,7 +321,7 @@ function ChalaanPageContent() {
       />
 
       {browseEmpty ? (
-        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
+        <EpassEmptyState {...browseEmptyState} />
       ) : data ? (
         <>
           <ChalaanTable rows={data.items} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />

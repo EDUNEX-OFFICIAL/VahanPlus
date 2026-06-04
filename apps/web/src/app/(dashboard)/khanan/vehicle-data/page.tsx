@@ -11,7 +11,7 @@ import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import { Button } from '@/components/ui/Button';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
-import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { getEpassBrowseEmptyState, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
@@ -131,6 +131,11 @@ function VehicleDataPageContent() {
 
   const browseEmpty = useMemo(
     () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
+    [snapshotsData?.items, dateFilterInput],
+  );
+
+  const browseEmptyState = useMemo(
+    () => getEpassBrowseEmptyState(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
   );
 
@@ -349,7 +354,7 @@ function VehicleDataPageContent() {
       />
 
       {browseEmpty ? (
-        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
+        <EpassEmptyState {...browseEmptyState} />
       ) : data ? (
         <>
           <VehicleDataTable

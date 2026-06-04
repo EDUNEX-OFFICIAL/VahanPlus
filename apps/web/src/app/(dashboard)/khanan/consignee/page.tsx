@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
-import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { getEpassBrowseEmptyState, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { ConsigneeEpassFilters } from '@/components/khanan/ConsigneeEpassFilters';
@@ -108,6 +108,11 @@ function ConsigneePageContent() {
 
   const browseEmpty = useMemo(
     () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
+    [snapshotsData?.items, dateFilterInput],
+  );
+
+  const browseEmptyState = useMemo(
+    () => getEpassBrowseEmptyState(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
   );
 
@@ -404,7 +409,7 @@ function ConsigneePageContent() {
       ) : null}
 
       {browseEmpty ? (
-        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
+        <EpassEmptyState {...browseEmptyState} />
       ) : (
         <Card
           className={[

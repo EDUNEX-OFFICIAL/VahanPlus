@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
-import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { getEpassBrowseEmptyState, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
@@ -321,6 +321,11 @@ function ConsignerBrowse() {
     [snapshotsData?.items, dateFilterInput],
   );
 
+  const browseEmptyState = useMemo(
+    () => getEpassBrowseEmptyState(snapshotsData?.items, dateFilterInput),
+    [snapshotsData?.items, dateFilterInput],
+  );
+
   useStaleEpassSnapshotParams(
     Boolean(snapshotsData) && !snapshotsLoading,
     snapshotsData?.items.length ?? 0,
@@ -515,9 +520,7 @@ function ConsignerBrowse() {
         />
       ) : null}
 
-      {browseEmpty ? (
-        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
-      ) : null}
+      {browseEmpty ? <EpassEmptyState {...browseEmptyState} /> : null}
 
       {!browseEmpty && data && snapshotId ? (
         <>

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
-import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { getEpassBrowseEmptyState, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
@@ -88,6 +88,11 @@ function MineralPageContent() {
 
   const browseEmpty = useMemo(
     () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
+    [snapshotsData?.items, dateFilterInput],
+  );
+
+  const browseEmptyState = useMemo(
+    () => getEpassBrowseEmptyState(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
   );
 
@@ -252,7 +257,7 @@ function MineralPageContent() {
       ) : null}
 
       {browseEmpty ? (
-        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
+        <EpassEmptyState {...browseEmptyState} />
       ) : snapshotId && rowsData ? (
         <MineralSummaryTable minerals={displayMinerals} operatorFilter={appliedFilters.operator} />
       ) : null}

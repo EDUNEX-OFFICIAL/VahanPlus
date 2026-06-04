@@ -10,7 +10,7 @@ import {
   type DistrictFilterValues,
 } from '@/components/khanan/DistrictEpassFilters';
 import { EpassEmptyState } from '@/components/khanan/EpassEmptyState';
-import { epassBrowseEmptyMessage, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
+import { getEpassBrowseEmptyState, isEpassBrowseEmpty } from '@/lib/epass-empty-state';
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { DistrictEpassTable } from '@/components/khanan/DistrictEpassTable';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
@@ -89,6 +89,11 @@ function DistrictPageContent() {
 
   const browseEmpty = useMemo(
     () => isEpassBrowseEmpty(snapshotsData?.items, dateFilterInput),
+    [snapshotsData?.items, dateFilterInput],
+  );
+
+  const browseEmptyState = useMemo(
+    () => getEpassBrowseEmptyState(snapshotsData?.items, dateFilterInput),
     [snapshotsData?.items, dateFilterInput],
   );
 
@@ -276,7 +281,7 @@ function DistrictPageContent() {
       ) : null}
 
       {browseEmpty ? (
-        <EpassEmptyState message={epassBrowseEmptyMessage(snapshotsData?.items, dateFilterInput)} />
+        <EpassEmptyState {...browseEmptyState} />
       ) : (
         <>
           <DistrictEpassTable

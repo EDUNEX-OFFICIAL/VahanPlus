@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-type ChipTone = 'default' | 'indigo' | 'emerald' | 'amber' | 'red' | 'cyan';
+export type ChipTone = 'default' | 'indigo' | 'emerald' | 'amber' | 'red' | 'cyan';
 
 const tones: Record<ChipTone, string> = {
   default: 'border-border-default bg-surface-deep/80 text-text-secondary',

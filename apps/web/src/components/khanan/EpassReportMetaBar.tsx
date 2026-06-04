@@ -1,6 +1,6 @@
 import { EpassReportMetaBarSkeleton } from '@/components/khanan/skeletons/EpassReportMetaBarSkeleton';
 import { Card } from '@/components/ui/Card';
-import { formatDateDmy, normalizeReportDate } from '@/lib/epass-report-date';
+import { formatDateDmy, formatReportDateLong } from '@/lib/epass-report-date';
 import type { EpassSnapshotDto } from '@/lib/epass-types';
 
 interface EpassReportMetaBarProps {
@@ -26,7 +26,7 @@ export function EpassReportMetaBar({ snapshot, isLoading = false }: EpassReportM
         <div>
           <p className="text-xs uppercase tracking-wider text-text-secondary">Report date</p>
           <p className="mt-1 font-semibold text-white">
-            {normalizeReportDate(snapshot.reportDate)}
+            {formatReportDateLong(snapshot.reportDate)}
           </p>
         </div>
         {snapshot.reportGeneratedOn ? (

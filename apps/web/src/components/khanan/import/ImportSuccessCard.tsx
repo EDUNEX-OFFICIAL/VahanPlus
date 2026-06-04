@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { formatReportDateNumeric } from '@/lib/epass-report-date';
 import { consignerBrowseDateRangeUrl, type ImportSuccessSummary } from '@/lib/epass-import';
 
 interface ImportSuccessCardProps {
@@ -28,7 +29,8 @@ export function ImportSuccessCard({ message, summary }: ImportSuccessCardProps) 
           href={consignerBrowseDateRangeUrl(dateFrom!, dateTo!)}
           className="inline-flex text-sm font-medium text-indigo-300 hover:text-indigo-200"
         >
-          Browse date range ({dateFrom} – {dateTo})
+          Browse date range ({formatReportDateNumeric(dateFrom!)} –{' '}
+          {formatReportDateNumeric(dateTo!)})
         </Link>
       ) : null}
     </Card>

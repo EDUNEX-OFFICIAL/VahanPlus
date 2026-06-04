@@ -17,8 +17,8 @@ import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import {
-  EPASS_SNAPSHOTS_QUERY_KEY,
-  fetchEpassSnapshots,
+  EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
+  fetchEpassSnapshotReportDates,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
   fetchVehicleDataList,
@@ -109,8 +109,8 @@ function VehicleDataPageContent() {
     isError: snapshotsError,
     refetch: refetchSnapshots,
   } = useQuery({
-    queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
-    queryFn: () => fetchEpassSnapshots(),
+    queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
+    queryFn: () => fetchEpassSnapshotReportDates(),
     staleTime: SNAPSHOTS_STALE_MS,
   });
 

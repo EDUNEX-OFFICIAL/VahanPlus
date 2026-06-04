@@ -3,9 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { compareReportDates, snapshotsForDateMode } from '@/lib/epass-report-date';
+import { ReportDateYearSelect } from '@/components/khanan/ReportDateYearSelect';
+import {
+  formatReportDateNumeric,
+  reportDateOptions,
+  snapshotsForDateMode,
+} from '@/lib/epass-report-date';
 import { formatMineralLabel } from '@/lib/epass-district-view';
-import type { DistrictOperatorFilter, EpassSnapshotListItemDto } from '@/lib/epass-types';
+import type { DistrictOperatorFilter, EpassSnapshotReportDateItemDto } from '@/lib/epass-types';
 
 export type DistrictDateMode = 'specific' | 'range';
 
@@ -24,7 +29,7 @@ export interface DistrictFilterDraft {
 export type DistrictFilterValues = DistrictFilterDraft;
 
 interface DistrictEpassFiltersProps {
-  snapshots: EpassSnapshotListItemDto[];
+  snapshots: EpassSnapshotReportDateItemDto[];
   minerals: string[];
   districts: string[];
   values: DistrictFilterValues;
@@ -34,21 +39,6 @@ interface DistrictEpassFiltersProps {
 
 const inputClass =
   'mt-2 h-11 w-full rounded-xl border border-border-default bg-surface-deep px-3 text-sm text-white outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20';
-
-function reportDateOptions(
-  snapshots: EpassSnapshotListItemDto[],
-): { reportDate: string; snapshotId: string }[] {
-  const byDate = new Map<string, EpassSnapshotListItemDto>();
-  for (const s of snapshots) {
-    const existing = byDate.get(s.reportDate);
-    if (!existing || new Date(s.scrapedAt) > new Date(existing.scrapedAt)) {
-      byDate.set(s.reportDate, s);
-    }
-  }
-  return [...byDate.entries()]
-    .sort((a, b) => compareReportDates(b[0], a[0]))
-    .map(([reportDate, snap]) => ({ reportDate, snapshotId: snap.id }));
-}
 
 function operatorLabel(op: DistrictOperatorFilter): string {
   if (op === 'lessee') return 'Lessee';
@@ -60,11 +50,15 @@ export function buildFilterChips(values: DistrictFilterValues): string[] {
   const chips: string[] = [operatorLabel(values.operator)];
   if (values.minerals.length > 0) chips.push(formatMineralLabel(values.minerals));
   if (values.dateMode === 'range' && (values.dateFrom || values.dateTo)) {
-    const from = values.dateFrom || '…';
-    const to = values.dateTo || values.dateFrom || '…';
+    const from = values.dateFrom ? formatReportDateNumeric(values.dateFrom) : '…';
+    const to = values.dateTo
+      ? formatReportDateNumeric(values.dateTo)
+      : values.dateFrom
+        ? formatReportDateNumeric(values.dateFrom)
+        : '…';
     chips.push(`${from} – ${to}`);
   }
-  if (values.reportDate) chips.push(values.reportDate);
+  if (values.reportDate) chips.push(formatReportDateNumeric(values.reportDate));
   if (values.districts.length > 0) {
     chips.push(
       values.districts.length === 1
@@ -299,37 +293,13 @@ export function DistrictEpassFilters({
                   </div>
                 ) : null}
 
-                <div>
-                  <label
-                    className="text-xs uppercase tracking-wider text-text-secondary"
-                    htmlFor="report-date"
-                  >
-                    Report date
-                  </label>
-                  <select
-                    id="report-date"
-                    value={draft.snapshotId}
-                    onChange={(e) => {
-                      const opt = dateOptions.find((o) => o.snapshotId === e.target.value);
-                      patch({
-                        snapshotId: e.target.value,
-                        reportDate: opt?.reportDate ?? '',
-                      });
-                    }}
-                    className={inputClass}
-                    disabled={dateOptions.length === 0}
-                  >
-                    {dateOptions.length === 0 ? (
-                      <option value="">No reports in range</option>
-                    ) : (
-                      dateOptions.map((o) => (
-                        <option key={o.snapshotId} value={o.snapshotId}>
-                          {o.reportDate}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
+                <ReportDateYearSelect
+                  idPrefix="district"
+                  options={dateOptions}
+                  snapshotId={draft.snapshotId}
+                  onChange={(snapshotId, reportDate) => patch({ snapshotId, reportDate })}
+                  inputClass={inputClass}
+                />
 
                 <div>
                   <p className="text-xs uppercase tracking-wider text-text-secondary">District</p>

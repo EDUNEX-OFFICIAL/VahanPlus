@@ -28,6 +28,21 @@ const MONTH_LABELS = [
   'Dec',
 ];
 
+const FULL_MONTH_LABELS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
 /** Parse portal report dates like `20-May-2026`. Returns null if unparseable. */
 export function parseReportDate(value: string): Date | null {
   const trimmed = value.trim();
@@ -51,17 +66,30 @@ export function formatDateDmy(value: Date): string {
   return `${day}-${month}-${year}`;
 }
 
+/** Display report date as `DD-MM-YYYY` (tables, chips). */
+export function formatReportDateNumeric(value: string): string {
+  const d = parseReportDateFlexible(value);
+  if (!d) return value.trim() || '—';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${day}-${month}-${d.getFullYear()}`;
+}
+
+/** Display report date as `DD-MMMM-YYYY` (dropdown labels, meta bar). */
+export function formatReportDateLong(value: string): string {
+  const d = parseReportDateFlexible(value);
+  if (!d) return value.trim() || '—';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = FULL_MONTH_LABELS[d.getMonth()] ?? '';
+  return `${day}-${month}-${d.getFullYear()}`;
+}
+
 export function normalizeReportDate(value: string): string {
   const trimmed = value.trim();
-  const parsed = parseReportDate(trimmed);
-  if (parsed) return formatDateDmy(parsed);
-  const dmy = parseNumericDmy(trimmed);
-  if (dmy) return formatDateDmy(dmy);
-  const iso = parseIsoDateInput(trimmed);
-  if (iso) return formatDateDmy(iso);
-  const timestamp = Date.parse(trimmed);
-  if (!Number.isNaN(timestamp)) return formatDateDmy(new Date(timestamp));
-  return trimmed || '—';
+  if (!trimmed) return '—';
+  const d = parseReportDateFlexible(trimmed);
+  if (d) return formatReportDateNumeric(trimmed);
+  return trimmed;
 }
 
 function parseNumericDmy(value: string): Date | null {
@@ -122,7 +150,7 @@ export function startOfLocalDayMs(d: Date): number {
 
 /** ISO date string `yyyy-mm-dd` from report date, or null. */
 export function reportDateToIso(value: string): string | null {
-  const d = parseReportDate(value);
+  const d = parseReportDateFlexible(value);
   if (!d) return null;
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -149,7 +177,7 @@ export function isReportDateInRange(
   const to = toIso ? parseIsoDateInput(toIso) : null;
   if (!from && !to) return true;
 
-  const d = parseReportDate(reportDate);
+  const d = parseReportDateFlexible(reportDate);
   if (!d) return false;
 
   if (from && d < from) return false;
@@ -167,6 +195,60 @@ export interface EpassDateFilterInput {
   dateFrom: string;
   dateTo: string;
   snapshotId: string;
+}
+
+export interface EpassSnapshotDatePick {
+  id: string;
+  reportDate: string;
+  scrapedAt: string;
+}
+
+/** One option per report date (latest scrapedAt wins when duplicates exist). */
+export function reportDateOptions(snapshots: EpassSnapshotDatePick[]): ReportDateOption[] {
+  const byDate = new Map<string, EpassSnapshotDatePick>();
+  for (const s of snapshots) {
+    const existing = byDate.get(s.reportDate);
+    if (!existing || new Date(s.scrapedAt) > new Date(existing.scrapedAt)) {
+      byDate.set(s.reportDate, s);
+    }
+  }
+  return [...byDate.entries()]
+    .sort((a, b) => compareReportDates(b[0], a[0]))
+    .map(([reportDate, snap]) => ({ reportDate, snapshotId: snap.id }));
+}
+
+export interface ReportDateOption {
+  reportDate: string;
+  snapshotId: string;
+}
+
+export interface ReportDateYearGroup {
+  year: number;
+  options: ReportDateOption[];
+}
+
+/** Calendar year from a stored/portal report date string. */
+export function reportDateYear(value: string): number | null {
+  const d = parseReportDateFlexible(value);
+  return d?.getFullYear() ?? null;
+}
+
+/** Group flat report-date options by year (years desc, dates desc within each year). */
+export function groupReportDateOptionsByYear(options: ReportDateOption[]): ReportDateYearGroup[] {
+  const byYear = new Map<number, ReportDateOption[]>();
+  for (const opt of options) {
+    const year = reportDateYear(opt.reportDate);
+    if (year == null) continue;
+    const list = byYear.get(year);
+    if (list) list.push(opt);
+    else byYear.set(year, [opt]);
+  }
+  return [...byYear.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([year, yearOptions]) => ({
+      year,
+      options: [...yearOptions].sort((a, b) => compareReportDates(b.reportDate, a.reportDate)),
+    }));
 }
 
 /** Snapshots whose portal report date falls in the HTML date range (range mode only). */

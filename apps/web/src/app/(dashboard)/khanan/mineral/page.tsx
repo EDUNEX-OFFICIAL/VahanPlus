@@ -23,8 +23,8 @@ import {
   districtParamsFromFilters,
 } from '@/lib/epass-district-filter-params';
 import {
-  EPASS_SNAPSHOTS_QUERY_KEY,
-  fetchEpassSnapshots,
+  EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
+  fetchEpassSnapshotReportDates,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
@@ -64,9 +64,9 @@ function MineralPageContent() {
     isError: snapshotsError,
     refetch: refetchSnapshots,
   } = useQuery({
-    queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
+    queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
     queryFn: () => {
-      return fetchEpassSnapshots();
+      return fetchEpassSnapshotReportDates();
     },
     staleTime: SNAPSHOTS_STALE_MS,
   });

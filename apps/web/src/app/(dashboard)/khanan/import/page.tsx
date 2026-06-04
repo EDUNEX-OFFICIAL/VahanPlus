@@ -12,7 +12,7 @@ import { ImportSuccessCard } from '@/components/khanan/import/ImportSuccessCard'
 import { KhananExportPanel } from '@/components/khanan/import/KhananExportPanel';
 import { useKhananImportJob } from '@/components/khanan/import/KhananImportJobProvider';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
-import { EPASS_SNAPSHOTS_QUERY_KEY } from '@/lib/epass';
+import { EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY, EPASS_SNAPSHOTS_QUERY_KEY } from '@/lib/epass';
 import {
   analyzeImport,
   buildDuplicateVrnWarnings,
@@ -185,6 +185,7 @@ export default function ImportDataPage() {
             analysis.detectedType === 'khanan_pass' ? refreshVehicleStatus : undefined,
         });
         await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOTS_QUERY_KEY });
+        await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY });
         await queryClient.invalidateQueries({ queryKey: ['epass'] });
         if (result.passesImported != null) {
           const queueNote =
@@ -262,7 +263,7 @@ export default function ImportDataPage() {
               onChange={(e) => setReplaceExisting(e.target.checked)}
               className="rounded border-slate-600"
             />
-            Replace existing import snapshots for affected dates
+            Replace existing data for the same dates
           </label>
           <label className="flex items-center gap-2 text-sm text-text-secondary">
             <input
@@ -271,7 +272,7 @@ export default function ImportDataPage() {
               onChange={(e) => setRefreshVehicleStatus(e.target.checked)}
               className="rounded border-slate-600"
             />
-            Queue MCV vehicle status for imported VRNs
+            Re-scrape vehicle status for all VRNs
           </label>
         </Card>
       ) : null}

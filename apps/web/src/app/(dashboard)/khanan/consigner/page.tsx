@@ -35,10 +35,10 @@ import {
   sortConsignerRows,
 } from '@/lib/epass-consigner-view';
 import {
-  EPASS_SNAPSHOTS_QUERY_KEY,
+  EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
   fetchConsignerList,
   fetchDistrictConsigners,
-  fetchEpassSnapshots,
+  fetchEpassSnapshotReportDates,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
   updateConsignerGhatNumber,
@@ -294,9 +294,9 @@ function ConsignerBrowse() {
     isError: snapshotsError,
     refetch: refetchSnapshots,
   } = useQuery({
-    queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
+    queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
     queryFn: () => {
-      return fetchEpassSnapshots();
+      return fetchEpassSnapshotReportDates();
     },
     staleTime: SNAPSHOTS_STALE_MS,
   });

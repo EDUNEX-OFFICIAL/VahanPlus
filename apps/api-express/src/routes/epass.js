@@ -878,6 +878,44 @@ router.get('/latest', async (_req, res) => {
   }
 });
 
+router.get('/snapshots/report-dates', async (req, res) => {
+  const prisma = getPrisma();
+  const maxRows = Math.min(Number(req.query.limit) || 10_000, 10_000);
+
+  const rows = await prisma.epassSnapshot.findMany({
+    select: {
+      id: true,
+      reportDate: true,
+      scrapedAt: true,
+      sourceUrl: true,
+    },
+  });
+
+  const byDate = new Map();
+  for (const row of rows) {
+    const existing = byDate.get(row.reportDate);
+    if (!existing || row.scrapedAt > existing.scrapedAt) {
+      byDate.set(row.reportDate, row);
+    }
+  }
+
+  const items = [...byDate.values()]
+    .sort((a, b) => {
+      if (a.reportDate === b.reportDate) return 0;
+      return a.reportDate < b.reportDate ? 1 : -1;
+    })
+    .slice(0, maxRows);
+
+  res.json({
+    items: items.map((s) => ({
+      id: s.id,
+      reportDate: s.reportDate,
+      scrapedAt: s.scrapedAt.toISOString(),
+      sourceUrl: s.sourceUrl,
+    })),
+  });
+});
+
 router.get('/snapshots', async (req, res) => {
   const prisma = getPrisma();
   const limit = Math.min(Number(req.query.limit) || 20, 100);

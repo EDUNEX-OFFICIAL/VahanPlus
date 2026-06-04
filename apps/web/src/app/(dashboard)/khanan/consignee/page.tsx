@@ -28,10 +28,10 @@ import {
   toConsignerOptionsQueryParams,
 } from '@/lib/epass-filter-params';
 import {
-  EPASS_SNAPSHOTS_QUERY_KEY,
+  EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
   fetchConsignerChallans,
   fetchConsignerOptions,
-  fetchEpassSnapshots,
+  fetchEpassSnapshotReportDates,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
@@ -40,19 +40,19 @@ import type {
   ConsigneeSortDir,
   ConsigneeSortKey,
   EpassSnapshotDto,
-  EpassSnapshotListItemDto,
+  EpassSnapshotReportDateItemDto,
 } from '@/lib/epass-types';
 
 const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
 
-function snapshotFromListItem(snap: EpassSnapshotListItemDto): EpassSnapshotDto {
+function snapshotFromListItem(snap: EpassSnapshotReportDateItemDto): EpassSnapshotDto {
   return {
     id: snap.id,
     reportDate: snap.reportDate,
-    reportGeneratedOn: snap.reportGeneratedOn,
+    reportGeneratedOn: '',
     scrapedAt: snap.scrapedAt,
-    rowCount: snap.rowCount,
-    jobId: snap.jobId,
+    rowCount: 0,
+    jobId: null,
   };
 }
 
@@ -94,9 +94,9 @@ function ConsigneePageContent() {
     isError: snapshotsError,
     refetch: refetchSnapshots,
   } = useQuery({
-    queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
+    queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
     queryFn: () => {
-      return fetchEpassSnapshots();
+      return fetchEpassSnapshotReportDates();
     },
     staleTime: SNAPSHOTS_STALE_MS,
   });

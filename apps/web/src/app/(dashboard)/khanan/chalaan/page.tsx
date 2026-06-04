@@ -18,9 +18,9 @@ import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import { parseChalaanSortDir, parseChalaanSortKey } from '@/lib/epass-chalaan-view';
 import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import {
-  EPASS_SNAPSHOTS_QUERY_KEY,
+  EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
   fetchChalaanPassList,
-  fetchEpassSnapshots,
+  fetchEpassSnapshotReportDates,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
@@ -115,9 +115,9 @@ function ChalaanPageContent() {
     isError: snapshotsError,
     refetch: refetchSnapshots,
   } = useQuery({
-    queryKey: EPASS_SNAPSHOTS_QUERY_KEY,
+    queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
     queryFn: () => {
-      return fetchEpassSnapshots();
+      return fetchEpassSnapshotReportDates();
     },
     staleTime: SNAPSHOTS_STALE_MS,
   });

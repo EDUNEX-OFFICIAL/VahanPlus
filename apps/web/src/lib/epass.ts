@@ -18,6 +18,7 @@ import type {
   ConsignerOptionsResponse,
   DistrictConsignersResponse,
   EpassSnapshotListResponse,
+  EpassSnapshotReportDatesResponse,
   LatestEpassResponse,
   OperatorType,
   SnapshotDistrictRowsResponse,
@@ -25,6 +26,7 @@ import type {
 
 export const EPASS_LATEST_QUERY_KEY = ['epass', 'latest'] as const;
 export const EPASS_SNAPSHOTS_QUERY_KEY = ['epass', 'snapshots'] as const;
+export const EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY = ['epass', 'snapshot-report-dates'] as const;
 
 export function fetchLatestEpass() {
   return apiFetch<LatestEpassResponse>('/epass/latest');
@@ -32,6 +34,10 @@ export function fetchLatestEpass() {
 
 export function fetchEpassSnapshots(limit = 100) {
   return apiFetch<EpassSnapshotListResponse>(`/epass/snapshots?limit=${limit}`);
+}
+
+export function fetchEpassSnapshotReportDates() {
+  return apiFetch<EpassSnapshotReportDatesResponse>('/epass/snapshots/report-dates');
 }
 
 export function fetchSnapshotDistrictRows(snapshotId: string) {

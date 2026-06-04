@@ -151,6 +151,17 @@ export interface EpassSnapshotListResponse {
   items: EpassSnapshotListItemDto[];
 }
 
+export interface EpassSnapshotReportDateItemDto {
+  id: string;
+  reportDate: string;
+  scrapedAt: string;
+  sourceUrl: string | null;
+}
+
+export interface EpassSnapshotReportDatesResponse {
+  items: EpassSnapshotReportDateItemDto[];
+}
+
 export interface SnapshotDistrictRowsResponse {
   snapshot: EpassSnapshotDto;
   rows: EpassDistrictRowDto[];

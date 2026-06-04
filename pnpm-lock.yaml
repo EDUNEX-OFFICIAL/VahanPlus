@@ -315,9 +315,6 @@ importers:
       '@vahanplus/scraper-bihar-epass':
         specifier: workspace:*
         version: link:../scraper-bihar-epass
-      stream-chain:
-        specifier: ^2.2.5
-        version: 2.2.5
       stream-json:
         specifier: ^1.9.1
         version: 1.9.1

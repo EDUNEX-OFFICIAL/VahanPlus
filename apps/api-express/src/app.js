@@ -38,11 +38,14 @@ export function createApp() {
   );
   app.use(cookieParser());
   app.use((req, res, next) => {
-    const isImportCommit =
+    const path = req.originalUrl.split('?')[0];
+    const isEpassImportPost =
       req.method === 'POST' &&
-      (req.path === '/epass/import/commit' ||
-        req.originalUrl.split('?')[0] === '/epass/import/commit');
-    const parser = express.json({ limit: isImportCommit ? '15mb' : '100kb' });
+      (path === '/epass/import/commit' ||
+        path === '/epass/import/analyze' ||
+        path.endsWith('/epass/import/commit') ||
+        path.endsWith('/epass/import/analyze'));
+    const parser = express.json({ limit: isEpassImportPost ? '15mb' : '100kb' });
     parser(req, res, next);
   });
   app.use(metricsMiddleware);

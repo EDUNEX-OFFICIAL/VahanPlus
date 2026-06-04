@@ -62,7 +62,7 @@ Central hub: **`/khanan/import`** → `POST /epass/import/analyze` and `POST /ep
 10. **Row cap** — 10,000 rows per commit (client + server); analyze uses `totalRowCount` from UI.
 11. **Post-import** — Invalidate `['epass']` and snapshot queries (import page).
 12. **UTF-8 BOM** — Stripped from first header (CSV + Excel).
-13. **Large commit body** — `POST /epass/import/commit` uses 15mb JSON limit (other routes 100kb).
+13. **Large import bodies** — `POST /epass/import/analyze` and `/commit` use 15mb JSON limit; ingress allows 20mb. Analyze sends only headers + 5 sample rows; full-file khanan stats are computed in the browser.
 
 ## Chalaan / pass import
 

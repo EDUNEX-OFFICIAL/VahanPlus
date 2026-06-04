@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api';
+import { parseReportDateFlexible } from '@/lib/epass-report-date';
 
 export type ImportDetectedType = 'district_snapshot' | 'vehicle_status' | 'khanan_pass';
 
@@ -30,12 +31,61 @@ export function analyzeImport(
   headers: string[],
   sampleRows: Record<string, string>[],
   totalRowCount?: number,
-  statsRows?: Record<string, string>[],
 ) {
   return apiFetch<ImportAnalyzeResult>('/epass/import/analyze', {
     method: 'POST',
-    body: JSON.stringify({ headers, sampleRows, totalRowCount, statsRows }),
+    body: JSON.stringify({ headers, sampleRows, totalRowCount }),
   });
+}
+
+function parseImportDateToIso(value: string): string | null {
+  const d = parseReportDateFlexible(value);
+  if (!d) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Full-file stats for khanan_pass after analyze returns column mapping (keeps analyze payload small). */
+export function buildKhananPassAnalyzeStatsClient(
+  rows: Record<string, string>[],
+  mapping: Record<string, string>,
+): Pick<ImportAnalyzeResult, 'distinctDates' | 'distinctVrns' | 'warnings'> {
+  const dateCol = mapping.date;
+  const vrnCol = mapping.vehicleRegNo;
+  const dates = new Set<string>();
+  const vrns = new Set<string>();
+  let unparseableDates = 0;
+  let blankVrn = 0;
+
+  for (const row of rows) {
+    const rawDate = dateCol ? String(row[dateCol] ?? '').trim() : '';
+    if (rawDate) {
+      const iso = parseImportDateToIso(rawDate);
+      if (iso) dates.add(iso);
+      else unparseableDates += 1;
+    }
+    const rawVrn = vrnCol ? String(row[vrnCol] ?? '').trim() : '';
+    const key = normalizeVrnKey(rawVrn);
+    if (!key) blankVrn += 1;
+    else vrns.add(key);
+  }
+
+  const warnings: string[] = [];
+  if (unparseableDates > 0) {
+    warnings.push(`${unparseableDates} row(s) have unparseable date values.`);
+  }
+  if (blankVrn > 0) {
+    warnings.push(`${blankVrn} row(s) have blank VRN.`);
+  }
+
+  const dateList = [...dates].sort();
+  return {
+    distinctDates: { count: dates.size, sample: dateList.slice(0, 5) },
+    distinctVrns: vrns.size,
+    warnings,
+  };
 }
 
 export function commitImport(body: {

@@ -11,6 +11,7 @@ import { EPASS_SNAPSHOTS_QUERY_KEY } from '@/lib/epass';
 import {
   analyzeImport,
   buildDuplicateVrnWarnings,
+  buildKhananPassAnalyzeStatsClient,
   commitImport,
   type ImportAnalyzeResult,
   type ImportDetectedType,
@@ -53,15 +54,24 @@ export default function ImportDataPage() {
           parsed.headers,
           parsed.rows.slice(0, 5),
           parsed.rows.length,
-          parsed.rows,
         );
+        const khananStats =
+          result.detectedType === 'khanan_pass'
+            ? buildKhananPassAnalyzeStatsClient(parsed.rows, result.mapping)
+            : null;
         const dupWarnings =
           result.detectedType === 'vehicle_status' || result.detectedType === 'khanan_pass'
             ? buildDuplicateVrnWarnings(parsed.rows, result.mapping)
             : [];
         setAnalysis({
           ...result,
-          warnings: [...result.warnings, ...dupWarnings],
+          ...(khananStats
+            ? {
+                distinctDates: khananStats.distinctDates,
+                distinctVrns: khananStats.distinctVrns,
+              }
+            : {}),
+          warnings: [...result.warnings, ...(khananStats?.warnings ?? []), ...dupWarnings],
           rowCount: parsed.rows.length,
         });
         if (result.detectedType === 'district_snapshot' && !reportDate) {

@@ -55,6 +55,7 @@ ingress:
   className: nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: 20m
   tls:
     enabled: true
     secretName: vahanplus-tls

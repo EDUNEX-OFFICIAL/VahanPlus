@@ -70,10 +70,13 @@ export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Prom
       throw new Error('Session expired');
     }
     const body = await res.json().catch(() => ({}));
-    const msg =
+    let msg =
       (body as { message?: string }).message ||
       (body as { error?: string }).error ||
       `Request failed (${res.status})`;
+    if (res.status === 413) {
+      msg = 'File too large (max 10,000 rows). Try a smaller export or split the file.';
+    }
     throw new Error(msg);
   }
 

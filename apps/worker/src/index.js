@@ -28,6 +28,7 @@ import {
   startHealthServer,
   stopHealthServer,
 } from './healthServer.js';
+import { processRcAdvanceFetch } from './rcAdvanceFetch.js';
 import { processKhananBulkExport, processKhananBulkImport } from './khananBulkHandlers.js';
 
 const HTTP_ONLY_TYPES = new Set([
@@ -132,6 +133,10 @@ async function processJob(job) {
       result = await processKhananBulkImport(prisma, target);
     } else if (type === 'khanan_bulk_export') {
       result = await processKhananBulkExport(prisma, target);
+    } else if (type === 'rc_advance_fetch') {
+      const vehicleRegNo = String(metadata?.vehicleRegNo ?? target ?? '');
+      const data = await processRcAdvanceFetch(prisma, vehicleRegNo);
+      result = { success: !data.error, data, error: data.error ?? undefined };
     } else {
       result = await runScrape(type, target, metadata);
     }

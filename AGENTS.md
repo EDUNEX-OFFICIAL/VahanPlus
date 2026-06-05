@@ -2,19 +2,20 @@
 
 ## Monorepo layout
 
-| Path                           | Role                                                   |
-| ------------------------------ | ------------------------------------------------------ |
-| `apps/web`                     | Next.js dashboard                                      |
-| `apps/api-express`             | REST API + queue producers                             |
-| `apps/worker`                  | BullMQ consumer + ETL                                  |
-| `packages/contracts`           | Shared constants (`QUEUE_NAMES`, etc.)                 |
-| `packages/db`                  | Prisma client                                          |
-| `packages/scraper-bihar-epass` | Bihar portal HTTP scrapers                             |
-| `packages/scraper-core`        | `resolveScraper()` registry                            |
-| `packages/epass-orchestrator`  | **Single** fanout/enqueue implementation               |
-| `packages/khanan-config`       | DB-backed scraper settings loader (cache + presets)    |
-| `packages/khanan-import`       | Bulk JSON/NDJSON import + JSONL export (streaming ETL) |
-| `packages/browser-pool`        | Playwright pool (stub default)                         |
+| Path                           | Role                                                    |
+| ------------------------------ | ------------------------------------------------------- |
+| `apps/web`                     | Next.js dashboard                                       |
+| `apps/api-express`             | REST API + queue producers                              |
+| `apps/worker`                  | BullMQ consumer + ETL                                   |
+| `packages/contracts`           | Shared constants (`QUEUE_NAMES`, etc.)                  |
+| `packages/db`                  | Prisma client                                           |
+| `packages/scraper-bihar-epass` | Bihar portal HTTP scrapers                              |
+| `packages/scraper-core`        | `resolveScraper()` registry                             |
+| `packages/epass-orchestrator`  | **Single** fanout/enqueue implementation                |
+| `packages/khanan-config`       | DB-backed scraper settings loader (cache + presets)     |
+| `packages/khanan-import`       | Bulk JSON/NDJSON import + JSONL export (streaming ETL)  |
+| `packages/rc-advance-client`   | RC Advance API mock/http client + CRM column flattening |
+| `packages/browser-pool`        | Playwright pool (stub default)                          |
 
 ## Build order
 
@@ -27,6 +28,7 @@ pnpm --filter @vahanplus/scraper-core build
 pnpm --filter @vahanplus/khanan-config build
 pnpm --filter @vahanplus/epass-orchestrator build
 pnpm --filter @vahanplus/khanan-import build
+pnpm --filter @vahanplus/rc-advance-client build
 pnpm --filter @vahanplus/browser-pool build
 pnpm db:generate && pnpm --filter @vahanplus/db build
 ```
@@ -36,6 +38,8 @@ Then `pnpm build` for apps.
 ## Bihar ePass scraping
 
 Full pipeline doc: [docs/scraping/bihar-epass-pipeline.md](docs/scraping/bihar-epass-pipeline.md).
+
+RC Advance (CRM owner/vehicle enrichment): [docs/ops/rc-advance-crm.md](docs/ops/rc-advance-crm.md).
 
 ### Do not duplicate orchestrator logic
 

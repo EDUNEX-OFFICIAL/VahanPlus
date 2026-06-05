@@ -18,6 +18,7 @@
     "@vahanplus/epass-orchestrator": "workspace:*",
     "@vahanplus/khanan-config": "workspace:*",
     "@vahanplus/khanan-import": "workspace:*",
+    "@vahanplus/rc-advance-client": "workspace:*",
     "@vahanplus/db": "workspace:*",
     "@vahanplus/scraper-core": "workspace:*",
     "bullmq": "^5.52.2",

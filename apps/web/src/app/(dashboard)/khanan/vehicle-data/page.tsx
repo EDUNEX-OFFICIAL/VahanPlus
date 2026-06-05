@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ChalaanEpassFilters } from '@/components/khanan/ChalaanEpassFilters';
 import type { ConsigneeEpassFilterExtras } from '@/components/khanan/ConsigneeEpassFilters';
+import { VehicleDataDetailDialog } from '@/components/khanan/VehicleDataDetailDialog';
 import { VehicleDataTable } from '@/components/khanan/VehicleDataTable';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
 import { EpassBrowsePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
@@ -113,6 +114,9 @@ function VehicleDataPageContent() {
     appliedFilters.reportScope,
   );
   const [vehicleSearchDraft, setVehicleSearchDraft] = useState(appliedFilters.vehicleSearch);
+  const [detailVrn, setDetailVrn] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const autoOpenedForSearch = useRef<string | null>(null);
 
   useEffect(() => {
     setVehicleSearchDraft(appliedFilters.vehicleSearch);
@@ -374,6 +378,38 @@ function VehicleDataPageContent() {
     });
   }, [updateParams, vehicleSearchDraft]);
 
+  const openDetail = useCallback((vehicleRegNo: string) => {
+    setDetailVrn(vehicleRegNo);
+    setDetailOpen(true);
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setDetailOpen(false);
+    setDetailVrn(null);
+  }, []);
+
+  useEffect(() => {
+    autoOpenedForSearch.current = null;
+  }, [appliedFilters.vehicleSearch]);
+
+  useEffect(() => {
+    const search = appliedFilters.vehicleSearch.trim();
+    if (!search || pageLoading || !data || autoOpenedForSearch.current === search) return;
+
+    if (data.total === 1 && data.items[0]) {
+      autoOpenedForSearch.current = search;
+      setDetailVrn(data.items[0].vehicleRegNo);
+      setDetailOpen(true);
+      return;
+    }
+
+    if (data.total === 0) {
+      autoOpenedForSearch.current = search;
+      setDetailVrn(search);
+      setDetailOpen(true);
+    }
+  }, [appliedFilters.vehicleSearch, data, pageLoading]);
+
   if (snapshotsError || isError) {
     return (
       <PageStack>
@@ -443,7 +479,7 @@ function VehicleDataPageContent() {
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={handleSort}
-            detailQueryParams={detailQueryParams}
+            onOpenDetail={openDetail}
           />
           {data.items.some(
             (r) =>
@@ -472,6 +508,13 @@ function VehicleDataPageContent() {
           ) : null}
         </>
       ) : null}
+
+      <VehicleDataDetailDialog
+        vehicleRegNo={detailVrn}
+        open={detailOpen}
+        onClose={closeDetail}
+        detailQueryParams={detailQueryParams}
+      />
     </PageStack>
   );
 }

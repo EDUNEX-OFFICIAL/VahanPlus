@@ -8,6 +8,7 @@ import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatDateDmy, normalizeReportDate } from '@/lib/epass-report-date';
 import { daysLeftTone, formatDaysLeft } from '@/lib/crm-expiry-view';
+import { RC_ADVANCE_CRM_COLUMNS } from '@vahanplus/rc-advance-client';
 import type { CrmExpirySortKey, CrmVehicleExpiryListItemDto } from '@/lib/crm-types';
 import type { VehicleStatusSortDir } from '@/lib/epass-types';
 
@@ -30,6 +31,11 @@ function sourceLabel(source: CrmVehicleExpiryListItemDto['crmSource']): string {
   if (source === 'both') return 'Auto + Manual';
   if (source === 'manual') return 'Manual';
   return 'Auto';
+}
+
+function formatRcAdvanceCell(value: string | number | boolean | null | undefined): string {
+  if (value == null || value === '') return '—';
+  return String(value);
 }
 
 function formatScrapedAt(iso: string): string {
@@ -145,6 +151,24 @@ export function CrmExpiryTable({
                 label="Fitness days"
                 value={<DaysLeftCell value={row.fitnessDaysLeft} />}
               />
+              <DataField
+                label="Owner"
+                value={formatRcAdvanceCell(row.rcAdvance?.owner_name as string | null)}
+              />
+              <DataField
+                label="Mobile"
+                value={formatRcAdvanceCell(row.rcAdvance?.mobile_no as string | number | null)}
+              />
+              <DataField
+                label="Insurance (RC)"
+                value={formatRcAdvanceCell(
+                  row.rcAdvance?.insurance_insurance_upto as string | null,
+                )}
+              />
+              <DataField
+                label="Fit (RC)"
+                value={formatRcAdvanceCell(row.rcAdvance?.fit_upto as string | null)}
+              />
             </div>
             {showSelection ? (
               <label className="mt-3 flex items-center gap-2 text-sm text-text-secondary">
@@ -172,7 +196,7 @@ export function CrmExpiryTable({
 
       <Card className="hidden overflow-hidden p-0 md:block">
         <div className="max-h-[min(68vh,760px)] overflow-auto overscroll-contain scrollbar-thin">
-          <table className="w-full min-w-[1280px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[5200px] border-collapse text-left text-sm">
             <thead className="sticky top-0 z-10 bg-surface-primary">
               <tr className="border-b border-border-default text-xs uppercase tracking-wider text-text-secondary">
                 {showSelection ? (
@@ -197,6 +221,11 @@ export function CrmExpiryTable({
                 <SortHeader label="Insurance Upto" columnKey="insuranceUpTo" />
                 <SortHeader label="Rc Tax Up To" columnKey="rcTaxUpTo" />
                 <SortHeader label="Scraped" columnKey="scrapedAt" />
+                {RC_ADVANCE_CRM_COLUMNS.map(({ key, label }) => (
+                  <th key={key} className="px-4 py-3 whitespace-nowrap">
+                    {label}
+                  </th>
+                ))}
                 {showRemove ? <th className="px-4 py-3">Action</th> : null}
               </tr>
             </thead>
@@ -253,6 +282,13 @@ export function CrmExpiryTable({
                   <td className="px-4 py-2.5 text-text-secondary">
                     {formatScrapedAt(row.scrapedAt)}
                   </td>
+                  {RC_ADVANCE_CRM_COLUMNS.map(({ key }) => (
+                    <td key={key} className="px-4 py-2.5 text-text-secondary whitespace-nowrap">
+                      {formatRcAdvanceCell(
+                        row.rcAdvance?.[key] as string | number | boolean | null | undefined,
+                      )}
+                    </td>
+                  ))}
                   {showRemove ? (
                     <td className="px-4 py-2.5">
                       <Button

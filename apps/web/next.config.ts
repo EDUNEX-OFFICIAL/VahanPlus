@@ -4,7 +4,7 @@ const apiOrigin = process.env.API_ORIGIN || 'http://localhost:3001';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  transpilePackages: ['@vahanplus/contracts'],
+  transpilePackages: ['@vahanplus/contracts', '@vahanplus/rc-advance-client'],
   async rewrites() {
     return [
       {

@@ -9,6 +9,11 @@ import {
   normalizeVrnParam,
   paginateCrmQueue,
 } from '../services/crmVehicleExpiryQueue.js';
+import {
+  enqueueRcAdvanceForVrns,
+  loadRcAdvanceFlatByVrns,
+  mergeRcAdvanceIntoCrmItems,
+} from '../services/rcAdvanceEnrichment.js';
 
 const router = express.Router();
 
@@ -31,11 +36,26 @@ router.get('/vehicle-expiry', async (req, res) => {
     ...computeCrmStats(filtered),
     lastScrapedAt: built.lastScrapedAt,
   };
+
+  if (statusFilter === 'active' && filtered.length > 0) {
+    enqueueRcAdvanceForVrns(
+      prisma,
+      filtered.map((item) => item.vehicleRegNo),
+    ).catch((err) => {
+      console.error('RC Advance enqueue failed:', err);
+    });
+  }
+
   const page = paginateCrmQueue(filtered, req.query);
+  const rcByVrn = await loadRcAdvanceFlatByVrns(
+    prisma,
+    page.items.map((item) => item.vehicleRegNo),
+  );
+  const items = mergeRcAdvanceIntoCrmItems(page.items, rcByVrn);
 
   res.json({
     ...page,
-    items: page.items,
+    items,
     stats,
   });
 });

@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { VehicleDataDetailDialog } from '@/components/khanan/VehicleDataDetailDialog';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
@@ -13,7 +12,6 @@ import { mcvPortalStatusChipTone, mcvPortalStatusLabel } from '@/lib/mcv-portal-
 import type {
   McvPortalStatus,
   VehicleDataListItemDto,
-  VehicleDataListParams,
   VehicleDataSortDir,
   VehicleDataSortKey,
 } from '@/lib/epass-types';
@@ -95,7 +93,7 @@ interface VehicleDataTableProps {
   sortKey?: VehicleDataSortKey | null;
   sortDir?: VehicleDataSortDir;
   onSort?: (key: VehicleDataSortKey) => void;
-  detailQueryParams: Omit<VehicleDataListParams, 'limit' | 'offset' | 'sort' | 'dir'>;
+  onOpenDetail: (vehicleRegNo: string) => void;
 }
 
 export function VehicleDataTable({
@@ -103,12 +101,10 @@ export function VehicleDataTable({
   sortKey = null,
   sortDir = 'asc',
   onSort,
-  detailQueryParams,
+  onOpenDetail,
 }: VehicleDataTableProps) {
   const queryClient = useQueryClient();
   const sortable = Boolean(onSort);
-  const [selectedVrn, setSelectedVrn] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
   const [queuedVrns, setQueuedVrns] = useState<Set<string>>(new Set());
 
   const [enqueueError, setEnqueueError] = useState<string | null>(null);
@@ -131,16 +127,6 @@ export function VehicleDataTable({
     },
     onError: () => setEnqueueError('Could not queue portal check. Try again.'),
   });
-
-  const openDetail = useCallback((row: VehicleDataListItemDto) => {
-    setSelectedVrn(row.vehicleRegNo);
-    setDetailOpen(true);
-  }, []);
-
-  const closeDetail = useCallback(() => {
-    setDetailOpen(false);
-    setSelectedVrn(null);
-  }, []);
 
   const handleCheckStatus = useCallback(
     (vehicleRegNo: string) => {
@@ -230,7 +216,7 @@ export function VehicleDataTable({
                   ) : null}
                   <button
                     type="button"
-                    onClick={() => openDetail(row)}
+                    onClick={() => onOpenDetail(row.vehicleRegNo)}
                     className="inline-flex min-h-10 items-center rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 text-xs font-bold text-indigo-100"
                   >
                     View
@@ -280,7 +266,7 @@ export function VehicleDataTable({
                   <tr
                     key={row.vehicleRegNo}
                     className="cursor-pointer border-b border-border-default/60 transition hover:bg-indigo-500/5"
-                    onClick={() => openDetail(row)}
+                    onClick={() => onOpenDetail(row.vehicleRegNo)}
                   >
                     <td className="px-4 py-2.5 font-mono text-sm text-white">
                       <span className="font-mono">{row.vehicleRegNo}</span>
@@ -324,7 +310,7 @@ export function VehicleDataTable({
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
-                            openDetail(row);
+                            onOpenDetail(row.vehicleRegNo);
                           }}
                         >
                           <EyeIcon className="h-4 w-4" />
@@ -338,12 +324,6 @@ export function VehicleDataTable({
           </table>
         </div>
       </Card>
-      <VehicleDataDetailDialog
-        vehicleRegNo={selectedVrn}
-        open={detailOpen}
-        onClose={closeDetail}
-        detailQueryParams={detailQueryParams}
-      />
     </>
   );
 }

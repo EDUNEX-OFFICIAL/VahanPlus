@@ -321,3 +321,23 @@ model CrmVehicleExpiryEntry {
   @@index([status])
   @@schema("processed")
 }
+
+model RcAdvanceVehicleData {
+  id           String   @id @default(cuid())
+  vehicleRegNo String   @unique
+  statusCode   Int?
+  message      String?
+  txnId        String?
+  billable     Boolean?
+  result       Json?
+  rawResponse  Json?
+  flat         Json?
+  source       String
+  fetchedAt    DateTime
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([fetchedAt])
+  @@schema("processed")
+}

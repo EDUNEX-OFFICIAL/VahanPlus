@@ -26,6 +26,9 @@ export interface CrmVehicleExpiryListItemDto {
   crmStatus: CrmExpiryStatus;
   crmEntryId: string | null;
   notes: string | null;
+  rcAdvanceFetchedAt: string | null;
+  rcAdvanceMessage: string | null;
+  rcAdvance: Record<string, string | number | boolean | null> | null;
 }
 
 export interface CrmExpiryStatsDto {

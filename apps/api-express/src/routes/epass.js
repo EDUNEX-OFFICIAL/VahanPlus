@@ -634,11 +634,51 @@ function parsePortalStatusFilter(query) {
     .filter((s) => MCV_PORTAL_STATUSES.includes(s));
 }
 
+function parseVehicleDataSearchQuery(query) {
+  const raw = typeof query.q === 'string' ? query.q.trim() : '';
+  if (!raw) return '';
+  return normalizeVehicleRegNo(raw) ?? raw;
+}
+
+function createEmptyVehicleDataAggregate(vehicleRegNo) {
+  return {
+    vehicleRegNo,
+    passCount: 0,
+    quantityByUnit: {},
+    minerals: new Set(),
+    dmoNames: new Set(),
+    consignerNames: new Set(),
+    destinations: new Set(),
+    lastTransportedDate: null,
+    lastScrapedAt: null,
+  };
+}
+
+async function mergeStatusOnlyVehicleDataAggregates(prisma, aggMap, query) {
+  const q = parseVehicleDataSearchQuery(query);
+  if (!q) return;
+
+  const statusRows = await prisma.epassVehicleStatusRow.findMany({
+    where: {
+      OR: [
+        { vehicleRegNo: { contains: q, mode: 'insensitive' } },
+        { ksRegNo: { contains: q, mode: 'insensitive' } },
+      ],
+    },
+  });
+
+  for (const statusRow of statusRows) {
+    const vrn = normalizeVehicleRegNo(statusRow.vehicleRegNo);
+    if (!vrn || aggMap.has(vrn)) continue;
+    aggMap.set(vrn, createEmptyVehicleDataAggregate(vrn));
+  }
+}
+
 function buildVehicleDataPassWhere(snapshotIdOrIds, query) {
   const where = buildChalaanPassWhere(snapshotIdOrIds, query);
   const and = [...(where.AND ?? [])];
   and.push({ vehicleRegNo: { not: null } });
-  const q = typeof query.q === 'string' ? query.q.trim() : '';
+  const q = parseVehicleDataSearchQuery(query);
   if (q) {
     and.push({ vehicleRegNo: { contains: q, mode: 'insensitive' } });
   }
@@ -1216,6 +1256,7 @@ router.get('/vehicle-data', async (req, res) => {
   for (const row of passRows) {
     aggregatePassRow(aggMap, row);
   }
+  await mergeStatusOnlyVehicleDataAggregates(prisma, aggMap, req.query);
 
   const allAggs = [...aggMap.values()].map((agg) => mapVehicleDataAggregate(agg, false));
   let enriched = await enrichVehicleDataAggregates(prisma, allAggs);

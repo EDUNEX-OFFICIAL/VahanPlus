@@ -359,7 +359,7 @@ export function DistrictEpassFilters({
                   Hide zero passes
                 </label>
 
-                <div className="sticky bottom-0 -mx-4 mt-auto grid grid-cols-2 gap-3 border-t border-border-default bg-surface-primary/95 px-4 pt-3">
+                <div className="sticky bottom-0 -mx-4 mt-auto grid grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 pt-3">
                   <Button className="text-sm" onClick={handleApply}>
                     Apply
                   </Button>

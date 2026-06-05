@@ -92,7 +92,7 @@ export function AdaptiveFilterSheet({
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 scrollbar-thin">
             <div className="space-y-5">{children}</div>
           </div>
-          <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-3 border-t border-border-default/70 bg-surface-primary/95 px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-5">
+          <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-3 border-t border-border-default/70 bg-surface-primary px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-5">
             <Button variant="secondary" onClick={onReset}>
               {resetLabel}
             </Button>

@@ -341,3 +341,15 @@ model RcAdvanceVehicleData {
   @@index([fetchedAt])
   @@schema("processed")
 }
+
+model CrmConfig {
+  id                   String   @id @default("default")
+  insuranceExpiryDays  Int      @default(30)
+  rcExpiryDays         Int      @default(30)
+  fitnessExpiryDays    Int      @default(30)
+  rcAdvanceEnabled     Boolean  @default(true)
+  configVersion        Int      @default(1)
+  updatedAt            DateTime @updatedAt
+
+  @@schema("system")
+}

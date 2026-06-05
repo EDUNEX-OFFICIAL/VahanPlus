@@ -111,3 +111,24 @@ export const KhananScraperConfigPatchSchema = z
   .strict();
 
 export type KhananScraperConfigPatch = z.infer<typeof KhananScraperConfigPatchSchema>;
+
+export const CrmConfigPatchSchema = z
+  .object({
+    insuranceExpiryDays: z.number().int().min(0).max(365).optional(),
+    rcExpiryDays: z.number().int().min(0).max(365).optional(),
+    fitnessExpiryDays: z.number().int().min(0).max(365).optional(),
+    rcAdvanceEnabled: z.boolean().optional(),
+  })
+  .strict();
+
+export type CrmConfigPatch = z.infer<typeof CrmConfigPatchSchema>;
+
+export interface CrmConfigDto {
+  id: string;
+  insuranceExpiryDays: number;
+  rcExpiryDays: number;
+  fitnessExpiryDays: number;
+  rcAdvanceEnabled: boolean;
+  configVersion: number;
+  updatedAt: string;
+}

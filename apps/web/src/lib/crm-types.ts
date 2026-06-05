@@ -36,6 +36,11 @@ export interface CrmExpiryStatsDto {
   autoCount: number;
   manualCount: number;
   lastScrapedAt: string | null;
+  thresholds?: {
+    insuranceExpiryDays: number;
+    rcExpiryDays: number;
+    fitnessExpiryDays: number;
+  };
 }
 
 export interface CrmVehicleExpiryListResponse {

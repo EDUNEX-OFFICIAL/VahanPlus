@@ -19,6 +19,7 @@ import {
   fetchCrmVehicleExpiryList,
   removeVehicleFromCrmExpiry,
 } from '@/lib/crm';
+import { CRM_CONFIG_QUERY_KEY, crmConfigToExpiryDefaults, fetchCrmConfig } from '@/lib/crm-config';
 import {
   DEFAULT_CRM_EXPIRY_DAYS,
   parseCrmExpiryFilters,
@@ -61,7 +62,18 @@ function CrmVehicleExpiryPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const appliedFilters = useMemo(() => parseCrmExpiryFilters(searchParams), [searchParams]);
+  const { data: crmConfigData } = useQuery({
+    queryKey: CRM_CONFIG_QUERY_KEY,
+    queryFn: () => fetchCrmConfig(),
+  });
+  const expiryDefaults = useMemo(
+    () => crmConfigToExpiryDefaults(crmConfigData?.config),
+    [crmConfigData?.config],
+  );
+  const appliedFilters = useMemo(
+    () => parseCrmExpiryFilters(searchParams, expiryDefaults),
+    [searchParams, expiryDefaults],
+  );
   const offset = Math.max(Number(searchParams.get('offset') || '0'), 0);
   const pageSize = Math.max(Number(searchParams.get('limit') || String(PAGE_SIZE)), 10);
   const sortKey = parseSortKey(searchParams.get('sort')) ?? 'vehicleRegNo';
@@ -159,9 +171,9 @@ function CrmVehicleExpiryPageContent() {
         found: serializeCrmExpiryFoundFilter(next.found),
         status: next.status === 'active' ? null : next.status,
         source: next.source === 'all' ? null : next.source,
-        insuranceExpiryDays: next.insuranceExpiryDays.trim() || DEFAULT_CRM_EXPIRY_DAYS,
-        rcExpiryDays: next.rcExpiryDays.trim() || DEFAULT_CRM_EXPIRY_DAYS,
-        fitnessExpiryDays: next.fitnessExpiryDays.trim() || DEFAULT_CRM_EXPIRY_DAYS,
+        insuranceExpiryDays: next.insuranceExpiryDays.trim() || expiryDefaults.insuranceExpiryDays,
+        rcExpiryDays: next.rcExpiryDays.trim() || expiryDefaults.rcExpiryDays,
+        fitnessExpiryDays: next.fitnessExpiryDays.trim() || expiryDefaults.fitnessExpiryDays,
         grossWeightMin: next.grossWeightMin.trim() || null,
         grossWeightMax: next.grossWeightMax.trim() || null,
         vehicleClass: next.vehicleClass.trim() || null,
@@ -170,7 +182,7 @@ function CrmVehicleExpiryPageContent() {
       });
       setSelected(new Set());
     },
-    [updateParams],
+    [updateParams, expiryDefaults],
   );
 
   const handleClearFilters = useCallback(() => {
@@ -179,9 +191,9 @@ function CrmVehicleExpiryPageContent() {
       found: null,
       status: null,
       source: null,
-      insuranceExpiryDays: DEFAULT_CRM_EXPIRY_DAYS,
-      rcExpiryDays: DEFAULT_CRM_EXPIRY_DAYS,
-      fitnessExpiryDays: DEFAULT_CRM_EXPIRY_DAYS,
+      insuranceExpiryDays: expiryDefaults.insuranceExpiryDays,
+      rcExpiryDays: expiryDefaults.rcExpiryDays,
+      fitnessExpiryDays: expiryDefaults.fitnessExpiryDays,
       grossWeightMin: null,
       grossWeightMax: null,
       vehicleClass: null,
@@ -189,7 +201,7 @@ function CrmVehicleExpiryPageContent() {
       offset: '0',
     });
     setSelected(new Set());
-  }, [updateParams]);
+  }, [updateParams, expiryDefaults]);
 
   const pageRows = useMemo(() => data?.items ?? [], [data?.items]);
   const allSelected = pageRows.length > 0 && pageRows.every((r) => selected.has(r.vehicleRegNo));

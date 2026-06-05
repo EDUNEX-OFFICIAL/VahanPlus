@@ -24,6 +24,20 @@ async function main() {
 
   console.log(`Seeded admin user: ${username}`);
   console.log('Seeded Khanan scraper config (default)');
+
+  await prisma.crmConfig.upsert({
+    where: { id: 'default' },
+    update: {},
+    create: {
+      id: 'default',
+      insuranceExpiryDays: 30,
+      rcExpiryDays: 30,
+      fitnessExpiryDays: 30,
+      rcAdvanceEnabled: true,
+      configVersion: 1,
+    },
+  });
+  console.log('Seeded CRM config (default)');
 }
 
 main()

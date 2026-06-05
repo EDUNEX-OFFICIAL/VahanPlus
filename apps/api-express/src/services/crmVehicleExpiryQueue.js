@@ -6,12 +6,6 @@ import {
   sortVehicleStatusItems,
 } from './vehicleStatusList.js';
 
-function parseThreshold(query, key, defaultValue) {
-  const n = Number(query[key]);
-  if (!Number.isFinite(n)) return defaultValue;
-  return Math.max(0, Math.floor(n));
-}
-
 function manualOrphanPassesBrowse(query, vehicleRegNo) {
   const q = typeof query.q === 'string' ? query.q.trim().toLowerCase() : '';
   if (q && !vehicleRegNo.toLowerCase().includes(q)) return false;
@@ -55,10 +49,10 @@ function emptyStatusItem(entry) {
   };
 }
 
-export async function buildActiveCrmQueue(prisma, query) {
-  const insuranceDays = parseThreshold(query, 'insuranceExpiryDays', 30);
-  const rcDays = parseThreshold(query, 'rcExpiryDays', 30);
-  const fitnessDays = parseThreshold(query, 'fitnessExpiryDays', 30);
+export async function buildActiveCrmQueue(prisma, query, thresholds) {
+  const insuranceDays = thresholds.insuranceExpiryDays;
+  const rcDays = thresholds.rcExpiryDays;
+  const fitnessDays = thresholds.fitnessExpiryDays;
 
   const where = buildVehicleStatusWhere(query);
   const [statusRows, crmEntries, latestRow] = await Promise.all([

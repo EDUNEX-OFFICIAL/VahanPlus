@@ -7,7 +7,20 @@ import type {
 
 export const DEFAULT_CRM_EXPIRY_DAYS = '30';
 
-export function parseCrmExpiryFilters(searchParams: URLSearchParams): CrmExpiryFilterValues {
+export interface CrmExpiryFilterDefaults {
+  insuranceExpiryDays: string;
+  rcExpiryDays: string;
+  fitnessExpiryDays: string;
+}
+
+export function parseCrmExpiryFilters(
+  searchParams: URLSearchParams,
+  defaults: CrmExpiryFilterDefaults = {
+    insuranceExpiryDays: DEFAULT_CRM_EXPIRY_DAYS,
+    rcExpiryDays: DEFAULT_CRM_EXPIRY_DAYS,
+    fitnessExpiryDays: DEFAULT_CRM_EXPIRY_DAYS,
+  },
+): CrmExpiryFilterValues {
   const foundRaw = searchParams.get('found');
   let found: CrmExpiryFoundFilter = 'all';
   if (foundRaw === 'found') found = 'found';
@@ -23,9 +36,9 @@ export function parseCrmExpiryFilters(searchParams: URLSearchParams): CrmExpiryF
   return {
     search: searchParams.get('q') ?? '',
     found,
-    insuranceExpiryDays: searchParams.get('insuranceExpiryDays') ?? DEFAULT_CRM_EXPIRY_DAYS,
-    rcExpiryDays: searchParams.get('rcExpiryDays') ?? DEFAULT_CRM_EXPIRY_DAYS,
-    fitnessExpiryDays: searchParams.get('fitnessExpiryDays') ?? DEFAULT_CRM_EXPIRY_DAYS,
+    insuranceExpiryDays: searchParams.get('insuranceExpiryDays') ?? defaults.insuranceExpiryDays,
+    rcExpiryDays: searchParams.get('rcExpiryDays') ?? defaults.rcExpiryDays,
+    fitnessExpiryDays: searchParams.get('fitnessExpiryDays') ?? defaults.fitnessExpiryDays,
     grossWeightMin: searchParams.get('grossWeightMin') ?? '',
     grossWeightMax: searchParams.get('grossWeightMax') ?? '',
     vehicleClass: searchParams.get('vehicleClass') ?? '',

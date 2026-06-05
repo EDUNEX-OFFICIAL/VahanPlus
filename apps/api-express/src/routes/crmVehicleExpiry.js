@@ -14,6 +14,7 @@ import {
   loadRcAdvanceFlatByVrns,
   mergeRcAdvanceIntoCrmItems,
 } from '../services/rcAdvanceEnrichment.js';
+import { loadCrmConfig, resolveCrmExpiryThresholds } from '../services/crmConfig.js';
 
 const router = express.Router();
 
@@ -25,19 +26,26 @@ function usernameFromReq(req) {
 
 router.get('/vehicle-expiry', async (req, res) => {
   const prisma = getPrisma();
+  const crmConfig = await loadCrmConfig(prisma);
+  const thresholds = resolveCrmExpiryThresholds(req.query, crmConfig);
   const statusFilter = req.query.status === 'removed' ? 'removed' : 'active';
   const built =
     statusFilter === 'removed'
       ? await buildRemovedCrmQueue(prisma, req.query)
-      : await buildActiveCrmQueue(prisma, req.query);
+      : await buildActiveCrmQueue(prisma, req.query, thresholds);
 
   const filtered = applyCrmQueueFilters(built.queue, req.query);
   const stats = {
     ...computeCrmStats(filtered),
     lastScrapedAt: built.lastScrapedAt,
+    thresholds: {
+      insuranceExpiryDays: thresholds.insuranceExpiryDays,
+      rcExpiryDays: thresholds.rcExpiryDays,
+      fitnessExpiryDays: thresholds.fitnessExpiryDays,
+    },
   };
 
-  if (statusFilter === 'active' && filtered.length > 0) {
+  if (statusFilter === 'active' && filtered.length > 0 && crmConfig.rcAdvanceEnabled) {
     enqueueRcAdvanceForVrns(
       prisma,
       filtered.map((item) => item.vehicleRegNo),

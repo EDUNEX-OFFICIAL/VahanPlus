@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { normalizeVehicleRegNo } from '@vahanplus/scraper-bihar-epass';
+import { normalizeVehicleRegNo } from './normalizeVrn.js';
 import { DEFAULT_RC_ADVANCE_MOCK_FILE } from './schema.js';
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');

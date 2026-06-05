@@ -336,10 +336,6 @@ importers:
         version: 29.7.0(@types/node@22.19.19)
 
   packages/rc-advance-client:
-    dependencies:
-      '@vahanplus/scraper-bihar-epass':
-        specifier: workspace:*
-        version: link:../scraper-bihar-epass
     devDependencies:
       '@jest/globals':
         specifier: ^29.7.0

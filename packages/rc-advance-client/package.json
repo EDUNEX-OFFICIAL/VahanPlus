@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./columns": "./src/columnsEntry.js"
   },
   "scripts": {
     "build": "node -e \"console.log('rc-advance-client: no build step')\"",
@@ -16,7 +17,5 @@
     "@jest/globals": "^29.7.0",
     "jest": "^29.7.0"
   },
-  "dependencies": {
-    "@vahanplus/scraper-bihar-epass": "workspace:*"
-  }
+  "dependencies": {}
 }

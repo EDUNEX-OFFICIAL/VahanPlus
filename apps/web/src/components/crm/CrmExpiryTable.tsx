@@ -8,7 +8,7 @@ import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatDateDmy, normalizeReportDate } from '@/lib/epass-report-date';
 import { daysLeftTone, formatDaysLeft } from '@/lib/crm-expiry-view';
-import { RC_ADVANCE_CRM_COLUMNS } from '@vahanplus/rc-advance-client';
+import { RC_ADVANCE_CRM_COLUMNS } from '@vahanplus/rc-advance-client/columns';
 import type { CrmExpirySortKey, CrmVehicleExpiryListItemDto } from '@/lib/crm-types';
 import type { VehicleStatusSortDir } from '@/lib/epass-types';
 

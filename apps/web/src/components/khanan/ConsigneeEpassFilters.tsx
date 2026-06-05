@@ -224,7 +224,7 @@ export function ConsigneeEpassFilters({
                 className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden"
                 onClick={() => setOpen(false)}
               />
-              <Card className="fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] z-50 flex max-h-[min(72dvh,calc(100dvh-11rem),640px)] flex-col overflow-hidden p-0 shadow-2xl md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:max-h-[min(78vh,680px)] md:w-[min(100vw-2rem,420px)]">
+              <Card className="fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] z-50 flex max-h-[min(72dvh,calc(100dvh-11rem),640px)] flex-col overflow-hidden bg-surface-primary p-0 shadow-2xl md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:max-h-[min(78vh,680px)] md:w-[min(100vw-2rem,420px)]">
                 <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin">
                   <div className="space-y-5">
                     <FilterSection title="Operator">
@@ -493,7 +493,7 @@ export function ConsigneeEpassFilters({
                   </div>
                 </div>
 
-                <div className="shrink-0 grid grid-cols-2 gap-3 border-t border-border-default bg-surface-primary/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                <div className="relative z-10 shrink-0 grid grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_24px_rgba(0,0,0,0.5)]">
                   <Button className="text-sm" onClick={handleApply}>
                     Apply
                   </Button>

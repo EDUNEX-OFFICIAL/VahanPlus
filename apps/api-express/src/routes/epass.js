@@ -5,6 +5,7 @@ import {
   enqueueChallanPassJobs,
   enqueueConsignerJobsForSnapshot,
   enqueueMissingVehicleStatusFromPasses,
+  enqueueVehicleStatusJobs,
 } from '@vahanplus/epass-orchestrator';
 import { buildConsignerChallansWhere } from '../services/consignerChallanFilters.js';
 import {
@@ -249,6 +250,10 @@ async function resolveSnapshotsForQuery(prisma, query) {
     const to = typeof query.dateTo === 'string' ? query.dateTo : query.dateFrom || '';
     if (!from && !to) return all;
     return all.filter((s) => isReportDateInRange(s.reportDate, from || null, to || null));
+  }
+
+  if (query.reportScope === 'all') {
+    return all;
   }
 
   if (query.snapshotId) {
@@ -518,8 +523,10 @@ function buildChalaanOrderBy(query) {
   }
 }
 
-function buildChalaanPassWhere(snapshotId, query) {
-  const consignerRow = { snapshotId };
+function buildChalaanPassWhere(snapshotIdOrIds, query) {
+  const consignerRow = Array.isArray(snapshotIdOrIds)
+    ? { snapshotId: { in: snapshotIdOrIds } }
+    : { snapshotId: snapshotIdOrIds };
   const operatorType = parseOperatorFromQuery(query);
   if (operatorType) {
     consignerRow.operatorType = operatorType;
@@ -616,8 +623,19 @@ function normalizeVehicleRegNo(raw) {
   return normalized.length > 0 ? normalized : null;
 }
 
-function buildVehicleDataPassWhere(snapshotId, query) {
-  const where = buildChalaanPassWhere(snapshotId, query);
+const MCV_PORTAL_STATUSES = ['on_portal', 'no_portal_data', 'not_checked'];
+
+function parsePortalStatusFilter(query) {
+  const raw = typeof query.portalStatus === 'string' ? query.portalStatus.trim() : '';
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => MCV_PORTAL_STATUSES.includes(s));
+}
+
+function buildVehicleDataPassWhere(snapshotIdOrIds, query) {
+  const where = buildChalaanPassWhere(snapshotIdOrIds, query);
   const and = [...(where.AND ?? [])];
   and.push({ vehicleRegNo: { not: null } });
   const q = typeof query.q === 'string' ? query.q.trim() : '';
@@ -708,6 +726,35 @@ function mapVehicleDataAggregate(agg, hasVehicleStatus) {
     lastScrapedAt: agg.lastScrapedAt ? agg.lastScrapedAt.toISOString() : null,
     hasVehicleStatus,
   };
+}
+
+async function enrichVehicleDataAggregates(prisma, allAggs) {
+  const allVrns = allAggs.map((item) => item.vehicleRegNo);
+  const statusRows =
+    allVrns.length > 0
+      ? await prisma.epassVehicleStatusRow.findMany({
+          where: { vehicleRegNo: { in: allVrns } },
+          select: {
+            vehicleRegNo: true,
+            grossWeightMt: true,
+            unladenWeightMt: true,
+            found: true,
+          },
+        })
+      : [];
+  const statusByVrn = new Map(statusRows.map((r) => [r.vehicleRegNo, r]));
+
+  return allAggs.map((item) => {
+    const status = statusByVrn.get(item.vehicleRegNo);
+    const mcvPortalStatus = !status ? 'not_checked' : status.found ? 'on_portal' : 'no_portal_data';
+    return {
+      ...item,
+      mcvPortalStatus,
+      hasVehicleStatus: mcvPortalStatus === 'on_portal',
+      grossWeightMt: status?.grossWeightMt != null ? toNumber(status.grossWeightMt) : null,
+      unladenWeightMt: status?.unladenWeightMt != null ? toNumber(status.unladenWeightMt) : null,
+    };
+  });
 }
 
 function sortVehicleDataAggregates(items, sort, dir) {
@@ -1091,19 +1138,74 @@ router.get('/chalaan-passes', async (req, res) => {
   });
 });
 
-router.get('/vehicle-data', async (req, res) => {
+router.get('/filter-options', async (req, res) => {
   const prisma = getPrisma();
-  const snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
-
-  if (!snapshot) {
-    return res.json({ snapshot: null, total: 0, limit: 50, offset: 0, items: [] });
+  if (req.query.reportScope !== 'all') {
+    return res.status(400).json({ error: 'reportScope=all is required' });
   }
 
+  const snapshots = await resolveSnapshotsForQuery(prisma, req.query);
+  const snapshotIds = snapshots.map((s) => s.id);
+  if (snapshotIds.length === 0) {
+    return res.json({ districts: [], minerals: [], latestScrapedAt: null });
+  }
+
+  const districtRows = await prisma.epassDistrictRow.findMany({
+    where: { snapshotId: { in: snapshotIds } },
+    select: { dmoName: true, lesseeMineral: true, dealerMineral: true },
+  });
+
+  const districtSet = new Set();
+  const mineralSet = new Set();
+  for (const row of districtRows) {
+    if (row.dmoName?.trim()) districtSet.add(row.dmoName.trim());
+    if (row.lesseeMineral?.trim()) mineralSet.add(row.lesseeMineral.trim());
+    if (row.dealerMineral?.trim()) mineralSet.add(row.dealerMineral.trim());
+  }
+
+  res.json({
+    districts: [...districtSet].sort((a, b) => a.localeCompare(b)),
+    minerals: [...mineralSet].sort((a, b) => a.localeCompare(b)),
+    latestScrapedAt: snapshots[0]?.scrapedAt?.toISOString() ?? null,
+  });
+});
+
+router.get('/vehicle-data', async (req, res) => {
+  const prisma = getPrisma();
+  const isAllScope = req.query.reportScope === 'all';
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
-  const sort = typeof req.query.sort === 'string' ? req.query.sort : 'vehicle';
-  const dir = req.query.dir === 'desc' ? 'desc' : 'asc';
-  const where = buildVehicleDataPassWhere(snapshot.id, req.query);
+  const sort =
+    typeof req.query.sort === 'string' ? req.query.sort : isAllScope ? 'lastDate' : 'vehicle';
+  const dir = req.query.dir === 'desc' ? 'desc' : isAllScope && !req.query.dir ? 'desc' : 'asc';
+  const portalStatusFilter = parsePortalStatusFilter(req.query);
+
+  let snapshot = null;
+  let snapshotIds = [];
+  let where;
+
+  if (isAllScope) {
+    const snapshots = await resolveSnapshotsForQuery(prisma, req.query);
+    snapshotIds = snapshots.map((s) => s.id);
+    if (snapshotIds.length === 0) {
+      return res.json({
+        snapshot: null,
+        reportScope: 'all',
+        snapshotCount: 0,
+        total: 0,
+        limit,
+        offset,
+        items: [],
+      });
+    }
+    where = buildVehicleDataPassWhere(snapshotIds, req.query);
+  } else {
+    snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
+    if (!snapshot) {
+      return res.json({ snapshot: null, total: 0, limit, offset, items: [] });
+    }
+    where = buildVehicleDataPassWhere(snapshot.id, req.query);
+  }
 
   const passRows = await prisma.epassChallanPassRow.findMany({
     where,
@@ -1116,36 +1218,28 @@ router.get('/vehicle-data', async (req, res) => {
   }
 
   const allAggs = [...aggMap.values()].map((agg) => mapVehicleDataAggregate(agg, false));
-  const allVrns = allAggs.map((item) => item.vehicleRegNo);
-  const statusRows =
-    allVrns.length > 0
-      ? await prisma.epassVehicleStatusRow.findMany({
-          where: { vehicleRegNo: { in: allVrns } },
-          select: {
-            vehicleRegNo: true,
-            grossWeightMt: true,
-            unladenWeightMt: true,
-            found: true,
-          },
-        })
-      : [];
-  const statusByVrn = new Map(statusRows.map((r) => [r.vehicleRegNo, r]));
+  let enriched = await enrichVehicleDataAggregates(prisma, allAggs);
 
-  const enriched = allAggs.map((item) => {
-    const status = statusByVrn.get(item.vehicleRegNo);
-    const mcvPortalStatus = !status ? 'not_checked' : status.found ? 'on_portal' : 'no_portal_data';
-    return {
-      ...item,
-      mcvPortalStatus,
-      hasVehicleStatus: mcvPortalStatus === 'on_portal',
-      grossWeightMt: status?.grossWeightMt != null ? toNumber(status.grossWeightMt) : null,
-      unladenWeightMt: status?.unladenWeightMt != null ? toNumber(status.unladenWeightMt) : null,
-    };
-  });
+  if (portalStatusFilter.length > 0) {
+    const allowed = new Set(portalStatusFilter);
+    enriched = enriched.filter((item) => allowed.has(item.mcvPortalStatus));
+  }
 
   sortVehicleDataAggregates(enriched, sort, dir);
   const total = enriched.length;
   const items = enriched.slice(offset, offset + limit);
+
+  if (isAllScope) {
+    return res.json({
+      snapshot: null,
+      reportScope: 'all',
+      snapshotCount: snapshotIds.length,
+      total,
+      limit,
+      offset,
+      items,
+    });
+  }
 
   res.json({
     snapshot: {
@@ -1167,19 +1261,40 @@ router.get('/vehicle-data/:vehicleRegNo', async (req, res) => {
     return res.status(400).json({ error: 'Invalid vehicle registration number' });
   }
 
-  const snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
-  if (!snapshot) {
-    return res.json({
-      vehicleRegNo,
-      snapshot: null,
-      summary: null,
-      passes: [],
-      vehicleStatus: null,
-    });
+  const isAllScope = req.query.reportScope === 'all';
+  let snapshot = null;
+  let passWhereBase;
+
+  if (isAllScope) {
+    const snapshots = await resolveSnapshotsForQuery(prisma, req.query);
+    const snapshotIds = snapshots.map((s) => s.id);
+    if (snapshotIds.length === 0) {
+      return res.json({
+        vehicleRegNo,
+        snapshot: null,
+        reportScope: 'all',
+        summary: null,
+        passes: [],
+        vehicleStatus: null,
+      });
+    }
+    passWhereBase = buildVehicleDataPassWhere(snapshotIds, req.query);
+  } else {
+    snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
+    if (!snapshot) {
+      return res.json({
+        vehicleRegNo,
+        snapshot: null,
+        summary: null,
+        passes: [],
+        vehicleStatus: null,
+      });
+    }
+    passWhereBase = buildVehicleDataPassWhere(snapshot.id, req.query);
   }
 
   const where = {
-    ...buildVehicleDataPassWhere(snapshot.id, req.query),
+    ...passWhereBase,
     vehicleRegNo: { equals: vehicleRegNo, mode: 'insensitive' },
   };
 
@@ -1212,6 +1327,17 @@ router.get('/vehicle-data/:vehicleRegNo', async (req, res) => {
     };
   } else if (summary) {
     summary = { ...summary, grossWeightMt: null, unladenWeightMt: null };
+  }
+
+  if (isAllScope) {
+    return res.json({
+      vehicleRegNo,
+      snapshot: null,
+      reportScope: 'all',
+      summary,
+      passes: passRows.map(mapChalaanPassListItem),
+      vehicleStatus: vehicleStatusRow ? mapVehicleStatusListItem(vehicleStatusRow) : null,
+    });
   }
 
   res.json({
@@ -1611,6 +1737,17 @@ router.get('/vehicle-status', async (req, res) => {
       lastScrapedAt: latestRow?.scrapedAt?.toISOString() ?? null,
     },
   });
+});
+
+router.post('/vehicle-status/enqueue', async (req, res) => {
+  const prisma = getPrisma();
+  const vehicleRegNo = normalizeVehicleRegNo(req.body?.vehicleRegNo);
+  if (!vehicleRegNo) {
+    return res.status(400).json({ error: 'vehicleRegNo is required' });
+  }
+
+  const fanout = await enqueueVehicleStatusJobs(prisma, [vehicleRegNo], 'vehicle-data-ui');
+  res.json({ vehicleRegNo, ...fanout });
 });
 
 router.post('/vehicle-status/scrape-missing', async (req, res) => {

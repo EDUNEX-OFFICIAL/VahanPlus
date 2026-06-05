@@ -505,15 +505,31 @@ export interface VehicleDataListItemDto {
 
 export interface VehicleDataListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
+  reportScope?: 'all';
+  snapshotCount?: number;
   total: number;
   limit: number;
   offset: number;
   items: VehicleDataListItemDto[];
 }
 
+export interface EpassFilterOptionsResponse {
+  districts: string[];
+  minerals: string[];
+  latestScrapedAt: string | null;
+}
+
+export interface VehicleStatusEnqueueResponse {
+  vehicleRegNo: string;
+  enqueued: number;
+  skipped?: boolean;
+  skippedExisting?: number;
+}
+
 export interface VehicleDataDetailResponse {
   vehicleRegNo: string;
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
+  reportScope?: 'all';
   summary: VehicleDataListItemDto | null;
   passes: EpassChalaanPassListItemDto[];
   vehicleStatus: EpassVehicleStatusListItemDto | null;
@@ -531,6 +547,10 @@ export type VehicleDataSortDir = 'asc' | 'desc';
 
 export interface VehicleDataListParams {
   snapshotId?: string;
+  reportScope?: 'all';
+  dateMode?: 'specific' | 'range';
+  dateFrom?: string;
+  dateTo?: string;
   operator?: OperatorType;
   district?: string;
   dmo?: string;
@@ -538,6 +558,7 @@ export interface VehicleDataListParams {
   consigner?: string;
   consignee?: string;
   hideZeroPasses?: boolean;
+  portalStatus?: McvPortalStatus;
   q?: string;
   sort?: VehicleDataSortKey;
   dir?: VehicleDataSortDir;
@@ -548,4 +569,6 @@ export interface VehicleDataListParams {
 export interface VehicleDataFilterValues {
   epass: EpassBrowseFilterValues;
   vehicleSearch: string;
+  reportScope: 'all' | 'specific';
+  portalStatus: McvPortalStatus | 'all';
 }

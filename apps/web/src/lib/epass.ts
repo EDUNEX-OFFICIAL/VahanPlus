@@ -4,9 +4,11 @@ import type {
   ChalaanListResponse,
   ChalaanPassListResponse,
   ChalaanPassesResponse,
+  EpassFilterOptionsResponse,
   VehicleDataDetailResponse,
   VehicleDataListParams,
   VehicleDataListResponse,
+  VehicleStatusEnqueueResponse,
   VehicleStatusListParams,
   VehicleStatusListResponse,
   VehicleStatusScrapeMissingResponse,
@@ -165,6 +167,10 @@ export function updateChallanGhatNumber(challanRowId: string, ghatNumber: string
 
 type EpassPassBrowseQueryParams = {
   snapshotId?: string;
+  reportScope?: 'all';
+  dateMode?: 'specific' | 'range';
+  dateFrom?: string;
+  dateTo?: string;
   operator?: ChalaanListParams['operator'];
   district?: string;
   dmo?: string;
@@ -172,6 +178,7 @@ type EpassPassBrowseQueryParams = {
   consigner?: string;
   consignee?: string;
   hideZeroPasses?: boolean;
+  portalStatus?: string;
   q?: string;
   sort?: string;
   dir?: string;
@@ -180,7 +187,11 @@ type EpassPassBrowseQueryParams = {
 };
 
 function appendChalaanBrowseQuery(q: URLSearchParams, params: EpassPassBrowseQueryParams) {
-  if (params.snapshotId) q.set('snapshotId', params.snapshotId);
+  if (params.reportScope === 'all') q.set('reportScope', 'all');
+  else if (params.snapshotId) q.set('snapshotId', params.snapshotId);
+  if (params.dateMode === 'range') q.set('dateMode', 'range');
+  if (params.dateFrom) q.set('dateFrom', params.dateFrom);
+  if (params.dateTo) q.set('dateTo', params.dateTo);
   if (params.operator) q.set('operator', params.operator);
   const district = params.district ?? params.dmo;
   if (district) q.set('district', district);
@@ -188,6 +199,7 @@ function appendChalaanBrowseQuery(q: URLSearchParams, params: EpassPassBrowseQue
   if (params.consigner) q.set('consigner', params.consigner);
   if (params.consignee) q.set('consignee', params.consignee);
   if (params.hideZeroPasses) q.set('hideZeroPasses', '1');
+  if (params.portalStatus) q.set('portalStatus', params.portalStatus);
   if (params.q) q.set('q', params.q);
   if (params.sort) q.set('sort', params.sort);
   if (params.dir) q.set('dir', params.dir);
@@ -240,5 +252,27 @@ export function scrapeMissingVehicleStatus(limit = 100) {
   const q = limit > 0 ? `?limit=${limit}` : '';
   return apiFetch<VehicleStatusScrapeMissingResponse>(`/epass/vehicle-status/scrape-missing${q}`, {
     method: 'POST',
+  });
+}
+
+export function fetchEpassFilterOptions(
+  params: Pick<
+    VehicleDataListParams,
+    'reportScope' | 'dateMode' | 'dateFrom' | 'dateTo' | 'snapshotId'
+  > = { reportScope: 'all' },
+) {
+  const q = new URLSearchParams();
+  q.set('reportScope', 'all');
+  if (params.dateMode === 'range') q.set('dateMode', 'range');
+  if (params.dateFrom) q.set('dateFrom', params.dateFrom);
+  if (params.dateTo) q.set('dateTo', params.dateTo);
+  if (params.snapshotId) q.set('snapshotId', params.snapshotId);
+  return apiFetch<EpassFilterOptionsResponse>(`/epass/filter-options?${q.toString()}`);
+}
+
+export function enqueueVehicleStatusScrape(vehicleRegNo: string) {
+  return apiFetch<VehicleStatusEnqueueResponse>('/epass/vehicle-status/enqueue', {
+    method: 'POST',
+    body: JSON.stringify({ vehicleRegNo }),
   });
 }

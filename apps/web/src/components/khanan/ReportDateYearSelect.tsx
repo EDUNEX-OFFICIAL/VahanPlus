@@ -6,6 +6,7 @@ import {
   groupReportDateOptionsByYear,
   type ReportDateOption,
 } from '@/lib/epass-report-date';
+import { ALL_REPORTS_SNAPSHOT_ID } from '@/components/khanan/ConsigneeEpassFilters';
 
 interface ReportDateYearSelectProps {
   idPrefix: string;
@@ -13,6 +14,7 @@ interface ReportDateYearSelectProps {
   snapshotId: string;
   onChange: (snapshotId: string, reportDate: string) => void;
   inputClass: string;
+  allowAllReports?: boolean;
 }
 
 export function ReportDateYearSelect({
@@ -21,22 +23,26 @@ export function ReportDateYearSelect({
   snapshotId,
   onChange,
   inputClass,
+  allowAllReports = false,
 }: ReportDateYearSelectProps) {
+  const isAllReports = allowAllReports && snapshotId === ALL_REPORTS_SNAPSHOT_ID;
+
   const yearGroups = useMemo(() => groupReportDateOptionsByYear(options), [options]);
 
   const selectedOption = useMemo(
-    () => options.find((o) => o.snapshotId === snapshotId) ?? null,
-    [options, snapshotId],
+    () => (isAllReports ? null : (options.find((o) => o.snapshotId === snapshotId) ?? null)),
+    [options, snapshotId, isAllReports],
   );
 
   const selectedYear = useMemo(() => {
+    if (isAllReports) return null;
     if (!yearGroups.length) return null;
     const fromSelection = selectedOption
       ? yearGroups.find((g) => g.options.some((o) => o.snapshotId === selectedOption.snapshotId))
           ?.year
       : null;
     return fromSelection ?? yearGroups[0].year;
-  }, [yearGroups, selectedOption]);
+  }, [yearGroups, selectedOption, isAllReports]);
 
   const datesInYear = useMemo(() => {
     if (selectedYear == null) return [];
@@ -45,7 +51,7 @@ export function ReportDateYearSelect({
 
   const yearId = `${idPrefix}-report-year`;
   const dateId = `${idPrefix}-report-date`;
-  const empty = options.length === 0;
+  const empty = options.length === 0 && !allowAllReports;
 
   function handleYearChange(yearValue: string) {
     const year = Number(yearValue);
@@ -59,6 +65,10 @@ export function ReportDateYearSelect({
   }
 
   function handleDateChange(nextSnapshotId: string) {
+    if (nextSnapshotId === ALL_REPORTS_SNAPSHOT_ID) {
+      onChange(ALL_REPORTS_SNAPSHOT_ID, '');
+      return;
+    }
     const opt = options.find((o) => o.snapshotId === nextSnapshotId);
     onChange(nextSnapshotId, opt?.reportDate ?? '');
   }
@@ -66,15 +76,18 @@ export function ReportDateYearSelect({
   return (
     <div className="grid grid-cols-2 gap-3">
       <div>
-        <label className="text-xs uppercase tracking-wider text-text-secondary" htmlFor={yearId}>
+        <label
+          className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted"
+          htmlFor={yearId}
+        >
           Year
         </label>
         <select
           id={yearId}
-          value={selectedYear ?? ''}
+          value={isAllReports ? '' : (selectedYear ?? '')}
           onChange={(e) => handleYearChange(e.target.value)}
           className={inputClass}
-          disabled={empty}
+          disabled={empty || isAllReports}
         >
           {empty ? (
             <option value="">—</option>
@@ -88,18 +101,24 @@ export function ReportDateYearSelect({
         </select>
       </div>
       <div>
-        <label className="text-xs uppercase tracking-wider text-text-secondary" htmlFor={dateId}>
+        <label
+          className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted"
+          htmlFor={dateId}
+        >
           Report date
         </label>
         <select
           id={dateId}
-          value={snapshotId}
+          value={isAllReports ? ALL_REPORTS_SNAPSHOT_ID : snapshotId}
           onChange={(e) => handleDateChange(e.target.value)}
           className={inputClass}
-          disabled={empty || datesInYear.length === 0}
+          disabled={!allowAllReports && (empty || datesInYear.length === 0)}
         >
+          {allowAllReports ? <option value={ALL_REPORTS_SNAPSHOT_ID}>All reports</option> : null}
           {empty || datesInYear.length === 0 ? (
-            <option value="">No reports in range</option>
+            !allowAllReports ? (
+              <option value="">No reports in range</option>
+            ) : null
           ) : (
             datesInYear.map((o) => (
               <option key={o.snapshotId} value={o.snapshotId}>

@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/Alert';
 import { AdaptiveDialog } from '@/components/ui/AdaptiveDialog';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
-import { fetchVehicleDataDetail } from '@/lib/epass';
+import { enqueueVehicleStatusScrape, fetchVehicleDataDetail } from '@/lib/epass';
 import { formatQty } from '@/lib/epass-aggregate';
 import { formatVehicleDataPreview, formatVehicleDataQty } from '@/lib/epass-vehicle-data-view';
 import { formatOperatorType } from '@/lib/operator';
@@ -51,6 +52,24 @@ export function VehicleDataDetailDialog({
   onClose,
   detailQueryParams,
 }: VehicleDataDetailDialogProps) {
+  const queryClient = useQueryClient();
+  const [queued, setQueued] = useState(false);
+
+  useEffect(() => {
+    if (open) setQueued(false);
+  }, [open, vehicleRegNo]);
+
+  const enqueueMutation = useMutation({
+    mutationFn: (vrn: string) => enqueueVehicleStatusScrape(vrn),
+    onSuccess: () => {
+      setQueued(true);
+      void queryClient.invalidateQueries({ queryKey: ['epass', 'vehicle-data'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['epass', 'vehicle-data-detail', vehicleRegNo],
+      });
+    },
+  });
+
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['epass', 'vehicle-data-detail', vehicleRegNo, detailQueryParams],
     queryFn: () => {
@@ -164,12 +183,27 @@ export function VehicleDataDetailDialog({
                 MCV scrape ran for this registration, but the Bihar portal returned no status data
                 (not on portal or empty response). Pass import data is still shown below.
               </Alert>
-            ) : (
+            ) : queued ? (
               <Alert type="info">
-                Portal status not checked yet for this VRN. Run MCV scrape from Khanan Config, use
-                Import option &quot;Queue MCV status scrape&quot;, or open Vehicle Status after
-                scrape.
+                Portal check queued for this VRN. Refresh this page in a minute to see updated
+                status, or open Vehicle Status.
               </Alert>
+            ) : (
+              <div className="space-y-3">
+                <Alert type="info">
+                  Portal status not checked yet for this VRN. Queue an MCV scrape to fetch GVW,
+                  unladen weight, and expiry dates from the Bihar portal.
+                </Alert>
+                <Button
+                  className="text-sm"
+                  disabled={enqueueMutation.isPending || !vehicleRegNo}
+                  onClick={() => {
+                    if (vehicleRegNo) enqueueMutation.mutate(vehicleRegNo);
+                  }}
+                >
+                  {enqueueMutation.isPending ? 'Queuing…' : 'Check portal status'}
+                </Button>
+              </div>
             )}
           </div>
 

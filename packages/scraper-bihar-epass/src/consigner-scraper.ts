@@ -11,6 +11,8 @@ export class BiharEpassConsignerScraper implements Scraper {
       const scraped = await scrapePaginatedGrid(
         url,
         (html, sourceUrl) => parseConsignerTable(html, sourceUrl).rows,
+        (row) =>
+          [row.consignerName.trim().toLowerCase(), row.leaseId ?? '', row.mineral ?? ''].join('|'),
         fetchOptionsFromMetadata(ctx.metadata),
       );
       const report = EpassConsignerReportSchema.parse({

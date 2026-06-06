@@ -57,16 +57,29 @@ function totalPages(paging: PortalPaging): number {
   return Math.ceil(paging.total / pageSize(paging));
 }
 
-export function mergeRowsBySlNo<T extends { slNo: number }>(pages: T[][]): T[] {
-  const bySl = new Map<number, T>();
+/**
+ * Portal grids restart Sl.No at 1 on each page — never dedupe paginated rows by slNo alone.
+ */
+export function mergePaginatedRows<T>(pages: T[][], rowKey: (row: T) => string): T[] {
+  const byKey = new Map<string, T>();
+  const order: string[] = [];
+
   for (const page of pages) {
     for (const row of page) {
-      if (!bySl.has(row.slNo)) {
-        bySl.set(row.slNo, row);
+      const key = rowKey(row);
+      if (!byKey.has(key)) {
+        byKey.set(key, row);
+        order.push(key);
       }
     }
   }
-  return [...bySl.values()].sort((a, b) => a.slNo - b.slNo);
+
+  return order.map((key) => byKey.get(key)!);
+}
+
+/** @deprecated Use mergePaginatedRows — slNo restarts per portal page. */
+export function mergeRowsBySlNo<T extends { slNo: number }>(pages: T[][]): T[] {
+  return mergePaginatedRows(pages, (row) => String(row.slNo));
 }
 
 export interface PaginatedGridMetadata {
@@ -125,9 +138,50 @@ async function fetchRemainingPages(
   };
 }
 
+async function tryViewAllFallback(
+  url: string,
+  firstHtml: string,
+  firstCookie: string,
+  portalTotal: number,
+  options: HttpClientOptions,
+): Promise<PaginatedGridFetchResult | null> {
+  if (!hasViewAllLink(firstHtml)) return null;
+
+  const viewAll = await aspnetPostBackFromHtml(url, firstHtml, VIEW_ALL_TARGET, '', {
+    ...options,
+    cookie: firstCookie,
+  });
+  const viewAllPaging = parsePortalPaging(viewAll.html);
+  const total = viewAllPaging?.total ?? portalTotal;
+
+  if (!viewAllPaging || isPagingComplete(viewAllPaging, viewAllPaging.end)) {
+    return {
+      pages: [viewAll.html],
+      portalTotal: total,
+      pagesFetched: 2,
+      complete: true,
+    };
+  }
+
+  const remaining = await fetchRemainingPages(
+    url,
+    viewAll.html,
+    viewAll.cookie,
+    viewAllPaging,
+    options,
+  );
+  const pages = [viewAll.html, ...remaining.pages];
+  return {
+    pages,
+    portalTotal: total,
+    pagesFetched: pages.length + 1,
+    complete: remaining.complete,
+  };
+}
+
 /**
  * Fetch all ASP.NET grid pages for consigner/challan/challan-pass reports.
- * Tries View All first, then Page$N fallback.
+ * Page$N chain first; View All only if pages are still incomplete.
  */
 export async function fetchAllGridPages(
   url: string,
@@ -146,44 +200,28 @@ export async function fetchAllGridPages(
   }
 
   let portalTotal = firstPaging.total;
-  let cookie = firstCookie;
-  let baseHtml = firstHtml;
   const pages: string[] = [firstHtml];
 
-  if (hasViewAllLink(firstHtml)) {
-    const viewAll = await aspnetPostBackFromHtml(url, firstHtml, VIEW_ALL_TARGET, '', {
-      ...options,
-      cookie: firstCookie,
-    });
-    cookie = viewAll.cookie;
-    baseHtml = viewAll.html;
-    pages.length = 0;
-    pages.push(baseHtml);
+  const remaining = await fetchRemainingPages(url, firstHtml, firstCookie, firstPaging, options);
+  pages.push(...remaining.pages);
 
-    const viewAllPaging = parsePortalPaging(baseHtml);
-    if (viewAllPaging) {
-      portalTotal = viewAllPaging.total;
-    }
-    if (!viewAllPaging || isPagingComplete(viewAllPaging, viewAllPaging.end)) {
-      return {
-        pages,
-        portalTotal,
-        pagesFetched: pages.length,
-        complete: true,
-      };
+  let complete = remaining.complete;
+
+  if (!complete) {
+    const fallback = await tryViewAllFallback(url, firstHtml, firstCookie, portalTotal, options);
+    if (fallback) {
+      return fallback;
     }
   }
 
-  const paging = parsePortalPaging(baseHtml) ?? firstPaging;
-  portalTotal = paging.total;
-
-  const remaining = await fetchRemainingPages(url, baseHtml, cookie, paging, options);
-  pages.push(...remaining.pages);
+  const lastPaging = parsePortalPaging(pages.at(-1) ?? firstHtml) ?? firstPaging;
+  portalTotal = lastPaging.total;
+  complete = complete || isPagingComplete(lastPaging, lastPaging.end);
 
   return {
     pages,
     portalTotal,
     pagesFetched: pages.length,
-    complete: remaining.complete,
+    complete,
   };
 }

@@ -11,6 +11,7 @@ export class BiharEpassChallanPassScraper implements Scraper {
       const scraped = await scrapePaginatedGrid(
         url,
         (html, sourceUrl) => parseChallanPassTable(html, sourceUrl).rows,
+        (row) => [row.challanNo.trim(), row.portalPassId ?? '', row.vehicleRegNo ?? ''].join('|'),
         fetchOptionsFromMetadata(ctx.metadata),
       );
       const report = EpassChallanPassReportSchema.parse({

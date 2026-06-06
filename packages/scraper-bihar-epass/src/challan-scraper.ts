@@ -11,6 +11,12 @@ export class BiharEpassChallanScraper implements Scraper {
       const scraped = await scrapePaginatedGrid(
         url,
         (html, sourceUrl) => parseChallanTable(html, sourceUrl).rows,
+        (row) =>
+          [
+            row.consigneeName.trim().toLowerCase(),
+            row.mineral ?? '',
+            row.mineralCategory ?? '',
+          ].join('|'),
         fetchOptionsFromMetadata(ctx.metadata),
       );
       const report = EpassChallanReportSchema.parse({

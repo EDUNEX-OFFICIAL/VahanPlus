@@ -7,7 +7,7 @@ import { parseConsignerTable } from '../src/consigner-parser.js';
 import {
   gridMetadataFromFetch,
   isPagingComplete,
-  mergeRowsBySlNo,
+  mergePaginatedRows,
   parsePortalPaging,
 } from '../src/grid-pagination.js';
 
@@ -39,24 +39,27 @@ const consignerFixture = readFileSync(
   assert.equal(isPagingComplete(paging, paging.end), true);
 }
 
-// mergeRowsBySlNo dedupes across synthetic pages
+// mergePaginatedRows keeps rows when portal restarts slNo on page 2
 {
-  const merged = mergeRowsBySlNo([
+  const merged = mergePaginatedRows(
     [
-      { slNo: 1, name: 'a' },
-      { slNo: 2, name: 'b' },
+      [
+        { slNo: 1, name: 'a' },
+        { slNo: 2, name: 'b' },
+      ],
+      [
+        { slNo: 1, name: 'u' },
+        { slNo: 2, name: 'v' },
+        { slNo: 3, name: 'w' },
+      ],
     ],
-    [
-      { slNo: 2, name: 'dup' },
-      { slNo: 3, name: 'c' },
-    ],
-  ]);
-  assert.equal(merged.length, 3);
-  assert.deepEqual(
-    merged.map((r) => r.slNo),
-    [1, 2, 3],
+    (row) => row.name,
   );
-  assert.equal(merged[1].name, 'b');
+  assert.equal(merged.length, 5);
+  assert.deepEqual(
+    merged.map((r) => r.name),
+    ['a', 'b', 'u', 'v', 'w'],
+  );
 }
 
 // challan parser row count on page-1 fixture

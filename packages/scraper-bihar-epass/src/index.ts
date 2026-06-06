@@ -19,6 +19,7 @@ export {
   fetchAllGridPages,
   gridMetadataFromFetch,
   isPagingComplete,
+  mergePaginatedRows,
   mergeRowsBySlNo,
   parsePortalPaging,
   type PaginatedGridFetchResult,

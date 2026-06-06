@@ -7,28 +7,22 @@ import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
-import { KhananConfigJobsTable } from '@/components/khanan/config/KhananConfigJobsTable';
 import { auditLiveScrapeDates } from '@/lib/live-scrape-date-audit';
 import {
   dedupeHistorySnapshotsByReportDate,
   HISTORY_FETCH_LIMIT,
   HISTORY_INITIAL_VISIBLE,
-  HISTORY_JOBS_FETCH_LIMIT,
   HISTORY_SCROLL_CLASS,
   HISTORY_SHOW_MORE_STEP,
   sliceForHistoryPreview,
 } from '@/lib/khanan-config-history-view';
 import { formatJobStatusLabel } from '@/lib/scraper-config-labels';
 import {
-  SCRAPER_JOBS_QUERY_KEY,
   SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY,
-  fetchScraperJobs,
   fetchScraperSnapshotHistory,
 } from '@/lib/scraper-config';
 import type { LiveSnapshotRow, ScraperConfigStatus } from '@/lib/scraper-config-types';
 import { cn } from '@/lib/utils';
-
-type HistoryTab = 'runs' | 'activity';
 
 interface Props {
   status: ScraperConfigStatus;
@@ -119,31 +113,6 @@ function HistorySkeleton() {
   );
 }
 
-function HistoryTabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-md px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors',
-        active
-          ? 'bg-surface-deep text-white'
-          : 'text-text-secondary hover:bg-surface-deep/60 hover:text-white',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
 function HistoryFooter({
   visibleCount,
   totalCount,
@@ -178,9 +147,7 @@ function HistoryFooter({
 }
 
 export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
-  const [historyTab, setHistoryTab] = useState<HistoryTab>('runs');
   const [runsVisible, setRunsVisible] = useState(HISTORY_INITIAL_VISIBLE);
-  const [jobsVisible, setJobsVisible] = useState(HISTORY_INITIAL_VISIBLE);
 
   const pollMs = scrapeActive ? 4_000 : 60_000;
 
@@ -194,27 +161,11 @@ export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
     refetchInterval: pollMs,
   });
 
-  const {
-    data: jobsData,
-    isLoading: jobsLoading,
-    isError: jobsError,
-  } = useQuery({
-    queryKey: [...SCRAPER_JOBS_QUERY_KEY, HISTORY_JOBS_FETCH_LIMIT, 'portal'],
-    queryFn: () => fetchScraperJobs(HISTORY_JOBS_FETCH_LIMIT, 'portal'),
-    refetchInterval: pollMs,
-  });
-
   const dedupedSnapshots = dedupeHistorySnapshotsByReportDate(snapshotData?.items ?? []);
   const visibleSnapshots = sliceForHistoryPreview(dedupedSnapshots, runsVisible);
-  const jobs = jobsData?.items ?? [];
-  const visibleJobs = sliceForHistoryPreview(jobs, jobsVisible);
 
   const showMoreRuns = () => {
     setRunsVisible((n) => Math.min(n + HISTORY_SHOW_MORE_STEP, dedupedSnapshots.length));
-  };
-
-  const showMoreJobs = () => {
-    setJobsVisible((n) => Math.min(n + HISTORY_SHOW_MORE_STEP, jobs.length));
   };
 
   return (
@@ -222,19 +173,10 @@ export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
       <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary">History</h3>
       <StatusChips status={status} />
 
-      <div className="mt-4 flex gap-1 border-b border-slate-700/50 pb-2">
-        <HistoryTabButton active={historyTab === 'runs'} onClick={() => setHistoryTab('runs')}>
+      <div className="mt-4">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary">
           Scrape runs
-        </HistoryTabButton>
-        <HistoryTabButton
-          active={historyTab === 'activity'}
-          onClick={() => setHistoryTab('activity')}
-        >
-          Activity
-        </HistoryTabButton>
-      </div>
-
-      {historyTab === 'runs' ? (
+        </h4>
         <div className="mt-3">
           {snapshotsLoading ? (
             <HistorySkeleton />
@@ -333,27 +275,7 @@ export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
             </>
           )}
         </div>
-      ) : (
-        <div className="mt-3">
-          {jobsError && !jobsLoading ? (
-            <p className="text-sm text-text-secondary">Unable to load activity</p>
-          ) : (
-            <>
-              <div className={cn(HISTORY_SCROLL_CLASS)}>
-                <KhananConfigJobsTable jobs={visibleJobs} loading={jobsLoading} hideTitle compact />
-              </div>
-              {!jobsLoading && jobs.length > 0 ? (
-                <HistoryFooter
-                  visibleCount={visibleJobs.length}
-                  totalCount={jobs.length}
-                  noun="jobs"
-                  onShowMore={showMoreJobs}
-                />
-              ) : null}
-            </>
-          )}
-        </div>
-      )}
+      </div>
     </Card>
   );
 }

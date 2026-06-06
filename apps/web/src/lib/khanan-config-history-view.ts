@@ -1,7 +1,6 @@
 import type { LiveSnapshotRow } from '@/lib/scraper-config-types';
 
 export const HISTORY_FETCH_LIMIT = 25;
-export const HISTORY_JOBS_FETCH_LIMIT = 20;
 export const HISTORY_INITIAL_VISIBLE = 8;
 export const HISTORY_SHOW_MORE_STEP = 8;
 export const HISTORY_SCROLL_CLASS =

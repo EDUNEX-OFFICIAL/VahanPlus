@@ -31,6 +31,7 @@ import {
   EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
   fetchConsignerChallans,
   fetchConsignerOptions,
+  fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
@@ -116,6 +117,28 @@ function ConsigneePageContent() {
     [snapshotsData?.items, dateFilterInput],
   );
 
+  const isRangeMode =
+    appliedFilters.dateMode === 'range' &&
+    Boolean(appliedFilters.dateFrom || appliedFilters.dateTo);
+
+  const hasInRangeSnapshots = useMemo(() => {
+    if (!isRangeMode || !snapshotsData?.items.length) return false;
+    return (
+      snapshotsForDateMode(
+        snapshotsData.items,
+        appliedFilters.dateMode,
+        appliedFilters.dateFrom,
+        appliedFilters.dateTo,
+      ).length > 0
+    );
+  }, [
+    isRangeMode,
+    snapshotsData?.items,
+    appliedFilters.dateMode,
+    appliedFilters.dateFrom,
+    appliedFilters.dateTo,
+  ]);
+
   useStaleEpassSnapshotParams(
     Boolean(snapshotsData) && !snapshotsLoading,
     snapshotsData?.items.length ?? 0,
@@ -129,21 +152,7 @@ function ConsigneePageContent() {
     if (resolvedSnapshotId) return;
     if (browseEmpty) return;
 
-    if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
-      const inRange = snapshotsForDateMode(
-        snapshotsData.items,
-        appliedFilters.dateMode,
-        appliedFilters.dateFrom,
-        appliedFilters.dateTo,
-      );
-      if (inRange.length > 0) {
-        const pick = [...inRange].sort(
-          (a, b) => new Date(b.scrapedAt).getTime() - new Date(a.scrapedAt).getTime(),
-        )[0];
-        updateParams({ snapshotId: pick.id, reportDate: pick.reportDate });
-      }
-      return;
-    }
+    if (isRangeMode) return;
 
     const bootstrap = async () => {
       try {
@@ -172,9 +181,11 @@ function ConsigneePageContent() {
     appliedFilters.dateMode,
     appliedFilters.dateFrom,
     appliedFilters.dateTo,
+    isRangeMode,
   ]);
 
   useEffect(() => {
+    if (isRangeMode) return;
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (!appliedFilters.snapshotId) return;
     if (resolvedSnapshotId === appliedFilters.snapshotId) return;
@@ -192,13 +203,35 @@ function ConsigneePageContent() {
     snapshotsData,
     updateParams,
     consignerRowId,
+    isRangeMode,
   ]);
+
+  const filterOptionsParams = useMemo(
+    () => ({
+      reportScope: 'all' as const,
+      dateMode: isRangeMode ? ('range' as const) : undefined,
+      dateFrom: appliedFilters.dateFrom || undefined,
+      dateTo: appliedFilters.dateTo || undefined,
+    }),
+    [isRangeMode, appliedFilters.dateFrom, appliedFilters.dateTo],
+  );
+
+  const { data: rangeFilterOptions } = useQuery({
+    queryKey: ['epass', 'filter-options', filterOptionsParams],
+    queryFn: () => fetchEpassFilterOptions(filterOptionsParams),
+    enabled: isRangeMode && Boolean(snapshotsData?.items.length),
+    staleTime: SNAPSHOTS_STALE_MS,
+  });
+
+  const optionsEnabled = isRangeMode
+    ? hasInRangeSnapshots && !browseEmpty
+    : Boolean(resolvedSnapshotId) && !browseEmpty;
 
   const optionsQuery = useQuery({
     queryKey: ['epass', 'consigner-options', resolvedSnapshotId, appliedFilters],
     queryFn: () =>
       fetchConsignerOptions(toConsignerOptionsQueryParams(appliedFilters, resolvedSnapshotId)),
-    enabled: Boolean(resolvedSnapshotId) && !browseEmpty,
+    enabled: optionsEnabled,
   });
 
   const { data: districtRowsData } = useQuery({
@@ -207,18 +240,18 @@ function ConsigneePageContent() {
       if (!resolvedSnapshotId) throw new Error('Snapshot required');
       return fetchSnapshotDistrictRows(resolvedSnapshotId);
     },
-    enabled: Boolean(resolvedSnapshotId),
+    enabled: Boolean(resolvedSnapshotId) && !isRangeMode,
   });
 
-  const minerals = useMemo(
-    () => (districtRowsData?.rows ? collectMinerals(districtRowsData.rows) : []),
-    [districtRowsData?.rows],
-  );
+  const minerals = useMemo(() => {
+    if (isRangeMode) return rangeFilterOptions?.minerals ?? [];
+    return districtRowsData?.rows ? collectMinerals(districtRowsData.rows) : [];
+  }, [isRangeMode, rangeFilterOptions?.minerals, districtRowsData?.rows]);
 
-  const districts = useMemo(
-    () => (districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : []),
-    [districtRowsData?.rows],
-  );
+  const districts = useMemo(() => {
+    if (isRangeMode) return rangeFilterOptions?.districts ?? [];
+    return districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : [];
+  }, [isRangeMode, rangeFilterOptions?.districts, districtRowsData?.rows]);
 
   const challansQuery = useQuery({
     queryKey: ['epass', 'challans', consignerRowId, appliedFilters],

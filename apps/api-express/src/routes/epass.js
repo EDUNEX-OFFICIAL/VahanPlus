@@ -12,7 +12,7 @@ import {
   normalizeConsigneeFilterQuery,
   normalizeConsignerFilterQuery,
 } from '../lib/epass-query-normalize.js';
-import { parseDateFlexible, parseReportDate } from '../utils/epassDates.js';
+import { canonicalTransportDate, parseDateFlexible, parseReportDate } from '../utils/epassDates.js';
 import {
   buildVehicleStatusOrderBy,
   buildVehicleStatusWhere,
@@ -209,6 +209,43 @@ function dedupeConsignerRecords(rows) {
   return [...byKey.values()];
 }
 
+function snapshotReportDateFromPassRow(row) {
+  return row.challanRow?.consignerRow?.districtRow?.snapshot?.reportDate ?? '';
+}
+
+function challanPassDedupeKey(row) {
+  return [
+    snapshotReportDateFromPassRow(row).toLowerCase(),
+    (row.challanNo ?? '').toLowerCase(),
+    (row.vehicleRegNo ?? '').toLowerCase(),
+    canonicalTransportDate(row.transportedDate),
+    (row.destination ?? '').toLowerCase(),
+    String(toNumber(row.quantity)),
+    (row.unit ?? '').toLowerCase(),
+    (normalizeMineralLabel(row.mineral) ?? '').toLowerCase(),
+    (row.checkStatus ?? '').toLowerCase(),
+    (row.consigneeName ?? '').toLowerCase(),
+  ].join('|');
+}
+
+const CHALAAN_PASS_RAW_CAP = 25000;
+
+function preferChallanPassRow(a, b) {
+  const aScraped = a.scrapedAt instanceof Date ? a.scrapedAt : new Date(a.scrapedAt);
+  const bScraped = b.scrapedAt instanceof Date ? b.scrapedAt : new Date(b.scrapedAt);
+  return bScraped > aScraped ? b : a;
+}
+
+function dedupeChallanPassRows(rows) {
+  const byKey = new Map();
+  for (const row of rows) {
+    const key = challanPassDedupeKey(row);
+    const prev = byKey.get(key);
+    byKey.set(key, prev ? preferChallanPassRow(prev, row) : row);
+  }
+  return [...byKey.values()];
+}
+
 async function resolveSnapshot(prisma, snapshotId) {
   if (snapshotId) {
     return prisma.epassSnapshot.findUnique({ where: { id: snapshotId } });
@@ -239,18 +276,22 @@ function isReportDateInRange(reportDate, fromIso, toIso) {
 }
 
 async function resolveSnapshotsForQuery(prisma, query) {
-  const all = await prisma.epassSnapshot.findMany({
-    orderBy: { scrapedAt: 'desc' },
-    take: 100,
-  });
   const dateMode = query.dateMode === 'range' ? 'range' : 'specific';
 
   if (dateMode === 'range') {
     const from = typeof query.dateFrom === 'string' ? query.dateFrom : '';
     const to = typeof query.dateTo === 'string' ? query.dateTo : query.dateFrom || '';
+    const all = await prisma.epassSnapshot.findMany({
+      orderBy: { scrapedAt: 'desc' },
+    });
     if (!from && !to) return all;
     return all.filter((s) => isReportDateInRange(s.reportDate, from || null, to || null));
   }
+
+  const all = await prisma.epassSnapshot.findMany({
+    orderBy: { scrapedAt: 'desc' },
+    take: 100,
+  });
 
   if (query.reportScope === 'all') {
     return all;
@@ -617,6 +658,55 @@ function buildChalaanPassOrderBy(query) {
   }
 }
 
+function compareChalaanPassRows(a, b, sort, dir) {
+  const mult = dir === 'desc' ? -1 : 1;
+  const slCmp = (a.slNo ?? 0) - (b.slNo ?? 0);
+
+  const strCmp = (x, y) =>
+    String(x ?? '').localeCompare(String(y ?? ''), undefined, { sensitivity: 'base' });
+  const numCmp = (x, y) => toNumber(x) - toNumber(y);
+
+  let cmp = 0;
+  switch (sort) {
+    case 'challanNo':
+      cmp = strCmp(a.challanNo, b.challanNo);
+      break;
+    case 'consignee':
+      cmp = strCmp(a.consigneeName, b.consigneeName);
+      break;
+    case 'mineral':
+      cmp = strCmp(a.mineral, b.mineral);
+      break;
+    case 'vehicle':
+      cmp = strCmp(a.vehicleRegNo, b.vehicleRegNo);
+      break;
+    case 'destination':
+      cmp = strCmp(a.destination, b.destination);
+      break;
+    case 'date':
+      cmp = strCmp(a.transportedDate, b.transportedDate);
+      break;
+    case 'qty':
+      cmp = numCmp(a.quantity, b.quantity);
+      break;
+    case 'status':
+      cmp = strCmp(a.checkStatus, b.checkStatus);
+      break;
+    case 'slNo':
+      return mult * slCmp;
+    default:
+      cmp = strCmp(a.consigneeName, b.consigneeName);
+  }
+  if (cmp !== 0) return mult * cmp;
+  return slCmp;
+}
+
+function sortChalaanPassRows(rows, query) {
+  const sort = typeof query.sort === 'string' ? query.sort : '';
+  const dir = query.dir === 'desc' ? 'desc' : 'asc';
+  rows.sort((a, b) => compareChalaanPassRows(a, b, sort, dir));
+}
+
 function normalizeVehicleRegNo(raw) {
   if (raw == null) return null;
   const normalized = String(raw).trim().replace(/\s+/g, '').toUpperCase();
@@ -696,7 +786,12 @@ const CHALAAN_PASS_LIST_INCLUDE = {
           id: true,
           operatorType: true,
           consignerName: true,
-          districtRow: { select: { dmoName: true } },
+          districtRow: {
+            select: {
+              dmoName: true,
+              snapshot: { select: { reportDate: true } },
+            },
+          },
         },
       },
     },
@@ -1143,38 +1238,95 @@ function mapChallanPass(row) {
 
 router.get('/chalaan-passes', async (req, res) => {
   const prisma = getPrisma();
-  const snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
-
-  if (!snapshot) {
-    return res.json({ snapshot: null, total: 0, limit: 50, offset: 0, items: [] });
-  }
-
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
-  const where = buildChalaanPassWhere(snapshot.id, req.query);
-  const orderBy = buildChalaanPassOrderBy(req.query);
 
-  const [total, rows] = await Promise.all([
-    prisma.epassChallanPassRow.count({ where }),
-    prisma.epassChallanPassRow.findMany({
-      where,
-      orderBy,
-      take: limit,
-      skip: offset,
-      include: CHALAAN_PASS_LIST_INCLUDE,
-    }),
-  ]);
+  const dateMode = req.query.dateMode === 'range' ? 'range' : 'specific';
+  const useRange =
+    dateMode === 'range' &&
+    (typeof req.query.dateFrom === 'string' || typeof req.query.dateTo === 'string');
+
+  let snapshot = null;
+  let rangeSnapshots = [];
+  let where;
+
+  if (useRange) {
+    rangeSnapshots = await resolveSnapshotsForQuery(prisma, req.query);
+    const snapshotIds = rangeSnapshots.map((s) => s.id);
+    if (snapshotIds.length === 0) {
+      return res.json({
+        snapshot: null,
+        reportScope: 'range',
+        snapshotCount: 0,
+        latestScrapedAt: null,
+        total: 0,
+        totalQuantity: 0,
+        truncated: false,
+        limit,
+        offset,
+        items: [],
+      });
+    }
+    where = buildChalaanPassWhere(snapshotIds, req.query);
+  } else {
+    snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
+    if (!snapshot) {
+      return res.json({
+        snapshot: null,
+        total: 0,
+        totalQuantity: 0,
+        truncated: false,
+        limit,
+        offset,
+        items: [],
+      });
+    }
+    where = buildChalaanPassWhere(snapshot.id, req.query);
+  }
+
+  const rows = await prisma.epassChallanPassRow.findMany({
+    where,
+    include: CHALAAN_PASS_LIST_INCLUDE,
+    take: CHALAAN_PASS_RAW_CAP,
+    orderBy: [{ scrapedAt: 'desc' }, { slNo: 'asc' }],
+  });
+
+  const truncated = rows.length >= CHALAAN_PASS_RAW_CAP;
+  const deduped = dedupeChallanPassRows(rows);
+  sortChalaanPassRows(deduped, req.query);
+  const total = deduped.length;
+  const totalQuantity = deduped.reduce((sum, row) => sum + toNumber(row.quantity), 0);
+  const page = deduped.slice(offset, offset + limit);
+
+  const latestScrapedAt =
+    useRange && rangeSnapshots.length > 0
+      ? rangeSnapshots.reduce(
+          (latest, s) => (s.scrapedAt > latest ? s.scrapedAt : latest),
+          rangeSnapshots[0].scrapedAt,
+        )
+      : null;
 
   res.json({
-    snapshot: {
-      id: snapshot.id,
-      reportDate: snapshot.reportDate,
-      scrapedAt: snapshot.scrapedAt.toISOString(),
-    },
+    snapshot: useRange
+      ? null
+      : {
+          id: snapshot.id,
+          reportDate: snapshot.reportDate,
+          scrapedAt: snapshot.scrapedAt.toISOString(),
+        },
+    ...(useRange
+      ? {
+          reportScope: 'range',
+          snapshotCount: rangeSnapshots.length,
+          latestScrapedAt: latestScrapedAt?.toISOString() ?? null,
+        }
+      : {}),
     total,
+    totalQuantity,
+    truncated,
     limit,
     offset,
-    items: rows.map(mapChalaanPassListItem),
+    items: page.map(mapChalaanPassListItem),
   });
 });
 

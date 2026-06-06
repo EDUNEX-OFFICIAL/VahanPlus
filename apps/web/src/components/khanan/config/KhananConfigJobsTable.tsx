@@ -1,4 +1,3 @@
-import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatJobStatusLabel, formatJobTypeLabel } from '@/lib/scraper-config-labels';
@@ -7,12 +6,13 @@ import type { ScraperJobListItem } from '@/lib/scraper-config-types';
 interface Props {
   jobs: ScraperJobListItem[];
   loading?: boolean;
+  title?: string;
 }
 
-export function KhananConfigJobsTable({ jobs, loading }: Props) {
+export function KhananConfigJobsTable({ jobs, loading, title = 'Activity' }: Props) {
   return (
-    <Card>
-      <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary">Activity</h3>
+    <div>
+      <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary">{title}</h4>
       {loading ? (
         <p className="mt-4 text-sm text-text-secondary">Loading…</p>
       ) : jobs.length === 0 ? (
@@ -23,7 +23,7 @@ export function KhananConfigJobsTable({ jobs, loading }: Props) {
             {jobs.map((job) => (
               <MobileDataCard
                 key={job.id}
-                eyebrow="Activity"
+                eyebrow={title}
                 title={formatJobTypeLabel(job.type)}
                 meta={
                   <Chip
@@ -83,6 +83,6 @@ export function KhananConfigJobsTable({ jobs, loading }: Props) {
           </div>
         </>
       )}
-    </Card>
+    </div>
   );
 }

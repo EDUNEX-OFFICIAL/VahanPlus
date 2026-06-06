@@ -3,6 +3,7 @@ import type {
   ActionResult,
   ClearDataResult,
   KhananScraperConfigPatch,
+  LiveSnapshotRow,
   ScraperConfigResponse,
   ScraperJobListItem,
   ScraperLiveResponse,
@@ -22,6 +23,11 @@ export class ScraperConfigActionError extends Error {
 
 export const SCRAPER_CONFIG_QUERY_KEY = ['epass', 'scraper-config'] as const;
 export const SCRAPER_JOBS_QUERY_KEY = ['epass', 'scraper-config', 'jobs'] as const;
+export const SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY = [
+  'epass',
+  'scraper-config',
+  'snapshot-history',
+] as const;
 export const SCRAPER_LIVE_QUERY_KEY = ['epass', 'scraper-config', 'live'] as const;
 
 export function fetchScraperConfig() {
@@ -35,8 +41,16 @@ export function patchScraperConfig(body: KhananScraperConfigPatch) {
   });
 }
 
-export function fetchScraperJobs(limit = 25) {
-  return apiFetch<{ items: ScraperJobListItem[] }>(`/epass/scraper-config/jobs?limit=${limit}`);
+export function fetchScraperJobs(limit = 25, scope: 'portal' | 'all' = 'portal') {
+  const q = new URLSearchParams({ limit: String(limit) });
+  if (scope !== 'portal') q.set('scope', scope);
+  return apiFetch<{ items: ScraperJobListItem[] }>(`/epass/scraper-config/jobs?${q.toString()}`);
+}
+
+export function fetchScraperSnapshotHistory(limit = 50) {
+  return apiFetch<{ items: LiveSnapshotRow[] }>(
+    `/epass/scraper-config/snapshot-history?limit=${limit}`,
+  );
 }
 
 export function runDistrictScrape(date?: string) {

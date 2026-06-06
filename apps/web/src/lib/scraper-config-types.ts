@@ -104,6 +104,7 @@ export interface LiveSnapshotRow {
   id: string;
   reportDate: string;
   scrapedAt: string;
+  sourceUrl?: string | null;
   districtRows: number;
   consignerRows: number;
   challanRows: number;

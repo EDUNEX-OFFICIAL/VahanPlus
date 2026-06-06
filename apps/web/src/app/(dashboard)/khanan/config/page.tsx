@@ -9,6 +9,7 @@ import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { KhananConfigActions } from '@/components/khanan/config/KhananConfigActions';
 import { KhananConfigAdvanced } from '@/components/khanan/config/KhananConfigAdvanced';
 import { KhananConfigDangerZone } from '@/components/khanan/config/KhananConfigDangerZone';
+import { KhananConfigHistory } from '@/components/khanan/config/KhananConfigHistory';
 import { KhananConfigLiveScrape } from '@/components/khanan/config/KhananConfigLiveScrape';
 import { KhananConfigPipeline } from '@/components/khanan/config/KhananConfigPipeline';
 import { KhananConfigSpeed } from '@/components/khanan/config/KhananConfigSpeed';
@@ -19,7 +20,9 @@ import { formatClearDataSummary } from '@/lib/format-clear-data-summary';
 import { SCRAPER_SPEED_PRESETS } from '@/lib/scraper-speed-presets';
 import {
   SCRAPER_CONFIG_QUERY_KEY,
+  SCRAPER_JOBS_QUERY_KEY,
   SCRAPER_LIVE_QUERY_KEY,
+  SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY,
   clearAllData,
   fetchScraperConfig,
   fetchScraperLive,
@@ -225,6 +228,8 @@ export default function KhananConfigPage() {
       const res = await fn();
       await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
       await queryClient.invalidateQueries({ queryKey: SCRAPER_LIVE_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: SCRAPER_JOBS_QUERY_KEY });
       if (res.enqueued != null) {
         return res.enqueued === 0 ? 'Nothing to start' : 'Started';
       }
@@ -358,12 +363,16 @@ export default function KhananConfigPage() {
         </Card>
       ) : null}
 
-      <KhananConfigLiveScrape
-        status={data.status}
-        scrapeActive={scrapeActive}
-        live={liveData}
-        loading={liveLoading}
-      />
+      {scrapeActive ? (
+        <KhananConfigLiveScrape
+          status={data.status}
+          scrapeActive={scrapeActive}
+          live={liveData}
+          loading={liveLoading}
+        />
+      ) : null}
+
+      <KhananConfigHistory status={data.status} scrapeActive={scrapeActive} />
 
       <KhananConfigDangerZone
         allowDataWipe={draft.allowDataWipe}
@@ -385,6 +394,8 @@ export default function KhananConfigPage() {
             await queryClient.invalidateQueries({ queryKey: ['epass'] });
             await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
             await queryClient.invalidateQueries({ queryKey: SCRAPER_LIVE_QUERY_KEY });
+            await queryClient.invalidateQueries({ queryKey: SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY });
+            await queryClient.invalidateQueries({ queryKey: SCRAPER_JOBS_QUERY_KEY });
             const d = result.deleted;
             return `Removed ${formatClearDataSummary(d)}.`;
           } finally {

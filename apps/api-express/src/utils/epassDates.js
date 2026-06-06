@@ -55,6 +55,16 @@ export function parseDateFlexible(value) {
   return null;
 }
 
+/** Canonical YYYY-MM-DD for dedup keys (empty string when unparseable). */
+export function canonicalTransportDate(value) {
+  const parsed = parseDateFlexible(value);
+  if (!parsed) return '';
+  const y = parsed.getFullYear();
+  const m = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function daysLeftFromDate(value) {
   const parsed = parseDateFlexible(value);
   if (!parsed) return null;

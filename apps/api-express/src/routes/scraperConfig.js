@@ -151,6 +151,7 @@ async function buildSnapshotLiveRows(prisma, snapshots) {
     id: s.id,
     reportDate: s.reportDate,
     scrapedAt: s.scrapedAt.toISOString(),
+    sourceUrl: s.sourceUrl ?? null,
     districtRows: s._count.rows,
     consignerRows: consignerBySnapshot[s.id] ?? 0,
     challanRows: challanBySnapshot[s.id] ?? 0,
@@ -158,6 +159,14 @@ async function buildSnapshotLiveRows(prisma, snapshots) {
     snapshotCountForDate: reportDateGroups.get(s.reportDate)?.length ?? 1,
   }));
 }
+
+const PORTAL_SCRAPE_JOB_TYPES = [
+  'bihar_epass',
+  'bihar_epass_consigner',
+  'bihar_epass_challan',
+  'bihar_epass_challan_pass',
+  'bihar_mcv_vehicle_status',
+];
 
 /**
  * @param {import('@vahanplus/db').PrismaClient} prisma
@@ -276,11 +285,34 @@ router.patch('/', async (req, res) => {
   });
 });
 
+router.get('/snapshot-history', async (req, res) => {
+  const prisma = getPrisma();
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+
+  const snapshots = await prisma.epassSnapshot.findMany({
+    orderBy: { scrapedAt: 'desc' },
+    take: limit,
+    select: {
+      id: true,
+      reportDate: true,
+      scrapedAt: true,
+      sourceUrl: true,
+      _count: { select: { rows: true } },
+    },
+  });
+
+  const items = await buildSnapshotLiveRows(prisma, snapshots);
+  res.json({ items });
+});
+
 router.get('/jobs', async (req, res) => {
   const prisma = getPrisma();
   const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
+  const scope = typeof req.query.scope === 'string' ? req.query.scope.trim() : 'portal';
+  const typeFilter = scope === 'all' ? undefined : { type: { in: PORTAL_SCRAPE_JOB_TYPES } };
 
   const jobs = await prisma.scrapeJob.findMany({
+    where: typeFilter,
     orderBy: { createdAt: 'desc' },
     take: limit,
     select: {

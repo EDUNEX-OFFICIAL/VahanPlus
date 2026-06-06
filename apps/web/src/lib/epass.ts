@@ -128,20 +128,9 @@ export function fetchChalaanList(params: ChalaanListParams = {}) {
 
 export function fetchChalaanPassList(params: ChalaanListParams = {}) {
   const q = new URLSearchParams();
-  if (params.snapshotId) q.set('snapshotId', params.snapshotId);
-  if (params.operator) q.set('operator', params.operator);
-  const district = params.district ?? params.dmo;
-  if (district) q.set('district', district);
-  if (params.mineral) q.set('mineral', params.mineral);
-  if (params.consigner) q.set('consigner', params.consigner);
-  if (params.consignee) q.set('consignee', params.consignee);
+  appendChalaanBrowseQuery(q, params);
   if (params.destination) q.set('destination', params.destination);
   if (params.challan) q.set('challan', params.challan);
-  if (params.hideZeroPasses) q.set('hideZeroPasses', '1');
-  if (params.sort) q.set('sort', params.sort);
-  if (params.dir) q.set('dir', params.dir);
-  if (params.limit != null) q.set('limit', String(params.limit));
-  if (params.offset != null) q.set('offset', String(params.offset));
   const qs = q.toString();
   return apiFetch<ChalaanPassListResponse>(`/epass/chalaan-passes${qs ? `?${qs}` : ''}`);
 }

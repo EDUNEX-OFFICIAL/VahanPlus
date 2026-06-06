@@ -18,6 +18,46 @@ function parseQty(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function canonicalTransportDate(value) {
+  const source = String(value ?? '').trim();
+  if (!source) return '';
+  const iso = parsePortalReportDate(source);
+  if (iso) return iso;
+  const dmyDash = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(source);
+  if (dmyDash) {
+    const day = Number(dmyDash[1]);
+    const month = Number(dmyDash[2]);
+    const year = Number(dmyDash[3]);
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+  }
+  const parsed = Date.parse(source);
+  if (!Number.isNaN(parsed)) {
+    const d = new Date(parsed);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  return source.toLowerCase();
+}
+
+function normalizeConsigneeName(name) {
+  return (name ?? '—').trim().toLowerCase();
+}
+
+function passImportDedupeKey(m, vehicleRegNo, qty) {
+  return [
+    (m.challanNo ?? '').toLowerCase(),
+    (vehicleRegNo ?? '').toLowerCase(),
+    canonicalTransportDate(m.transportedDate),
+    (m.destination ?? '').toLowerCase(),
+    String(qty),
+    (m.unit ?? '').toLowerCase(),
+    (m.mineralName ?? '').toLowerCase(),
+    (m.checkStatus ?? '').toLowerCase(),
+    (m.consigneeName ?? '—').toLowerCase(),
+  ].join('|');
+}
+
 /**
  * Streaming-friendly Khanan pass ETL (one record at a time).
  */
@@ -37,6 +77,7 @@ export class KhananPassImportSession {
     this.vrns = new Set();
     this.passesImported = 0;
     this.rowsSkipped = 0;
+    this.duplicatePassesSkipped = 0;
     this.snapshotsCreated = 0;
     this.warnings = [];
     this.now = new Date();
@@ -86,6 +127,7 @@ export class KhananPassImportSession {
           consigner: new Map(),
           challan: new Map(),
           passSlNo: new Map(),
+          duplicatePass: new Map(),
           districtSlNo: 0,
           consignerSlNo: new Map(),
           challanSlNo: new Map(),
@@ -156,10 +198,45 @@ export class KhananPassImportSession {
       });
     }
 
+    const vehicleRegNo = normalizeVehicleRegNo(m.vehicleRegNo);
+    const dedupeKey = passImportDedupeKey(m, vehicleRegNo, qty);
+    let seen = caches.duplicatePass.get(challanRow.id);
+    if (!seen) {
+      seen = new Set();
+      caches.duplicatePass.set(challanRow.id, seen);
+    }
+    if (seen.has(dedupeKey)) {
+      this.rowsSkipped += 1;
+      this.duplicatePassesSkipped += 1;
+      return;
+    }
+
+    const existingPass = await this.prisma.epassChallanPassRow.findFirst({
+      where: {
+        challanRowId: challanRow.id,
+        challanNo: m.challanNo,
+        consigneeName: m.consigneeName || '—',
+        vehicleRegNo: vehicleRegNo ?? null,
+        destination: m.destination || null,
+        transportedDate: m.transportedDate || null,
+        quantity: qty,
+        unit: m.unit || null,
+        mineral: m.mineralName || null,
+        checkStatus: m.checkStatus || null,
+      },
+      select: { id: true },
+    });
+    if (existingPass) {
+      seen.add(dedupeKey);
+      this.rowsSkipped += 1;
+      this.duplicatePassesSkipped += 1;
+      return;
+    }
+    seen.add(dedupeKey);
+
     const passSlNo = (caches.passSlNo.get(challanRow.id) ?? 0) + 1;
     caches.passSlNo.set(challanRow.id, passSlNo);
 
-    const vehicleRegNo = normalizeVehicleRegNo(m.vehicleRegNo);
     if (vehicleRegNo) this.vrns.add(vehicleRegNo);
 
     await this.prisma.epassChallanPassRow.create({
@@ -205,7 +282,12 @@ export class KhananPassImportSession {
       vrnsQueued: fanout.enqueued ?? 0,
       vrnsSkippedExisting: fanout.skippedExisting ?? 0,
       fanoutSkipped: fanout.skipped ?? false,
-      warnings: this.warnings,
+      warnings: [
+        ...this.warnings,
+        ...(this.duplicatePassesSkipped > 0
+          ? [`${this.duplicatePassesSkipped} duplicate pass row(s) skipped`]
+          : []),
+      ],
     };
   }
 }
@@ -275,7 +357,7 @@ async function getOrCreateChallan(
   unit,
   caches,
 ) {
-  const key = `${consignerRow.id}|${consigneeName}|${challanNo}`;
+  const key = `${consignerRow.id}|${normalizeConsigneeName(consigneeName)}|${challanNo}`;
   if (caches.challan.has(key)) {
     return { challanRow: caches.challan.get(key), isNew: false };
   }

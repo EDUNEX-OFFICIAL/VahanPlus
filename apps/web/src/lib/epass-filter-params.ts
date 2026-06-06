@@ -4,7 +4,7 @@ import {
 } from '@/lib/epass-consigner-view';
 import { parseDistrictsParam, serializeDistricts } from '@/lib/epass-district-view';
 import type { ChalaanListParams, EpassBrowseFilterValues } from '@/lib/epass-types';
-import type { EpassDateMode } from '@/lib/epass-report-date';
+import { normalizeDateRange, type EpassDateMode } from '@/lib/epass-report-date';
 import { parseOperatorParam } from '@/lib/operator';
 
 export type { EpassBrowseFilterValues, EpassDateMode };
@@ -53,12 +53,18 @@ export function serializeEpassFilterParams(
   filters: EpassBrowseFilterValues,
   extra?: Record<string, string | null>,
 ): Record<string, string | null> {
+  const isRange = filters.dateMode === 'range';
+  const normalized = isRange
+    ? normalizeDateRange(filters.dateFrom, filters.dateTo)
+    : { dateFrom: filters.dateFrom, dateTo: filters.dateTo };
+  const rangeActive = isRange && (normalized.dateFrom || normalized.dateTo);
+
   return {
-    snapshotId: filters.snapshotId || null,
-    reportDate: filters.reportDate || null,
+    snapshotId: rangeActive ? null : filters.snapshotId || null,
+    reportDate: rangeActive ? null : filters.reportDate || null,
     dateMode: filters.dateMode === 'specific' ? null : filters.dateMode,
-    dateFrom: filters.dateFrom || null,
-    dateTo: filters.dateTo || null,
+    dateFrom: normalized.dateFrom || null,
+    dateTo: normalized.dateTo || null,
     operator: filters.operator === 'all' ? null : filters.operator,
     role: null,
     mineral: serializeConsignerMinerals(filters.minerals) ?? null,
@@ -169,8 +175,16 @@ export function toChalaanListQueryParams(
   offset: number,
   limit: number,
 ): ChalaanListParams {
+  const normalized =
+    filters.dateMode === 'range'
+      ? normalizeDateRange(filters.dateFrom, filters.dateTo)
+      : { dateFrom: filters.dateFrom, dateTo: filters.dateTo };
+  const isRange = filters.dateMode === 'range' && (normalized.dateFrom || normalized.dateTo);
   return {
-    snapshotId: resolvedSnapshotId ?? undefined,
+    snapshotId: isRange ? undefined : (resolvedSnapshotId ?? undefined),
+    dateMode: isRange ? 'range' : undefined,
+    dateFrom: isRange ? normalized.dateFrom || undefined : undefined,
+    dateTo: isRange ? normalized.dateTo || normalized.dateFrom || undefined : undefined,
     operator: filters.operator === 'all' ? undefined : filters.operator,
     district: serializeDistricts(filters.districts) ?? undefined,
     mineral: serializeConsignerMinerals(filters.minerals),

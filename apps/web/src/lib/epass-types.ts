@@ -338,7 +338,12 @@ export interface ChalaanListResponse {
 
 export interface ChalaanPassListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
+  reportScope?: 'range';
+  snapshotCount?: number;
+  latestScrapedAt?: string | null;
   total: number;
+  totalQuantity?: number;
+  truncated?: boolean;
   limit: number;
   offset: number;
   items: EpassChalaanPassListItemDto[];
@@ -359,6 +364,9 @@ export type ChalaanSortDir = 'asc' | 'desc';
 
 export interface ChalaanListParams {
   snapshotId?: string;
+  dateMode?: 'specific' | 'range';
+  dateFrom?: string;
+  dateTo?: string;
   operator?: OperatorType;
   district?: string;
   dmo?: string;

@@ -168,6 +168,29 @@ export function parseIsoDateInput(value: string): Date | null {
   return d;
 }
 
+export function normalizeDateRange(from: string, to: string): { dateFrom: string; dateTo: string } {
+  const dateFrom = from.trim();
+  const dateTo = (to || from).trim();
+  if (!dateFrom || !dateTo) {
+    return { dateFrom, dateTo };
+  }
+  const fromDate = parseIsoDateInput(dateFrom);
+  const toDate = parseIsoDateInput(dateTo);
+  if (fromDate && toDate && fromDate > toDate) {
+    return { dateFrom: dateTo, dateTo: dateFrom };
+  }
+  return { dateFrom, dateTo };
+}
+
+export function isValidRangeSelection(
+  dateMode: EpassDateMode,
+  dateFrom: string,
+  dateTo: string,
+): boolean {
+  if (dateMode !== 'range') return true;
+  return Boolean(dateFrom.trim() || dateTo.trim());
+}
+
 export function isReportDateInRange(
   reportDate: string,
   fromIso: string | null,

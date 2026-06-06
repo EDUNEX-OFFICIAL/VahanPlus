@@ -20,6 +20,7 @@ import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import {
   EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
   fetchChalaanPassList,
+  fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
   fetchLatestEpass,
   fetchSnapshotDistrictRows,
@@ -147,6 +148,28 @@ function ChalaanPageContent() {
     [snapshotsData?.items, dateFilterInput],
   );
 
+  const isRangeMode =
+    appliedFilters.dateMode === 'range' &&
+    Boolean(appliedFilters.dateFrom || appliedFilters.dateTo);
+
+  const hasInRangeSnapshots = useMemo(() => {
+    if (!isRangeMode || !snapshotsData?.items.length) return false;
+    return (
+      snapshotsForDateMode(
+        snapshotsData.items,
+        appliedFilters.dateMode,
+        appliedFilters.dateFrom,
+        appliedFilters.dateTo,
+      ).length > 0
+    );
+  }, [
+    isRangeMode,
+    snapshotsData?.items,
+    appliedFilters.dateMode,
+    appliedFilters.dateFrom,
+    appliedFilters.dateTo,
+  ]);
+
   useStaleEpassSnapshotParams(
     Boolean(snapshotsData) && !snapshotsLoading,
     snapshotsData?.items.length ?? 0,
@@ -160,21 +183,7 @@ function ChalaanPageContent() {
     if (snapshotId) return;
     if (browseEmpty) return;
 
-    if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
-      const inRange = snapshotsForDateMode(
-        snapshotsData.items,
-        appliedFilters.dateMode,
-        appliedFilters.dateFrom,
-        appliedFilters.dateTo,
-      );
-      if (inRange.length > 0) {
-        const pick = [...inRange].sort(
-          (a, b) => new Date(b.scrapedAt).getTime() - new Date(a.scrapedAt).getTime(),
-        )[0];
-        updateParams({ snapshotId: pick.id, reportDate: pick.reportDate });
-      }
-      return;
-    }
+    if (isRangeMode) return;
 
     const bootstrap = async () => {
       try {
@@ -203,9 +212,11 @@ function ChalaanPageContent() {
     appliedFilters.dateMode,
     appliedFilters.dateFrom,
     appliedFilters.dateTo,
+    isRangeMode,
   ]);
 
   useEffect(() => {
+    if (isRangeMode) return;
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (!appliedFilters.snapshotId) return;
     if (snapshotId === appliedFilters.snapshotId) return;
@@ -215,7 +226,31 @@ function ChalaanPageContent() {
         ? (snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null)
         : null,
     });
-  }, [snapshotId, appliedFilters.snapshotId, snapshotsLoading, snapshotsData, updateParams]);
+  }, [
+    isRangeMode,
+    snapshotId,
+    appliedFilters.snapshotId,
+    snapshotsLoading,
+    snapshotsData,
+    updateParams,
+  ]);
+
+  const filterOptionsParams = useMemo(
+    () => ({
+      reportScope: 'all' as const,
+      dateMode: isRangeMode ? ('range' as const) : undefined,
+      dateFrom: appliedFilters.dateFrom || undefined,
+      dateTo: appliedFilters.dateTo || undefined,
+    }),
+    [isRangeMode, appliedFilters.dateFrom, appliedFilters.dateTo],
+  );
+
+  const { data: rangeFilterOptions } = useQuery({
+    queryKey: ['epass', 'filter-options', filterOptionsParams],
+    queryFn: () => fetchEpassFilterOptions(filterOptionsParams),
+    enabled: isRangeMode && Boolean(snapshotsData?.items.length),
+    staleTime: SNAPSHOTS_STALE_MS,
+  });
 
   const { data: districtRowsData } = useQuery({
     queryKey: ['epass', 'snapshot-rows', snapshotId, 'chalaan-filters'],
@@ -223,45 +258,42 @@ function ChalaanPageContent() {
       if (!snapshotId) throw new Error('Snapshot required');
       return fetchSnapshotDistrictRows(snapshotId);
     },
-    enabled: Boolean(snapshotId),
+    enabled: Boolean(snapshotId) && !isRangeMode,
   });
 
-  const minerals = useMemo(
-    () => (districtRowsData?.rows ? collectMinerals(districtRowsData.rows) : []),
-    [districtRowsData?.rows],
-  );
+  const minerals = useMemo(() => {
+    if (isRangeMode) return rangeFilterOptions?.minerals ?? [];
+    return districtRowsData?.rows ? collectMinerals(districtRowsData.rows) : [];
+  }, [isRangeMode, rangeFilterOptions?.minerals, districtRowsData?.rows]);
 
-  const districts = useMemo(
-    () => (districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : []),
-    [districtRowsData?.rows],
-  );
+  const districts = useMemo(() => {
+    if (isRangeMode) return rangeFilterOptions?.districts ?? [];
+    return districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : [];
+  }, [isRangeMode, rangeFilterOptions?.districts, districtRowsData?.rows]);
 
   const listParams = useMemo(
     () => toChalaanListQueryParams(appliedFilters, snapshotId, sortKey, sortDir, offset, pageSize),
     [appliedFilters, snapshotId, sortKey, sortDir, offset, pageSize],
   );
 
+  const listEnabled = isRangeMode ? hasInRangeSnapshots : Boolean(snapshotId) && !browseEmpty;
+
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['epass', 'chalaan-pass-list', listParams],
     queryFn: () => {
       return fetchChalaanPassList(listParams);
     },
-    enabled: Boolean(snapshotId) && !browseEmpty,
+    enabled: listEnabled,
   });
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);
   const total = data?.total ?? 0;
-  const pageTotals = useMemo(() => {
-    const rows = data?.items ?? [];
-    return {
-      quantity: rows.reduce((sum, row) => sum + row.quantity, 0),
-      chalaan: rows.length,
-    };
-  }, [data?.items]);
+  const totalQuantity = data?.totalQuantity ?? 0;
 
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
-  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, browseEmpty);
-  const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && isLoading);
+  const snapshotResolving =
+    !isRangeMode && isSnapshotResolving(snapshotsLoaded, snapshotId, browseEmpty);
+  const pageLoading = snapshotsLoading || snapshotResolving || (listEnabled && isLoading);
 
   const handleClearFilters = useCallback(() => {
     updateParams({
@@ -307,7 +339,16 @@ function ChalaanPageContent() {
 
   return (
     <PageStack>
-      <EpassReportMetaBar snapshot={snapshot} />
+      {isRangeMode && data?.reportScope === 'range' ? (
+        <EpassReportMetaBar
+          snapshot={null}
+          reportScope="all"
+          snapshotCount={data.snapshotCount}
+          latestScrapedAt={data.latestScrapedAt}
+        />
+      ) : (
+        <EpassReportMetaBar snapshot={snapshot} />
+      )}
 
       <ChalaanEpassFilters
         snapshots={snapshotsData?.items ?? []}
@@ -329,13 +370,15 @@ function ChalaanPageContent() {
             <Card>
               <div className="flex flex-wrap gap-6 text-sm">
                 <p className="tabular-nums text-text-secondary">
-                  Total Chalaan:{' '}
-                  <span className="font-semibold text-white">{pageTotals.chalaan}</span>
+                  Total Chalaan: <span className="font-semibold text-white">{total}</span>
                 </p>
                 <p className="tabular-nums text-text-secondary">
                   Total Quantity:{' '}
-                  <span className="font-semibold text-white">{pageTotals.quantity.toFixed(2)}</span>
+                  <span className="font-semibold text-white">{totalQuantity.toFixed(2)}</span>
                 </p>
+                {data.truncated ? (
+                  <p className="text-xs text-text-secondary">Capped at 25000 rows</p>
+                ) : null}
               </div>
             </Card>
           ) : null}

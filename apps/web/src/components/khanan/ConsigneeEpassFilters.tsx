@@ -13,6 +13,8 @@ import type { EpassBrowseFilterValues } from '@/lib/epass-filter-params';
 import { ReportDateYearSelect } from '@/components/khanan/ReportDateYearSelect';
 import {
   formatReportDateNumeric,
+  isValidRangeSelection,
+  normalizeDateRange,
   reportDateOptions,
   snapshotsForDateMode,
 } from '@/lib/epass-report-date';
@@ -75,7 +77,7 @@ export function buildConsigneeFilterChips(
   }
   if (extras?.reportScope === 'all') {
     chips.push('All reports');
-  } else if (values.reportDate) {
+  } else if (values.reportDate && values.dateMode !== 'range') {
     chips.push(formatReportDateNumeric(values.reportDate));
   }
   if (values.districts.length > 0) {
@@ -169,7 +171,12 @@ export function ConsigneeEpassFilters({
     setDraft((d) => ({ ...d, ...partial }));
   }
 
+  const rangeDatesValid = isValidRangeSelection(draft.dateMode, draft.dateFrom, draft.dateTo);
+
   function handleApply() {
+    if (!rangeDatesValid) return;
+
+    const normalizedDates = normalizeDateRange(draft.dateFrom, draft.dateTo);
     let snapshotId = '';
     let reportDate = '';
     let nextReportScope = draft.reportScope;
@@ -177,6 +184,10 @@ export function ConsigneeEpassFilters({
     if (draft.reportScope === 'all') {
       snapshotId = '';
       reportDate = '';
+    } else if (draft.dateMode === 'range') {
+      snapshotId = '';
+      reportDate = '';
+      nextReportScope = 'specific';
     } else if (dateOptions.length > 0) {
       const match =
         dateOptions.find((o) => o.snapshotId === draft.snapshotId) ??
@@ -188,7 +199,13 @@ export function ConsigneeEpassFilters({
     }
 
     onApply(
-      { ...draft, snapshotId, reportDate, consignerRowId: values.consignerRowId },
+      {
+        ...draft,
+        ...normalizedDates,
+        snapshotId,
+        reportDate,
+        consignerRowId: values.consignerRowId,
+      },
       {
         reportScope: nextReportScope,
         portalStatus: showPortalStatusFilter ? draft.portalStatus : undefined,
@@ -346,24 +363,26 @@ export function ConsigneeEpassFilters({
                       </div>
                     ) : null}
 
-                    <ReportDateYearSelect
-                      idPrefix="consignee"
-                      options={dateOptions}
-                      snapshotId={effectiveSnapshotId}
-                      allowAllReports={allowAllReports}
-                      onChange={(snapshotId, reportDate) => {
-                        if (snapshotId === ALL_REPORTS_SNAPSHOT_ID) {
-                          patch({ reportScope: 'all', snapshotId: '', reportDate: '' });
-                        } else {
-                          patch({
-                            reportScope: 'specific',
-                            snapshotId,
-                            reportDate,
-                          });
-                        }
-                      }}
-                      inputClass={filterInputClass}
-                    />
+                    {draft.dateMode !== 'range' || draft.reportScope === 'all' ? (
+                      <ReportDateYearSelect
+                        idPrefix="consignee"
+                        options={dateOptions}
+                        snapshotId={effectiveSnapshotId}
+                        allowAllReports={allowAllReports}
+                        onChange={(snapshotId, reportDate) => {
+                          if (snapshotId === ALL_REPORTS_SNAPSHOT_ID) {
+                            patch({ reportScope: 'all', snapshotId: '', reportDate: '' });
+                          } else {
+                            patch({
+                              reportScope: 'specific',
+                              snapshotId,
+                              reportDate,
+                            });
+                          }
+                        }}
+                        inputClass={filterInputClass}
+                      />
+                    ) : null}
 
                     <FilterSection title="District">
                       <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
@@ -494,7 +513,7 @@ export function ConsigneeEpassFilters({
                 </div>
 
                 <div className="relative z-10 shrink-0 grid grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_24px_rgba(0,0,0,0.5)]">
-                  <Button className="text-sm" onClick={handleApply}>
+                  <Button className="text-sm" onClick={handleApply} disabled={!rangeDatesValid}>
                     Apply
                   </Button>
                   <Button variant="secondary" className="text-sm" onClick={() => setOpen(false)}>

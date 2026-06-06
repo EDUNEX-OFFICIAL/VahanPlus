@@ -11,6 +11,7 @@ import epassImportRoutes from './routes/epassImport.js';
 import khananBulkRoutes from './routes/khananBulk.js';
 import crmVehicleExpiryRoutes from './routes/crmVehicleExpiry.js';
 import crmConfigRoutes from './routes/crmConfig.js';
+import dashboardRoutes from './routes/dashboard.js';
 
 const DEFAULT_CORS_ORIGINS = ['http://localhost:3000'];
 
@@ -65,6 +66,7 @@ export function createApp() {
   app.use('/epass', epassRoutes);
   app.use('/crm', crmVehicleExpiryRoutes);
   app.use('/crm', crmConfigRoutes);
+  app.use('/dashboard', dashboardRoutes);
   app.use('/epass/scraper-config', scraperConfigRoutes);
   app.use('/epass/import', epassImportRoutes);
   app.use('/epass/import', khananBulkRoutes);

@@ -22,9 +22,44 @@ export function normalizeConsignerFilterQuery(raw) {
   }
   // Trailing "(65)" row count from consigner options UI.
   trimmed = trimmed.replace(/\s+\(\d+\)\s*$/, '').trim();
-  // Portal compact names: "LTD(Arwal" vs UI "LTD (Arwal".
-  return trimmed
-    .replace(/\s+\(/g, '(')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+  return trimmed.replace(/\s{2,}/g, ' ').trim();
+}
+
+/**
+ * Prisma contains filter for consigner names — matches spaced and compact paren forms.
+ * DB may store "LTD (Arwal" or "LTD(Arwal".
+ *
+ * @param {string} normalizedName
+ * @returns {{ consignerName: object } | { OR: object[] } | null}
+ */
+export function consignerNameContainsWhere(normalizedName) {
+  const spaced = typeof normalizedName === 'string' ? normalizedName.trim() : '';
+  if (!spaced) return null;
+
+  const compact = spaced.replace(/\s+\(/g, '(');
+  const variants = [...new Set([spaced, compact].filter(Boolean))];
+
+  if (variants.length === 1) {
+    return { consignerName: { contains: variants[0], mode: 'insensitive' } };
+  }
+
+  return {
+    OR: variants.map((v) => ({
+      consignerName: { contains: v, mode: 'insensitive' },
+    })),
+  };
+}
+
+/**
+ * @param {Record<string, unknown>} target Prisma where object (consignerRow or consigner where)
+ * @param {string} normalizedName
+ */
+export function applyConsignerNameFilter(target, normalizedName) {
+  const clause = consignerNameContainsWhere(normalizedName);
+  if (!clause) return;
+  if (clause.OR) {
+    target.AND = [...(target.AND ?? []), clause];
+  } else {
+    Object.assign(target, clause);
+  }
 }

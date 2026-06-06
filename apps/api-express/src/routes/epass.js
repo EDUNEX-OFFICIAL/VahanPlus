@@ -9,6 +9,7 @@ import {
 } from '@vahanplus/epass-orchestrator';
 import { buildConsignerChallansWhere } from '../services/consignerChallanFilters.js';
 import {
+  applyConsignerNameFilter,
   normalizeConsigneeFilterQuery,
   normalizeConsignerFilterQuery,
 } from '../lib/epass-query-normalize.js';
@@ -310,9 +311,7 @@ function buildConsignerWhereForSnapshots(snapshotIds, query) {
     where.operatorType = operatorType;
   }
   const consigner = normalizeConsignerFilterQuery(query.consigner);
-  if (consigner) {
-    where.consignerName = { contains: consigner, mode: 'insensitive' };
-  }
+  applyConsignerNameFilter(where, consigner);
   const districts = parseDistrictList(query);
   if (districts.length > 0) {
     where.AND = [
@@ -391,9 +390,7 @@ function buildConsignerWhere(snapshotId, query) {
     where.operatorType = operatorType;
   }
   const consigner = normalizeConsignerFilterQuery(query.consigner);
-  if (consigner) {
-    where.consignerName = { contains: consigner, mode: 'insensitive' };
-  }
+  applyConsignerNameFilter(where, consigner);
   const districts = parseDistrictList(query);
   if (districts.length > 0) {
     where.AND = [
@@ -501,9 +498,7 @@ function buildChalaanWhere(snapshotId, query) {
     consignerRow.districtRow = { dmoName: { contains: dmo, mode: 'insensitive' } };
   }
 
-  if (consigner) {
-    consignerRow.consignerName = { contains: consigner, mode: 'insensitive' };
-  }
+  applyConsignerNameFilter(consignerRow, consigner);
 
   const where = { consignerRow };
   const consignee = normalizeConsigneeFilterQuery(query.consignee);
@@ -588,9 +583,7 @@ function buildChalaanPassWhere(snapshotIdOrIds, query) {
     consignerRow.districtRow = { dmoName: { contains: dmo, mode: 'insensitive' } };
   }
 
-  if (consigner) {
-    consignerRow.consignerName = { contains: consigner, mode: 'insensitive' };
-  }
+  applyConsignerNameFilter(consignerRow, consigner);
 
   const where = { challanRow: { consignerRow } };
 

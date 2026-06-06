@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
@@ -8,6 +9,15 @@ import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { KhananConfigJobsTable } from '@/components/khanan/config/KhananConfigJobsTable';
 import { auditLiveScrapeDates } from '@/lib/live-scrape-date-audit';
+import {
+  dedupeHistorySnapshotsByReportDate,
+  HISTORY_FETCH_LIMIT,
+  HISTORY_INITIAL_VISIBLE,
+  HISTORY_JOBS_FETCH_LIMIT,
+  HISTORY_SCROLL_CLASS,
+  HISTORY_SHOW_MORE_STEP,
+  sliceForHistoryPreview,
+} from '@/lib/khanan-config-history-view';
 import { formatJobStatusLabel } from '@/lib/scraper-config-labels';
 import {
   SCRAPER_JOBS_QUERY_KEY,
@@ -18,8 +28,7 @@ import {
 import type { LiveSnapshotRow, ScraperConfigStatus } from '@/lib/scraper-config-types';
 import { cn } from '@/lib/utils';
 
-const HISTORY_SNAPSHOT_LIMIT = 50;
-const HISTORY_JOBS_LIMIT = 50;
+type HistoryTab = 'runs' | 'activity';
 
 interface Props {
   status: ScraperConfigStatus;
@@ -66,11 +75,21 @@ function StatusChips({ status }: { status: ScraperConfigStatus }) {
 
 function HistorySnapshotRow({ row }: { row: LiveSnapshotRow }) {
   const audit = auditLiveScrapeDates(row.reportDate, row.scrapedAt);
+  const rescrapeCount = row.snapshotCountForDate ?? 1;
 
   return (
     <MobileDataCard
       eyebrow="Scrape run"
-      title={audit.reportDateDisplay}
+      title={
+        <span className="inline-flex items-center gap-1.5">
+          {audit.reportDateDisplay}
+          {rescrapeCount > 1 ? (
+            <Chip tone="default" className="px-1.5 py-0 text-[10px]">
+              ×{rescrapeCount}
+            </Chip>
+          ) : null}
+        </span>
+      }
       meta={
         <Link
           href={districtHref(row)}
@@ -92,15 +111,77 @@ function HistorySnapshotRow({ row }: { row: LiveSnapshotRow }) {
 
 function HistorySkeleton() {
   return (
-    <div className="mt-5 animate-pulse space-y-3">
-      <div className="h-10 rounded-lg bg-surface-deep" />
-      <div className="h-10 rounded-lg bg-surface-deep" />
-      <div className="h-10 rounded-lg bg-surface-deep" />
+    <div className="animate-pulse space-y-2">
+      <div className="h-8 rounded-lg bg-surface-deep" />
+      <div className="h-8 rounded-lg bg-surface-deep" />
+      <div className="h-8 rounded-lg bg-surface-deep" />
+    </div>
+  );
+}
+
+function HistoryTabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-md px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors',
+        active
+          ? 'bg-surface-deep text-white'
+          : 'text-text-secondary hover:bg-surface-deep/60 hover:text-white',
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function HistoryFooter({
+  visibleCount,
+  totalCount,
+  noun,
+  onShowMore,
+}: {
+  visibleCount: number;
+  totalCount: number;
+  noun: string;
+  onShowMore: () => void;
+}) {
+  if (totalCount === 0) return null;
+
+  const truncated = visibleCount < totalCount;
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-3">
+      <p className="text-xs text-text-secondary">
+        Showing {Math.min(visibleCount, totalCount)} of {totalCount} {noun}
+      </p>
+      {truncated ? (
+        <button
+          type="button"
+          onClick={onShowMore}
+          className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
+        >
+          Show more
+        </button>
+      ) : null}
     </div>
   );
 }
 
 export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
+  const [historyTab, setHistoryTab] = useState<HistoryTab>('runs');
+  const [runsVisible, setRunsVisible] = useState(HISTORY_INITIAL_VISIBLE);
+  const [jobsVisible, setJobsVisible] = useState(HISTORY_INITIAL_VISIBLE);
+
   const pollMs = scrapeActive ? 4_000 : 60_000;
 
   const {
@@ -108,8 +189,8 @@ export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
     isLoading: snapshotsLoading,
     isError: snapshotsError,
   } = useQuery({
-    queryKey: [...SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY, HISTORY_SNAPSHOT_LIMIT],
-    queryFn: () => fetchScraperSnapshotHistory(HISTORY_SNAPSHOT_LIMIT),
+    queryKey: [...SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY, HISTORY_FETCH_LIMIT],
+    queryFn: () => fetchScraperSnapshotHistory(HISTORY_FETCH_LIMIT),
     refetchInterval: pollMs,
   });
 
@@ -118,111 +199,161 @@ export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
     isLoading: jobsLoading,
     isError: jobsError,
   } = useQuery({
-    queryKey: [...SCRAPER_JOBS_QUERY_KEY, HISTORY_JOBS_LIMIT, 'portal'],
-    queryFn: () => fetchScraperJobs(HISTORY_JOBS_LIMIT, 'portal'),
+    queryKey: [...SCRAPER_JOBS_QUERY_KEY, HISTORY_JOBS_FETCH_LIMIT, 'portal'],
+    queryFn: () => fetchScraperJobs(HISTORY_JOBS_FETCH_LIMIT, 'portal'),
     refetchInterval: pollMs,
   });
 
-  const snapshots = snapshotData?.items ?? [];
+  const dedupedSnapshots = dedupeHistorySnapshotsByReportDate(snapshotData?.items ?? []);
+  const visibleSnapshots = sliceForHistoryPreview(dedupedSnapshots, runsVisible);
   const jobs = jobsData?.items ?? [];
+  const visibleJobs = sliceForHistoryPreview(jobs, jobsVisible);
+
+  const showMoreRuns = () => {
+    setRunsVisible((n) => Math.min(n + HISTORY_SHOW_MORE_STEP, dedupedSnapshots.length));
+  };
+
+  const showMoreJobs = () => {
+    setJobsVisible((n) => Math.min(n + HISTORY_SHOW_MORE_STEP, jobs.length));
+  };
 
   return (
     <Card>
       <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary">History</h3>
       <StatusChips status={status} />
 
-      <div className="mt-6 space-y-8">
-        <section>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary">
-            Scrape runs
-          </h4>
+      <div className="mt-4 flex gap-1 border-b border-slate-700/50 pb-2">
+        <HistoryTabButton active={historyTab === 'runs'} onClick={() => setHistoryTab('runs')}>
+          Scrape runs
+        </HistoryTabButton>
+        <HistoryTabButton
+          active={historyTab === 'activity'}
+          onClick={() => setHistoryTab('activity')}
+        >
+          Activity
+        </HistoryTabButton>
+      </div>
+
+      {historyTab === 'runs' ? (
+        <div className="mt-3">
           {snapshotsLoading ? (
             <HistorySkeleton />
           ) : snapshotsError ? (
-            <p className="mt-4 text-sm text-text-secondary">Unable to load data</p>
-          ) : snapshots.length === 0 ? (
-            <div className="mt-4">
-              <EmptyStateCard message="No data available" />
-            </div>
+            <p className="text-sm text-text-secondary">Unable to load data</p>
+          ) : dedupedSnapshots.length === 0 ? (
+            <EmptyStateCard message="No data available" />
           ) : (
             <>
-              <div className="mt-4 space-y-3 md:hidden">
-                {snapshots.map((row) => (
-                  <HistorySnapshotRow key={row.id} row={row} />
-                ))}
+              <div className={cn(HISTORY_SCROLL_CLASS)}>
+                <div className="space-y-2 md:hidden">
+                  {visibleSnapshots.map((row) => (
+                    <HistorySnapshotRow key={row.id} row={row} />
+                  ))}
+                </div>
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-700/50 text-[11px] uppercase text-text-secondary">
+                        <th className="pb-1.5 pr-3">Report date</th>
+                        <th className="pb-1.5 pr-3">Scraped at</th>
+                        <th className="pb-1.5 pr-3">Source</th>
+                        <th className="pb-1.5 pr-3 text-right">District</th>
+                        <th className="pb-1.5 pr-3 text-right">Consigner</th>
+                        <th className="pb-1.5 pr-3 text-right">Challan</th>
+                        <th className="pb-1.5 pr-3 text-right">Pass</th>
+                        <th className="pb-1.5">View</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleSnapshots.map((row) => {
+                        const audit = auditLiveScrapeDates(row.reportDate, row.scrapedAt);
+                        const rescrapeCount = row.snapshotCountForDate ?? 1;
+                        const hasActivity =
+                          row.districtRows > 0 ||
+                          row.consignerRows > 0 ||
+                          row.challanRows > 0 ||
+                          row.passRows > 0;
+                        return (
+                          <tr
+                            key={row.id}
+                            className={cn(
+                              'border-b border-slate-800/50',
+                              !hasActivity && 'opacity-80',
+                            )}
+                          >
+                            <td className="py-1.5 pr-3 text-white">
+                              <span className="inline-flex items-center gap-1.5">
+                                {audit.reportDateDisplay}
+                                {rescrapeCount > 1 ? (
+                                  <Chip tone="default" className="px-1.5 py-0 text-[10px]">
+                                    ×{rescrapeCount}
+                                  </Chip>
+                                ) : null}
+                              </span>
+                            </td>
+                            <td className="py-1.5 pr-3 tabular-nums text-text-secondary">
+                              <time dateTime={row.scrapedAt}>{audit.scrapedAtDisplay}</time>
+                            </td>
+                            <td className="py-1.5 pr-3 text-text-secondary">
+                              {snapshotSourceLabel(row.sourceUrl)}
+                            </td>
+                            <td className="py-1.5 pr-3 text-right tabular-nums text-text-secondary">
+                              {formatCount(row.districtRows)}
+                            </td>
+                            <td className="py-1.5 pr-3 text-right tabular-nums text-text-secondary">
+                              {formatCount(row.consignerRows)}
+                            </td>
+                            <td className="py-1.5 pr-3 text-right tabular-nums text-text-secondary">
+                              {formatCount(row.challanRows)}
+                            </td>
+                            <td className="py-1.5 pr-3 text-right tabular-nums text-text-secondary">
+                              {formatCount(row.passRows)}
+                            </td>
+                            <td className="py-1.5">
+                              <Link
+                                href={districtHref(row)}
+                                className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
+                              >
+                                View
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div className="mt-4 hidden overflow-x-auto md:block">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700/50 text-xs uppercase text-text-secondary">
-                      <th className="pb-2 pr-4">Report date</th>
-                      <th className="pb-2 pr-4">Scraped at</th>
-                      <th className="pb-2 pr-4">Source</th>
-                      <th className="pb-2 pr-4 text-right">District</th>
-                      <th className="pb-2 pr-4 text-right">Consigner</th>
-                      <th className="pb-2 pr-4 text-right">Challan</th>
-                      <th className="pb-2 pr-4 text-right">Pass</th>
-                      <th className="pb-2">View</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {snapshots.map((row) => {
-                      const audit = auditLiveScrapeDates(row.reportDate, row.scrapedAt);
-                      const hasActivity =
-                        row.districtRows > 0 ||
-                        row.consignerRows > 0 ||
-                        row.challanRows > 0 ||
-                        row.passRows > 0;
-                      return (
-                        <tr
-                          key={row.id}
-                          className={cn(
-                            'border-b border-slate-800/50',
-                            !hasActivity && 'opacity-80',
-                          )}
-                        >
-                          <td className="py-2 pr-4 text-white">{audit.reportDateDisplay}</td>
-                          <td className="py-2 pr-4 tabular-nums text-text-secondary">
-                            <time dateTime={row.scrapedAt}>{audit.scrapedAtDisplay}</time>
-                          </td>
-                          <td className="py-2 pr-4 text-text-secondary">
-                            {snapshotSourceLabel(row.sourceUrl)}
-                          </td>
-                          <td className="py-2 pr-4 text-right tabular-nums text-text-secondary">
-                            {formatCount(row.districtRows)}
-                          </td>
-                          <td className="py-2 pr-4 text-right tabular-nums text-text-secondary">
-                            {formatCount(row.consignerRows)}
-                          </td>
-                          <td className="py-2 pr-4 text-right tabular-nums text-text-secondary">
-                            {formatCount(row.challanRows)}
-                          </td>
-                          <td className="py-2 pr-4 text-right tabular-nums text-text-secondary">
-                            {formatCount(row.passRows)}
-                          </td>
-                          <td className="py-2">
-                            <Link
-                              href={districtHref(row)}
-                              className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
-                            >
-                              View
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <HistoryFooter
+                visibleCount={visibleSnapshots.length}
+                totalCount={dedupedSnapshots.length}
+                noun="runs"
+                onShowMore={showMoreRuns}
+              />
             </>
           )}
-        </section>
-
-        <KhananConfigJobsTable jobs={jobs} loading={jobsLoading} title="Activity" />
-        {jobsError && !jobsLoading ? (
-          <p className="text-sm text-text-secondary">Unable to load activity</p>
-        ) : null}
-      </div>
+        </div>
+      ) : (
+        <div className="mt-3">
+          {jobsError && !jobsLoading ? (
+            <p className="text-sm text-text-secondary">Unable to load activity</p>
+          ) : (
+            <>
+              <div className={cn(HISTORY_SCROLL_CLASS)}>
+                <KhananConfigJobsTable jobs={visibleJobs} loading={jobsLoading} hideTitle compact />
+              </div>
+              {!jobsLoading && jobs.length > 0 ? (
+                <HistoryFooter
+                  visibleCount={visibleJobs.length}
+                  totalCount={jobs.length}
+                  noun="jobs"
+                  onShowMore={showMoreJobs}
+                />
+              ) : null}
+            </>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

@@ -15,6 +15,15 @@ export {
   parsePortalReportDate,
 } from './date-format.js';
 export { fetchReportHtml } from './fetch.js';
+export {
+  fetchAllGridPages,
+  gridMetadataFromFetch,
+  isPagingComplete,
+  mergeRowsBySlNo,
+  parsePortalPaging,
+  type PaginatedGridFetchResult,
+  type PortalPaging,
+} from './grid-pagination.js';
 export { parseDistrictTable, extractMeta } from './parser.js';
 export { validateMvpFixtures, type ValidationResult } from './validate.js';
 export { BiharEpassScraper, biharEpassScraper, type BiharEpassMetadata } from './scraper.js';

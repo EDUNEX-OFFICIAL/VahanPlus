@@ -13,6 +13,7 @@ import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { ConsigneeEpassFilters } from '@/components/khanan/ConsigneeEpassFilters';
 import { ConsignerCombobox } from '@/components/khanan/ConsignerCombobox';
 import { ConsigneeTable } from '@/components/khanan/ConsigneeTable';
+import { IncompleteScrapeBanner } from '@/components/khanan/IncompleteScrapeBanner';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
 import { ConsigneePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
 import { isSnapshotResolving } from '@/lib/epass-page-loading';
@@ -516,6 +517,15 @@ function ConsigneePageContent() {
                     : ''}
                 </span>
               </h2>
+              {challansQuery.data.incompleteScrape ? (
+                <IncompleteScrapeBanner
+                  portalCount={displayRows.reduce((sum, row) => sum + row.challanCount, 0)}
+                  storedCount={displayRows.reduce(
+                    (sum, row) => sum + (row.storedPassCount ?? 0),
+                    0,
+                  )}
+                />
+              ) : null}
               {displayRows.length > 0 ? (
                 <p className="text-xs text-text-secondary tabular-nums">
                   Showing {displayRows.length} line{displayRows.length === 1 ? '' : 's'}

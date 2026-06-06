@@ -52,11 +52,18 @@ export const EpassChallanLineSchema = z.object({
 
 export type EpassChallanLine = z.infer<typeof EpassChallanLineSchema>;
 
+const PaginatedReportMetaSchema = z.object({
+  portalTotal: z.number().int().nonnegative().nullable().optional(),
+  complete: z.boolean().optional(),
+  pagesFetched: z.number().int().positive().optional(),
+});
+
 export const EpassConsignerReportSchema = z.object({
   sourceUrl: z.string().url(),
   scrapedAt: z.string(),
   rowCount: z.number().int().nonnegative(),
   rows: z.array(EpassConsignerRowSchema),
+  ...PaginatedReportMetaSchema.shape,
 });
 
 export type EpassConsignerReport = z.infer<typeof EpassConsignerReportSchema>;
@@ -66,6 +73,7 @@ export const EpassChallanReportSchema = z.object({
   scrapedAt: z.string(),
   rowCount: z.number().int().nonnegative(),
   rows: z.array(EpassChallanLineSchema),
+  ...PaginatedReportMetaSchema.shape,
 });
 
 export type EpassChallanReport = z.infer<typeof EpassChallanReportSchema>;
@@ -93,6 +101,7 @@ export const EpassChallanPassReportSchema = z.object({
   scrapedAt: z.string(),
   rowCount: z.number().int().nonnegative(),
   rows: z.array(EpassChallanPassLineSchema),
+  ...PaginatedReportMetaSchema.shape,
 });
 
 export type EpassChallanPassReport = z.infer<typeof EpassChallanPassReportSchema>;

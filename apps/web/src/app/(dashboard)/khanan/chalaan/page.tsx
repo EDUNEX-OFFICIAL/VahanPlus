@@ -12,6 +12,7 @@ import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { ChalaanEpassFilters } from '@/components/khanan/ChalaanEpassFilters';
 import { ChalaanTable } from '@/components/khanan/ChalaanTable';
+import { IncompleteScrapeBanner } from '@/components/khanan/IncompleteScrapeBanner';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
 import { EpassBrowsePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
 import { isSnapshotResolving } from '@/lib/epass-page-loading';
@@ -365,6 +366,9 @@ function ChalaanPageContent() {
         <EpassEmptyState {...browseEmptyState} />
       ) : data ? (
         <>
+          {data.incompleteScrape && data.portalPassTotal != null ? (
+            <IncompleteScrapeBanner portalCount={data.portalPassTotal} storedCount={total} />
+          ) : null}
           <ChalaanTable rows={data.items} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
           {data.items.length > 0 ? (
             <Card>

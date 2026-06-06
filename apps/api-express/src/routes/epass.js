@@ -444,6 +444,9 @@ function buildConsignerOrderBy(query) {
 
 function mapChallan(row) {
   const reportDate = row.consignerRow?.districtRow?.snapshot?.reportDate ?? '';
+  const storedPassCount = row._count?.passes;
+  const scrapeComplete =
+    storedPassCount == null || row.challanCount <= 0 ? true : storedPassCount >= row.challanCount;
   return {
     id: row.id,
     consignerRowId: row.consignerRowId,
@@ -453,6 +456,8 @@ function mapChallan(row) {
     mineral: normalizeMineralLabel(row.mineral),
     mineralCategory: row.mineralCategory,
     challanCount: row.challanCount,
+    storedPassCount: storedPassCount ?? 0,
+    scrapeComplete,
     dispatchedQty: toNumber(row.dispatchedQty),
     unit: row.unit,
     ghatNumber: row.ghatNumber ?? null,
@@ -460,6 +465,56 @@ function mapChallan(row) {
     detailUrl: row.detailUrl,
     scrapedAt: row.scrapedAt.toISOString(),
   };
+}
+
+function challanRowsIncompleteScrape(items) {
+  return items.some((row) => row.challanCount > 0 && !row.scrapeComplete);
+}
+
+function buildChallanRowConsignerWhere(snapshotIdOrIds, query) {
+  const consignerRow = Array.isArray(snapshotIdOrIds)
+    ? { snapshotId: { in: snapshotIdOrIds } }
+    : { snapshotId: snapshotIdOrIds };
+  const operatorType = parseOperatorFromQuery(query);
+  if (operatorType) {
+    consignerRow.operatorType = operatorType;
+  }
+
+  const dmo = typeof query.dmo === 'string' ? query.dmo.trim() : '';
+  const consigner = normalizeConsignerFilterQuery(query.consigner);
+  const districts = parseDistrictList(query);
+
+  if (districts.length > 0) {
+    consignerRow.AND = [
+      ...(consignerRow.AND ?? []),
+      {
+        OR: districts.map((d) => ({
+          districtRow: { dmoName: { equals: d, mode: 'insensitive' } },
+        })),
+      },
+    ];
+  } else if (dmo) {
+    consignerRow.districtRow = { dmoName: { contains: dmo, mode: 'insensitive' } };
+  }
+
+  applyConsignerNameFilter(consignerRow, consigner);
+  return consignerRow;
+}
+
+async function sumPortalPassCountForQuery(prisma, snapshotIdOrIds, query) {
+  const consignee = normalizeConsigneeFilterQuery(query.consignee);
+  if (!consignee) return null;
+
+  const consignerRow = buildChallanRowConsignerWhere(snapshotIdOrIds, query);
+  const rows = await prisma.epassChallanRow.findMany({
+    where: {
+      consignerRow,
+      consigneeName: { contains: consignee, mode: 'insensitive' },
+    },
+    select: { challanCount: true },
+  });
+  if (rows.length === 0) return null;
+  return rows.reduce((sum, row) => sum + row.challanCount, 0);
 }
 
 function mapChalaanListItem(row) {
@@ -1253,6 +1308,8 @@ router.get('/chalaan-passes', async (req, res) => {
         total: 0,
         totalQuantity: 0,
         truncated: false,
+        portalPassTotal: null,
+        incompleteScrape: false,
         limit,
         offset,
         items: [],
@@ -1267,6 +1324,8 @@ router.get('/chalaan-passes', async (req, res) => {
         total: 0,
         totalQuantity: 0,
         truncated: false,
+        portalPassTotal: null,
+        incompleteScrape: false,
         limit,
         offset,
         items: [],
@@ -1288,6 +1347,15 @@ router.get('/chalaan-passes', async (req, res) => {
   const total = deduped.length;
   const totalQuantity = deduped.reduce((sum, row) => sum + toNumber(row.quantity), 0);
   const page = deduped.slice(offset, offset + limit);
+
+  const snapshotIdsForPortalTotal = useRange ? rangeSnapshots.map((s) => s.id) : snapshot.id;
+  const portalPassTotal = await sumPortalPassCountForQuery(
+    prisma,
+    snapshotIdsForPortalTotal,
+    req.query,
+  );
+  const incompleteScrape =
+    portalPassTotal != null && portalPassTotal > 0 && total < portalPassTotal;
 
   const latestScrapedAt =
     useRange && rangeSnapshots.length > 0
@@ -1315,6 +1383,8 @@ router.get('/chalaan-passes', async (req, res) => {
     total,
     totalQuantity,
     truncated,
+    portalPassTotal,
+    incompleteScrape,
     limit,
     offset,
     items: page.map(mapChalaanPassListItem),
@@ -1755,6 +1825,7 @@ router.get('/consigners/:id/challans', async (req, res) => {
     ],
     take: CONSIGNER_CHALLAN_RAW_CAP,
     include: {
+      _count: { select: { passes: true } },
       consignerRow: {
         include: { districtRow: { include: { snapshot: true } } },
       },
@@ -1762,6 +1833,7 @@ router.get('/consigners/:id/challans', async (req, res) => {
   });
 
   const truncated = challans.length >= CONSIGNER_CHALLAN_RAW_CAP;
+  const items = challans.map(mapChallan);
 
   res.json({
     consigner: mapConsigner(consigner),
@@ -1773,7 +1845,8 @@ router.get('/consigners/:id/challans', async (req, res) => {
       reportDate: consigner.districtRow.snapshot.reportDate,
     },
     truncated,
-    items: challans.map(mapChallan),
+    incompleteScrape: challanRowsIncompleteScrape(items),
+    items,
   });
 });
 

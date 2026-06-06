@@ -167,3 +167,86 @@ export async function fetchHtmlGet(url: string, options: HttpClientOptions = {})
   }
   return res.text();
 }
+
+export interface AspNetPostBackResult {
+  html: string;
+  cookie: string;
+}
+
+/**
+ * ASP.NET __doPostBack from an existing page (ViewState from current HTML).
+ */
+export async function aspnetPostBackFromHtml(
+  url: string,
+  html: string,
+  eventTarget: string,
+  eventArgument: string,
+  options: AspNetFormPostOptions & { cookie?: string } = {},
+): Promise<AspNetPostBackResult> {
+  const defaults = getPortalHttpConfig();
+  const postDelayMs = options.postDelayMs ?? defaults.postDelayMs;
+  const httpOpts = { timeoutMs: options.timeoutMs, retries: options.retries };
+  const cookie = options.cookie ?? '';
+
+  const hidden = parseHiddenInputs(html);
+  const form = new URLSearchParams();
+  for (const [key, value] of Object.entries(hidden)) {
+    form.set(key, value);
+  }
+  form.set('__EVENTTARGET', eventTarget);
+  form.set('__EVENTARGUMENT', eventArgument);
+  if (options.extraFields) {
+    for (const [key, value] of Object.entries(options.extraFields)) {
+      form.set(key, value);
+    }
+  }
+
+  if (postDelayMs > 0) {
+    await sleep(postDelayMs);
+  }
+
+  const postRes = await fetchWithRetry(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Referer: url,
+        ...(cookie ? { Cookie: cookie } : {}),
+      },
+      body: form.toString(),
+      redirect: 'follow',
+    },
+    httpOpts,
+  );
+  if (!postRes.ok) {
+    throw new Error(`POST ${url} failed: ${postRes.status} ${postRes.statusText}`);
+  }
+
+  const nextCookie = collectCookieHeader(postRes) || cookie;
+  return { html: await postRes.text(), cookie: nextCookie };
+}
+
+export interface FetchHtmlGetWithCookieResult {
+  html: string;
+  cookie: string;
+}
+
+export async function fetchHtmlGetWithCookie(
+  url: string,
+  options: HttpClientOptions = {},
+): Promise<FetchHtmlGetWithCookieResult> {
+  const res = await fetchWithRetry(
+    url,
+    { method: 'GET', headers: DEFAULT_HEADERS, redirect: 'follow' },
+    options,
+  );
+  if (!res.ok) {
+    throw new Error(`GET ${url} failed: ${res.status} ${res.statusText}`);
+  }
+  return {
+    html: await res.text(),
+    cookie: collectCookieHeader(res),
+  };
+}

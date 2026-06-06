@@ -80,6 +80,8 @@ export interface EpassChallanRowDto {
   mineral: string | null;
   mineralCategory: string | null;
   challanCount: number;
+  storedPassCount?: number;
+  scrapeComplete?: boolean;
   dispatchedQty: number;
   unit: string | null;
   ghatNumber: string | null;
@@ -131,6 +133,7 @@ export interface ConsignerChallansResponse {
   districtRow: { dmoName: string; slNo: number };
   snapshot: { reportDate: string };
   truncated?: boolean;
+  incompleteScrape?: boolean;
   items: EpassChallanRowDto[];
 }
 
@@ -345,6 +348,8 @@ export interface ChalaanPassListResponse {
   total: number;
   totalQuantity?: number;
   truncated?: boolean;
+  portalPassTotal?: number | null;
+  incompleteScrape?: boolean;
   limit: number;
   offset: number;
   items: EpassChalaanPassListItemDto[];

@@ -16,6 +16,7 @@
     "lint": "eslint src scripts",
     "dev": "tsc --watch",
     "smoke": "tsx scripts/smoke.ts",
+    "test:grid-pagination": "tsx scripts/grid-pagination.test.ts",
     "test:challan-pass": "tsx scripts/challan-pass-fixture.test.ts",
     "test:mcv-vehicle-status": "tsx scripts/mcv-vehicle-status-fixture.test.ts",
     "test:http-client": "tsx scripts/http-client.test.ts",

@@ -50,6 +50,8 @@ export function parseDateFlexible(value) {
       return parsed;
     }
   }
+  const iso = parseIsoDateInput(source);
+  if (iso) return iso;
   const timestamp = Date.parse(source);
   if (!Number.isNaN(timestamp)) return new Date(timestamp);
   return null;
@@ -84,6 +86,30 @@ export function formatPortalReportDate(date) {
   return `${String(date.getDate()).padStart(2, '0')}-${PORTAL_MONTH_LABELS[date.getMonth()]}-${date.getFullYear()}`;
 }
 
+function formatNumericReportDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+  return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+}
+
+function formatIsoReportDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+export function isReportDateInRange(reportDate, fromIso, toIso) {
+  const from = fromIso ? parseIsoDateInput(fromIso) : null;
+  const to = toIso ? parseIsoDateInput(toIso) : null;
+  if (!from && !to) return true;
+  const d = parseDateFlexible(reportDate);
+  if (!d) return false;
+  if (from && d < from) return false;
+  if (to) {
+    const end = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59, 999);
+    if (d > end) return false;
+  }
+  return true;
+}
+
 /**
  * All portal report-date strings between ISO bounds (inclusive).
  * Returns null when neither bound is set (caller should load all snapshots).
@@ -110,6 +136,38 @@ export function portalReportDatesInIsoRange(fromIso, toIso) {
   }
 
   return dates;
+}
+
+/**
+ * DB lookup strings for each day in an ISO range — portal, numeric, and ISO formats.
+ * Snapshots may store reportDate as scrape (`05-Jun-2026`), import (`2026-04-01`), etc.
+ */
+export function reportDateLookupVariantsInIsoRange(fromIso, toIso) {
+  const from = fromIso ? parseIsoDateInput(fromIso) : null;
+  const to = toIso ? parseIsoDateInput(toIso) : null;
+  if (!from && !to) return null;
+
+  const start = from ?? to;
+  const end = to ?? from;
+  if (!start || !end) return [];
+
+  const rangeStart = start <= end ? start : end;
+  const rangeEnd = start <= end ? end : start;
+  const variants = new Set();
+  const cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate());
+  const last = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate());
+
+  while (cursor <= last) {
+    const portal = formatPortalReportDate(cursor);
+    const numeric = formatNumericReportDate(cursor);
+    const iso = formatIsoReportDate(cursor);
+    if (portal) variants.add(portal);
+    if (numeric) variants.add(numeric);
+    if (iso) variants.add(iso);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return [...variants];
 }
 
 /** Canonical YYYY-MM-DD for dedup keys (empty string when unparseable). */

@@ -14,9 +14,10 @@ import {
 } from '../lib/epass-query-normalize.js';
 import {
   canonicalTransportDate,
+  isReportDateInRange,
   parseDateFlexible,
   parseReportDate,
-  portalReportDatesInIsoRange,
+  reportDateLookupVariantsInIsoRange,
 } from '../utils/epassDates.js';
 import {
   buildVehicleStatusOrderBy,
@@ -267,27 +268,13 @@ function parseIsoDateInput(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function isReportDateInRange(reportDate, fromIso, toIso) {
-  const from = fromIso ? parseIsoDateInput(fromIso) : null;
-  const to = toIso ? parseIsoDateInput(toIso) : null;
-  if (!from && !to) return true;
-  const d = parseReportDate(reportDate);
-  if (!d) return false;
-  if (from && d < from) return false;
-  if (to) {
-    const end = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59, 999);
-    if (d > end) return false;
-  }
-  return true;
-}
-
 async function resolveSnapshotsForQuery(prisma, query) {
   const dateMode = query.dateMode === 'range' ? 'range' : 'specific';
 
   if (dateMode === 'range') {
     const from = typeof query.dateFrom === 'string' ? query.dateFrom : '';
     const to = typeof query.dateTo === 'string' ? query.dateTo : query.dateFrom || '';
-    const reportDates = portalReportDatesInIsoRange(from, to);
+    const reportDates = reportDateLookupVariantsInIsoRange(from, to);
     if (reportDates === null) {
       return prisma.epassSnapshot.findMany({ orderBy: { scrapedAt: 'desc' } });
     }

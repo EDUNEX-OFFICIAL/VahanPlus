@@ -391,8 +391,31 @@ function ConsigneePageContent() {
     return snap ? snapshotFromListItem(snap) : null;
   }, [resolvedSnapshotId, snapshotsData?.items]);
 
+  const rangeMeta = useMemo(() => {
+    if (!isRangeMode || !snapshotsData?.items.length) return null;
+    const inRange = snapshotsForDateMode(
+      snapshotsData.items,
+      appliedFilters.dateMode,
+      appliedFilters.dateFrom,
+      appliedFilters.dateTo,
+    );
+    if (inRange.length === 0) return null;
+    const latestScrapedAt = inRange.reduce(
+      (latest, s) => (s.scrapedAt > latest ? s.scrapedAt : latest),
+      inRange[0].scrapedAt,
+    );
+    return { snapshotCount: inRange.length, latestScrapedAt };
+  }, [
+    isRangeMode,
+    snapshotsData?.items,
+    appliedFilters.dateMode,
+    appliedFilters.dateFrom,
+    appliedFilters.dateTo,
+  ]);
+
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
-  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, resolvedSnapshotId, browseEmpty);
+  const snapshotResolving =
+    !isRangeMode && isSnapshotResolving(snapshotsLoaded, resolvedSnapshotId, browseEmpty);
   const pageLoading =
     snapshotsLoading ||
     snapshotResolving ||
@@ -428,7 +451,16 @@ function ConsigneePageContent() {
 
   return (
     <PageStack>
-      {metaSnapshot ? <EpassReportMetaBar snapshot={metaSnapshot} /> : null}
+      {isRangeMode && rangeMeta ? (
+        <EpassReportMetaBar
+          snapshot={null}
+          reportScope="all"
+          snapshotCount={rangeMeta.snapshotCount}
+          latestScrapedAt={rangeMeta.latestScrapedAt}
+        />
+      ) : metaSnapshot ? (
+        <EpassReportMetaBar snapshot={metaSnapshot} />
+      ) : null}
 
       {snapshotsData ? (
         <ConsigneeEpassFilters
@@ -532,6 +564,9 @@ function ConsigneePageContent() {
                         {totals.totalQuantity.toFixed(2)}
                       </span>
                     </p>
+                    {challansQuery.data?.truncated ? (
+                      <p className="text-xs text-text-secondary">Capped at 25000 rows</p>
+                    ) : null}
                   </div>
                 </Card>
               ) : null}

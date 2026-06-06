@@ -130,6 +130,7 @@ export interface ConsignerChallansResponse {
   consigner: EpassConsignerRowDto;
   districtRow: { dmoName: string; slNo: number };
   snapshot: { reportDate: string };
+  truncated?: boolean;
   items: EpassChallanRowDto[];
 }
 

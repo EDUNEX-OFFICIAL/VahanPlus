@@ -12,7 +12,12 @@ import {
   normalizeConsigneeFilterQuery,
   normalizeConsignerFilterQuery,
 } from '../lib/epass-query-normalize.js';
-import { canonicalTransportDate, parseDateFlexible, parseReportDate } from '../utils/epassDates.js';
+import {
+  canonicalTransportDate,
+  parseDateFlexible,
+  parseReportDate,
+  portalReportDatesInIsoRange,
+} from '../utils/epassDates.js';
 import {
   buildVehicleStatusOrderBy,
   buildVehicleStatusWhere,
@@ -229,6 +234,7 @@ function challanPassDedupeKey(row) {
 }
 
 const CHALAAN_PASS_RAW_CAP = 25000;
+const CONSIGNER_CHALLAN_RAW_CAP = 25000;
 
 function preferChallanPassRow(a, b) {
   const aScraped = a.scrapedAt instanceof Date ? a.scrapedAt : new Date(a.scrapedAt);
@@ -281,11 +287,16 @@ async function resolveSnapshotsForQuery(prisma, query) {
   if (dateMode === 'range') {
     const from = typeof query.dateFrom === 'string' ? query.dateFrom : '';
     const to = typeof query.dateTo === 'string' ? query.dateTo : query.dateFrom || '';
-    const all = await prisma.epassSnapshot.findMany({
+    const reportDates = portalReportDatesInIsoRange(from, to);
+    if (reportDates === null) {
+      return prisma.epassSnapshot.findMany({ orderBy: { scrapedAt: 'desc' } });
+    }
+    if (reportDates.length === 0) return [];
+    const snapshots = await prisma.epassSnapshot.findMany({
+      where: { reportDate: { in: reportDates } },
       orderBy: { scrapedAt: 'desc' },
     });
-    if (!from && !to) return all;
-    return all.filter((s) => isReportDateInRange(s.reportDate, from || null, to || null));
+    return snapshots.filter((s) => isReportDateInRange(s.reportDate, from || null, to || null));
   }
 
   const all = await prisma.epassSnapshot.findMany({
@@ -1762,12 +1773,15 @@ router.get('/consigners/:id/challans', async (req, res) => {
       { consignerRow: { districtRow: { snapshot: { reportDate: 'asc' } } } },
       { slNo: 'asc' },
     ],
+    take: CONSIGNER_CHALLAN_RAW_CAP,
     include: {
       consignerRow: {
         include: { districtRow: { include: { snapshot: true } } },
       },
     },
   });
+
+  const truncated = challans.length >= CONSIGNER_CHALLAN_RAW_CAP;
 
   res.json({
     consigner: mapConsigner(consigner),
@@ -1778,6 +1792,7 @@ router.get('/consigners/:id/challans', async (req, res) => {
     snapshot: {
       reportDate: consigner.districtRow.snapshot.reportDate,
     },
+    truncated,
     items: challans.map(mapChallan),
   });
 });

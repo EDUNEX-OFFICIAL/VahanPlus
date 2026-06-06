@@ -55,6 +55,63 @@ export function parseDateFlexible(value) {
   return null;
 }
 
+const PORTAL_MONTH_LABELS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+function parseIsoDateInput(value) {
+  if (!value) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value).trim());
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Portal report date string `DD-Mon-YYYY` from a Date. */
+export function formatPortalReportDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+  return `${String(date.getDate()).padStart(2, '0')}-${PORTAL_MONTH_LABELS[date.getMonth()]}-${date.getFullYear()}`;
+}
+
+/**
+ * All portal report-date strings between ISO bounds (inclusive).
+ * Returns null when neither bound is set (caller should load all snapshots).
+ */
+export function portalReportDatesInIsoRange(fromIso, toIso) {
+  const from = fromIso ? parseIsoDateInput(fromIso) : null;
+  const to = toIso ? parseIsoDateInput(toIso) : null;
+  if (!from && !to) return null;
+
+  const start = from ?? to;
+  const end = to ?? from;
+  if (!start || !end) return [];
+
+  const rangeStart = start <= end ? start : end;
+  const rangeEnd = start <= end ? end : start;
+  const dates = [];
+  const cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate());
+  const last = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate());
+
+  while (cursor <= last) {
+    const label = formatPortalReportDate(cursor);
+    if (label) dates.push(label);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return dates;
+}
+
 /** Canonical YYYY-MM-DD for dedup keys (empty string when unparseable). */
 export function canonicalTransportDate(value) {
   const parsed = parseDateFlexible(value);

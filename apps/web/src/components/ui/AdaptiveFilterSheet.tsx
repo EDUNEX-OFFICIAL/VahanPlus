@@ -4,8 +4,36 @@ import { ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { cn } from '@/lib/utils';
+
+export const filterDropdownPanelClass =
+  'fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] z-50 flex max-h-[min(72dvh,calc(100dvh-11rem),640px)] flex-col overflow-hidden bg-surface-primary p-0 shadow-2xl md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:max-h-[min(78vh,680px)] md:w-[min(100vw-2rem,420px)]';
+
+export function FilterDropdownPanel({
+  title,
+  children,
+  footer,
+}: {
+  title?: ReactNode;
+  children: ReactNode;
+  footer: ReactNode;
+}) {
+  return (
+    <Card className={filterDropdownPanelClass}>
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin">
+        {title ? (
+          <p className="mb-4 text-base font-bold tracking-tight text-white">{title}</p>
+        ) : null}
+        {children}
+      </div>
+      <div className="relative z-10 shrink-0 grid grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_24px_rgba(0,0,0,0.5)]">
+        {footer}
+      </div>
+    </Card>
+  );
+}
 
 export function AdaptiveFilterSheet({
   open,

@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FilterSection, filterInputClass } from '@/components/ui/AdaptiveFilterSheet';
+import {
+  FilterDropdownPanel,
+  FilterSection,
+  filterInputClass,
+} from '@/components/ui/AdaptiveFilterSheet';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { buildVehicleStatusFilterChips } from '@/lib/epass-vehicle-status-view';
 import type { VehicleStatusFilterValues, VehicleStatusFoundFilter } from '@/lib/epass-types';
 
@@ -76,10 +79,20 @@ export function VehicleStatusFilters({ values, onApply, onClear }: VehicleStatus
                 className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden"
                 onClick={() => setOpen(false)}
               />
-              <Card className="fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] z-50 flex max-h-[min(72dvh,calc(100dvh-11rem),640px)] flex-col overflow-y-auto p-4 shadow-2xl md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:max-h-[min(78vh,680px)] md:w-[min(100vw-2rem,420px)]">
-                <p className="text-base font-bold tracking-tight text-white">Vehicle filters</p>
-
-                <div className="mt-4 space-y-5">
+              <FilterDropdownPanel
+                title="Vehicle filters"
+                footer={
+                  <>
+                    <Button variant="secondary" className="text-sm" onClick={handleReset}>
+                      Reset
+                    </Button>
+                    <Button className="text-sm" onClick={handleApply}>
+                      Apply
+                    </Button>
+                  </>
+                }
+              >
+                <div className="space-y-5">
                   <FilterSection title="Vehicle">
                     <label
                       className="text-xs uppercase tracking-wider text-text-secondary"
@@ -182,16 +195,7 @@ export function VehicleStatusFilters({ values, onApply, onClear }: VehicleStatus
                     </div>
                   </FilterSection>
                 </div>
-
-                <div className="sticky bottom-0 -mx-4 mt-auto grid grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 pt-3">
-                  <Button variant="secondary" className="text-sm" onClick={handleReset}>
-                    Reset
-                  </Button>
-                  <Button className="text-sm" onClick={handleApply}>
-                    Apply
-                  </Button>
-                </div>
-              </Card>
+              </FilterDropdownPanel>
             </>
           ) : null}
         </div>

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { getPortalHttpConfig } from './config.js';
 
 export const DEFAULT_HEADERS: Record<string, string> = {
@@ -12,6 +13,12 @@ export interface HttpClientOptions {
   retries?: number;
   postDelayMs?: number;
 }
+
+const SCRIPT_MANAGER_IDS = [
+  'ctl00$MainContent$ScriptManager1',
+  'ctl00$ScriptManager1',
+  'ScriptManager1',
+];
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,6 +66,58 @@ export function parseHiddenInputs(html: string): Record<string, string> {
     }
   }
   return fields;
+}
+
+/** All named inputs inside #aspnetForm (hidden, text, radio checked, etc.). */
+export function parseAspNetFormFields(html: string): Record<string, string> {
+  const fields: Record<string, string> = {};
+  const formMatch = html.match(/<form[^>]*id=["']aspnetForm["'][^>]*>([\s\S]*?)<\/form>/i);
+  const scope = formMatch?.[1] ?? html;
+  const inputRe = /<input\b([^>]*)>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = inputRe.exec(scope)) !== null) {
+    const attrs = match[1];
+    const nameMatch = /name=["']([^"']+)["']/i.exec(attrs);
+    if (!nameMatch) continue;
+    const name = nameMatch[1];
+    const typeMatch = /type=["']([^"']+)["']/i.exec(attrs);
+    const type = (typeMatch?.[1] ?? 'text').toLowerCase();
+    if (type === 'submit' || type === 'button' || type === 'image' || type === 'file') continue;
+
+    const valueMatch = /value=["']([^"']*)["']/i.exec(attrs);
+    const value = valueMatch?.[1] ?? '';
+    const checked = /\bchecked\b/i.test(attrs);
+
+    if (type === 'radio' || type === 'checkbox') {
+      if (checked) fields[name] = value;
+      continue;
+    }
+    fields[name] = value;
+  }
+
+  const selectRe = /<select\b([^>]*)>([\s\S]*?)<\/select>/gi;
+  while ((match = selectRe.exec(scope)) !== null) {
+    const attrs = match[1];
+    const body = match[2];
+    const nameMatch = /name=["']([^"']+)["']/i.exec(attrs);
+    if (!nameMatch) continue;
+    const selected =
+      body.match(/<option[^>]*\bselected\b[^>]*value=["']([^"']*)["']/i) ??
+      body.match(/<option[^>]*value=["']([^"']*)["']/i);
+    if (selected) {
+      fields[nameMatch[1]] = selected[1];
+    }
+  }
+
+  return fields;
+}
+
+function findScriptManagerField(fields: Record<string, string>): string | null {
+  for (const id of SCRIPT_MANAGER_IDS) {
+    if (id in fields) return id;
+  }
+  return null;
 }
 
 export async function fetchWithRetry(
@@ -188,13 +247,19 @@ export async function aspnetPostBackFromHtml(
   const httpOpts = { timeoutMs: options.timeoutMs, retries: options.retries };
   const cookie = options.cookie ?? '';
 
-  const hidden = parseHiddenInputs(html);
+  const fields = parseAspNetFormFields(html);
   const form = new URLSearchParams();
-  for (const [key, value] of Object.entries(hidden)) {
+  for (const [key, value] of Object.entries(fields)) {
     form.set(key, value);
   }
   form.set('__EVENTTARGET', eventTarget);
   form.set('__EVENTARGUMENT', eventArgument);
+
+  const scriptManager = findScriptManagerField(fields);
+  if (scriptManager && eventArgument) {
+    form.set(scriptManager, `${eventTarget}|${eventArgument}`);
+  }
+
   if (options.extraFields) {
     for (const [key, value] of Object.entries(options.extraFields)) {
       form.set(key, value);
@@ -249,4 +314,14 @@ export async function fetchHtmlGetWithCookie(
     html: await res.text(),
     cookie: collectCookieHeader(res),
   };
+}
+
+/** Stable fingerprint of grid table body for duplicate-page detection. */
+export function gridTableFingerprint(html: string): string {
+  const tableMatch = html.match(
+    /<table[^>]*id=["']ctl00_MainContent_grd["'][^>]*>([\s\S]*?)<\/table>/i,
+  );
+  const body = tableMatch?.[1] ?? html;
+  const normalized = body.replace(/\s+/g, ' ').trim();
+  return createHash('sha256').update(normalized).digest('hex').slice(0, 16);
 }

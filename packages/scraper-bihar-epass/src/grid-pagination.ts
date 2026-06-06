@@ -1,6 +1,7 @@
 import {
   aspnetPostBackFromHtml,
   fetchHtmlGetWithCookie,
+  gridTableFingerprint,
   type HttpClientOptions,
 } from './http/client.js';
 
@@ -14,6 +15,7 @@ export interface PaginatedGridFetchResult {
   pages: string[];
   portalTotal: number | null;
   pagesFetched: number;
+  duplicatePagesSkipped: number;
   complete: boolean;
 }
 
@@ -45,6 +47,17 @@ export function isPagingComplete(paging: PortalPaging | null, visibleEnd: number
   return visibleEnd >= paging.total;
 }
 
+export function parseGridPageNumbers(html: string): number[] {
+  const pages = new Set<number>();
+  const re = /__doPostBack\([^,]+,\s*(?:'|&#39;)Page\$(\d+)(?:'|&#39;)\)/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(html)) !== null) {
+    const n = Number.parseInt(match[1], 10);
+    if (Number.isFinite(n) && n > 1) pages.add(n);
+  }
+  return [...pages].sort((a, b) => a - b);
+}
+
 function hasViewAllLink(html: string): boolean {
   return /id=["']ctl00_MainContent_lbtnAll["']/i.test(html);
 }
@@ -55,6 +68,27 @@ function pageSize(paging: PortalPaging): number {
 
 function totalPages(paging: PortalPaging): number {
   return Math.ceil(paging.total / pageSize(paging));
+}
+
+export function unionHtmlPagesByFingerprint(pages: string[]): {
+  pages: string[];
+  duplicatePagesSkipped: number;
+} {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  let duplicatePagesSkipped = 0;
+
+  for (const html of pages) {
+    const fp = gridTableFingerprint(html);
+    if (seen.has(fp)) {
+      duplicatePagesSkipped += 1;
+      continue;
+    }
+    seen.add(fp);
+    unique.push(html);
+  }
+
+  return { pages: unique, duplicatePagesSkipped };
 }
 
 /**
@@ -85,35 +119,59 @@ export function mergeRowsBySlNo<T extends { slNo: number }>(pages: T[][]): T[] {
 export interface PaginatedGridMetadata {
   portalTotal: number | null;
   pagesFetched: number;
+  duplicatePagesSkipped: number;
+  perPageRowCounts: number[];
   complete: boolean;
+  incompleteReason?: string;
 }
 
 export function gridMetadataFromFetch(
   fetch: PaginatedGridFetchResult,
   rowCount: number,
+  perPageRowCounts: number[],
 ): PaginatedGridMetadata {
   const portalTotal = fetch.portalTotal;
   const complete =
     fetch.complete ||
     (portalTotal != null && portalTotal > 0 ? rowCount >= portalTotal : fetch.pages.length === 1);
+
+  let incompleteReason: string | undefined;
+  if (!complete && portalTotal != null && portalTotal > rowCount) {
+    incompleteReason = `Portal reports ${portalTotal} rows but ${rowCount} were scraped`;
+    if (fetch.duplicatePagesSkipped > 0) {
+      incompleteReason += ` (${fetch.duplicatePagesSkipped} duplicate pages skipped)`;
+    }
+  }
+
   return {
     portalTotal,
     pagesFetched: fetch.pagesFetched,
+    duplicatePagesSkipped: fetch.duplicatePagesSkipped,
+    perPageRowCounts,
     complete,
+    incompleteReason,
   };
 }
 
-async function fetchRemainingPages(
+async function fetchPageChain(
   url: string,
   startHtml: string,
   startCookie: string,
   paging: PortalPaging,
   options: HttpClientOptions,
-): Promise<{ pages: string[]; cookie: string; complete: boolean }> {
+): Promise<{ pages: string[]; cookie: string; duplicatePagesSkipped: number; complete: boolean }> {
   const pages: string[] = [];
   let cookie = startCookie;
   let currentHtml = startHtml;
-  const lastPage = Math.min(totalPages(paging), MAX_PAGE_FETCHES);
+  let duplicatePagesSkipped = 0;
+  const seenFingerprints = new Set<string>([gridTableFingerprint(startHtml)]);
+
+  const linkedPages = parseGridPageNumbers(startHtml);
+  const lastPage = Math.min(
+    linkedPages.length > 0 ? Math.max(...linkedPages) : totalPages(paging),
+    totalPages(paging),
+    MAX_PAGE_FETCHES,
+  );
 
   for (let page = 2; page <= lastPage; page += 1) {
     const next = await aspnetPostBackFromHtml(url, currentHtml, GRID_EVENT_TARGET, `Page$${page}`, {
@@ -121,12 +179,19 @@ async function fetchRemainingPages(
       cookie,
     });
     cookie = next.cookie;
+
+    const fp = gridTableFingerprint(next.html);
+    if (seenFingerprints.has(fp)) {
+      duplicatePagesSkipped += 1;
+      break;
+    }
+    seenFingerprints.add(fp);
     currentHtml = next.html;
     pages.push(currentHtml);
 
     const pagePaging = parsePortalPaging(currentHtml);
     if (pagePaging && isPagingComplete(pagePaging, pagePaging.end)) {
-      return { pages, cookie, complete: true };
+      return { pages, cookie, duplicatePagesSkipped, complete: true };
     }
   }
 
@@ -134,54 +199,40 @@ async function fetchRemainingPages(
   return {
     pages,
     cookie,
+    duplicatePagesSkipped,
     complete: isPagingComplete(lastPaging ?? paging, lastPaging?.end ?? paging.end),
   };
 }
 
-async function tryViewAllFallback(
+async function collectViewAllPages(
   url: string,
   firstHtml: string,
   firstCookie: string,
   portalTotal: number,
   options: HttpClientOptions,
-): Promise<PaginatedGridFetchResult | null> {
-  if (!hasViewAllLink(firstHtml)) return null;
+): Promise<string[]> {
+  if (!hasViewAllLink(firstHtml)) return [];
 
   const viewAll = await aspnetPostBackFromHtml(url, firstHtml, VIEW_ALL_TARGET, '', {
     ...options,
     cookie: firstCookie,
   });
+  const collected = [viewAll.html];
   const viewAllPaging = parsePortalPaging(viewAll.html);
   const total = viewAllPaging?.total ?? portalTotal;
 
   if (!viewAllPaging || isPagingComplete(viewAllPaging, viewAllPaging.end)) {
-    return {
-      pages: [viewAll.html],
-      portalTotal: total,
-      pagesFetched: 2,
-      complete: true,
-    };
+    return collected;
   }
 
-  const remaining = await fetchRemainingPages(
-    url,
-    viewAll.html,
-    viewAll.cookie,
-    viewAllPaging,
-    options,
-  );
-  const pages = [viewAll.html, ...remaining.pages];
-  return {
-    pages,
-    portalTotal: total,
-    pagesFetched: pages.length + 1,
-    complete: remaining.complete,
-  };
+  const remaining = await fetchPageChain(url, viewAll.html, viewAll.cookie, viewAllPaging, options);
+  collected.push(...remaining.pages);
+  return collected;
 }
 
 /**
  * Fetch all ASP.NET grid pages for consigner/challan/challan-pass reports.
- * Page$N chain first; View All only if pages are still incomplete.
+ * Unions Page$N chain + View All pages; dedupes duplicate HTML fingerprints.
  */
 export async function fetchAllGridPages(
   url: string,
@@ -189,39 +240,42 @@ export async function fetchAllGridPages(
 ): Promise<PaginatedGridFetchResult> {
   const { html: firstHtml, cookie: firstCookie } = await fetchHtmlGetWithCookie(url, options);
   const firstPaging = parsePortalPaging(firstHtml);
+  const portalTotal = firstPaging?.total ?? null;
 
   if (!firstPaging || isPagingComplete(firstPaging, firstPaging.end)) {
     return {
       pages: [firstHtml],
-      portalTotal: firstPaging?.total ?? null,
+      portalTotal,
       pagesFetched: 1,
+      duplicatePagesSkipped: 0,
       complete: true,
     };
   }
 
-  let portalTotal = firstPaging.total;
-  const pages: string[] = [firstHtml];
+  const allHtml: string[] = [firstHtml];
 
-  const remaining = await fetchRemainingPages(url, firstHtml, firstCookie, firstPaging, options);
-  pages.push(...remaining.pages);
+  const chain = await fetchPageChain(url, firstHtml, firstCookie, firstPaging, options);
+  allHtml.push(...chain.pages);
 
-  let complete = remaining.complete;
+  const viewAllPages = await collectViewAllPages(
+    url,
+    firstHtml,
+    firstCookie,
+    firstPaging.total,
+    options,
+  );
+  allHtml.push(...viewAllPages);
 
-  if (!complete) {
-    const fallback = await tryViewAllFallback(url, firstHtml, firstCookie, portalTotal, options);
-    if (fallback) {
-      return fallback;
-    }
-  }
-
+  const { pages, duplicatePagesSkipped } = unionHtmlPagesByFingerprint(allHtml);
   const lastPaging = parsePortalPaging(pages.at(-1) ?? firstHtml) ?? firstPaging;
-  portalTotal = lastPaging.total;
-  complete = complete || isPagingComplete(lastPaging, lastPaging.end);
+  const complete =
+    isPagingComplete(firstPaging, firstPaging.end) || isPagingComplete(lastPaging, lastPaging.end);
 
   return {
     pages,
     portalTotal,
     pagesFetched: pages.length,
+    duplicatePagesSkipped: duplicatePagesSkipped + chain.duplicatePagesSkipped,
     complete,
   };
 }

@@ -15,13 +15,16 @@ export {
   parsePortalReportDate,
 } from './date-format.js';
 export { fetchReportHtml } from './fetch.js';
+export { gridTableFingerprint, parseAspNetFormFields } from './http/client.js';
 export {
   fetchAllGridPages,
   gridMetadataFromFetch,
   isPagingComplete,
   mergePaginatedRows,
   mergeRowsBySlNo,
+  parseGridPageNumbers,
   parsePortalPaging,
+  unionHtmlPagesByFingerprint,
   type PaginatedGridFetchResult,
   type PortalPaging,
 } from './grid-pagination.js';

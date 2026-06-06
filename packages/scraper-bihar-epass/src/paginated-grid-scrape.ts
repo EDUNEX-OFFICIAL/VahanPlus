@@ -33,8 +33,9 @@ export async function scrapePaginatedGrid<TRow>(
   const httpOpts = resolveHttpOptions(options);
   const fetch = await fetchAllGridPages(url, httpOpts);
   const rowPages = fetch.pages.map((html) => parseRows(html, url));
+  const perPageRowCounts = rowPages.map((page) => page.length);
   const rows = mergePaginatedRows(rowPages, rowKey);
-  const metadata = gridMetadataFromFetch(fetch, rows.length);
+  const metadata = gridMetadataFromFetch(fetch, rows.length, perPageRowCounts);
 
   return {
     rows,

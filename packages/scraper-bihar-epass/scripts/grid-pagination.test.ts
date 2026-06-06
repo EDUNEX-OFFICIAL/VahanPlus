@@ -2,13 +2,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gridTableFingerprint } from '../src/http/client.js';
 import { parseChallanTable } from '../src/challan-parser.js';
 import { parseConsignerTable } from '../src/consigner-parser.js';
 import {
   gridMetadataFromFetch,
   isPagingComplete,
   mergePaginatedRows,
+  parseGridPageNumbers,
   parsePortalPaging,
+  unionHtmlPagesByFingerprint,
 } from '../src/grid-pagination.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -29,14 +32,10 @@ const consignerFixture = readFileSync(
   assert.equal(isPagingComplete(paging, paging.total), true);
 }
 
-// parsePortalPaging — consigner fixture (complete single page)
+// parseGridPageNumbers from challan fixture
 {
-  const paging = parsePortalPaging(consignerFixture);
-  assert.ok(paging);
-  assert.equal(paging.start, 1);
-  assert.equal(paging.end, 17);
-  assert.equal(paging.total, 17);
-  assert.equal(isPagingComplete(paging, paging.end), true);
+  const pages = parseGridPageNumbers(challanFixture);
+  assert.deepEqual(pages, [2]);
 }
 
 // mergePaginatedRows keeps rows when portal restarts slNo on page 2
@@ -56,10 +55,16 @@ const consignerFixture = readFileSync(
     (row) => row.name,
   );
   assert.equal(merged.length, 5);
-  assert.deepEqual(
-    merged.map((r) => r.name),
-    ['a', 'b', 'u', 'v', 'w'],
-  );
+}
+
+// unionHtmlPagesByFingerprint skips duplicate table HTML
+{
+  const fp = gridTableFingerprint(challanFixture);
+  const dup = { pages: [challanFixture, challanFixture], duplicatePagesSkipped: 0 };
+  const union = unionHtmlPagesByFingerprint([challanFixture, challanFixture]);
+  assert.equal(union.pages.length, 1);
+  assert.equal(union.duplicatePagesSkipped, 1);
+  assert.equal(gridTableFingerprint(challanFixture), fp);
 }
 
 // challan parser row count on page-1 fixture
@@ -73,12 +78,15 @@ const consignerFixture = readFileSync(
       pages: [challanFixture],
       portalTotal: paging.total,
       pagesFetched: 1,
+      duplicatePagesSkipped: 0,
       complete: false,
     },
     report.rowCount,
+    [20],
   );
   assert.equal(meta.portalTotal, 34);
   assert.equal(meta.complete, false);
+  assert.ok(meta.incompleteReason?.includes('34'));
 }
 
 // consigner parser complete metadata
@@ -92,9 +100,11 @@ const consignerFixture = readFileSync(
       pages: [consignerFixture],
       portalTotal: paging.total,
       pagesFetched: 1,
+      duplicatePagesSkipped: 0,
       complete: true,
     },
     report.rowCount,
+    [17],
   );
   assert.equal(meta.complete, true);
 }

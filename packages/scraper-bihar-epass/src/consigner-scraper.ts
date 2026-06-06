@@ -1,5 +1,6 @@
 import { fetchOptionsFromMetadata } from './http/fetch-options.js';
 import { parseConsignerTable } from './consigner-parser.js';
+import { paginatedReportFields } from './paginated-report-fields.js';
 import { scrapePaginatedGrid } from './paginated-grid-scrape.js';
 import { EpassConsignerReportSchema } from './types.js';
 import type { ScrapeContext, ScrapeResult, Scraper } from './scraper-types.js';
@@ -20,9 +21,7 @@ export class BiharEpassConsignerScraper implements Scraper {
         scrapedAt: scraped.scrapedAt,
         rowCount: scraped.rowCount,
         rows: scraped.rows,
-        portalTotal: scraped.metadata.portalTotal,
-        complete: scraped.metadata.complete,
-        pagesFetched: scraped.metadata.pagesFetched,
+        ...paginatedReportFields(scraped),
       });
       return {
         success: true,

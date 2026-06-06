@@ -56,6 +56,9 @@ const PaginatedReportMetaSchema = z.object({
   portalTotal: z.number().int().nonnegative().nullable().optional(),
   complete: z.boolean().optional(),
   pagesFetched: z.number().int().positive().optional(),
+  perPageRowCounts: z.array(z.number().int().nonnegative()).optional(),
+  duplicatePagesSkipped: z.number().int().nonnegative().optional(),
+  incompleteReason: z.string().optional(),
 });
 
 export const EpassConsignerReportSchema = z.object({

@@ -11,9 +11,10 @@ interface EpassReportMetaBarProps {
   snapshot: EpassSnapshotDto | null;
   isLoading?: boolean;
   reportScope?: 'all' | 'range';
+  /** Row/entity count for all-reports scope (e.g. districts, minerals). */
   snapshotCount?: number;
-  totalSnapshotCount?: number;
-  snapshotsTruncated?: boolean;
+  /** Override column label when scope is all/range (default: Rows). */
+  countLabel?: string;
   latestScrapedAt?: string | null;
   dateFrom?: string;
   dateTo?: string;
@@ -24,8 +25,7 @@ export function EpassReportMetaBar({
   isLoading = false,
   reportScope,
   snapshotCount,
-  totalSnapshotCount,
-  snapshotsTruncated,
+  countLabel = 'Rows',
   latestScrapedAt,
   dateFrom,
   dateTo,
@@ -53,13 +53,8 @@ export function EpassReportMetaBar({
           </div>
           {snapshotCount != null && snapshotCount > 0 ? (
             <div>
-              <p className="text-xs uppercase tracking-wider text-text-secondary">Snapshots</p>
-              <p className="mt-1 font-semibold tabular-nums text-white">
-                {snapshotCount}
-                {snapshotsTruncated && totalSnapshotCount != null
-                  ? ` of ${totalSnapshotCount}`
-                  : null}
-              </p>
+              <p className="text-xs uppercase tracking-wider text-text-secondary">{countLabel}</p>
+              <p className="mt-1 font-semibold tabular-nums text-white">{snapshotCount}</p>
             </div>
           ) : null}
           <div>
@@ -67,11 +62,6 @@ export function EpassReportMetaBar({
             <p className="mt-1 font-semibold text-white">{latestLabel}</p>
           </div>
         </div>
-        {snapshotsTruncated ? (
-          <p className="mt-3 text-xs text-amber-300/90">
-            Showing latest {snapshotCount} snapshots only. Older reports are omitted from totals.
-          </p>
-        ) : null}
       </Card>
     );
   }

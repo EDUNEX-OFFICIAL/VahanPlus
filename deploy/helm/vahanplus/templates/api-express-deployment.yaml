@@ -65,6 +65,10 @@ spec:
             - name: CORS_ORIGINS
               value: {{ .Values.apiExpress.corsOrigins | quote }}
             {{- end }}
+            {{- if .Values.apiExpress.reportingReadModel }}
+            - name: REPORTING_READ_MODEL
+              value: "true"
+            {{- end }}
             {{- if .Values.apiExpress.khananData.enabled }}
             - name: KHANAN_IMPORT_DIR
               value: {{ .Values.apiExpress.khananData.importDir | quote }}

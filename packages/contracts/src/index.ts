@@ -5,6 +5,7 @@ export const QUEUE_NAMES = {
   VEHICLE: 'scrape:vehicle',
   KHANAN: 'scrape:khanan',
   SYSTEM_HEALTH: 'system:health',
+  REPORT_AGGREGATE: 'report:aggregate',
 } as const;
 
 export type JobStatus = 'pending' | 'active' | 'completed' | 'failed';
@@ -21,6 +22,8 @@ export const ScrapeJobTypeSchema = z.enum([
   'khanan_bulk_import',
   'khanan_bulk_export',
   'rc_advance_fetch',
+  'report_aggregate',
+  'report_aggregate_rebuild',
 ]);
 export type ScrapeJobType = z.infer<typeof ScrapeJobTypeSchema>;
 

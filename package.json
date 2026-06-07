@@ -24,7 +24,7 @@
     "db:verify-admin": "node packages/db/scripts/verify-admin-login.js",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "bootstrap": "pnpm --filter @vahanplus/contracts build && pnpm --filter @vahanplus/scraper-bihar-epass build && pnpm --filter @vahanplus/scraper-core build && pnpm --filter @vahanplus/khanan-config build && pnpm --filter @vahanplus/epass-orchestrator build && pnpm --filter @vahanplus/khanan-import build && pnpm --filter @vahanplus/rc-advance-client build && pnpm --filter @vahanplus/browser-pool build && pnpm db:generate && pnpm --filter @vahanplus/db build",
+    "bootstrap": "pnpm --filter @vahanplus/contracts build && pnpm --filter @vahanplus/scraper-bihar-epass build && pnpm --filter @vahanplus/scraper-core build && pnpm --filter @vahanplus/khanan-config build && pnpm --filter @vahanplus/epass-orchestrator build && pnpm --filter @vahanplus/khanan-import build && pnpm --filter @vahanplus/rc-advance-client build && pnpm --filter @vahanplus/report-aggregator build && pnpm --filter @vahanplus/browser-pool build && pnpm db:generate && pnpm --filter @vahanplus/db build",
     "prepare": "husky"
   },
   "devDependencies": {

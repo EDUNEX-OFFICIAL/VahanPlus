@@ -27,6 +27,21 @@ import {
   loadCrmLookupSets,
 } from '../services/vehicleStatusDb.js';
 import { mapVehicleStatusListItem } from '../services/vehicleStatusList.js';
+import { observeEpassQuery } from '../metrics.js';
+import { isReportingReadModelEnabled } from '../services/reporting/config.js';
+import { validateReportingQuery } from '../services/reporting/queryGuard.js';
+import {
+  fetchDistrictBrowse,
+  fetchFilterOptions,
+  fetchMineralBrowse,
+} from '../services/reporting/districtReporting.js';
+import {
+  fetchConsignerList,
+  fetchConsignerOptions,
+} from '../services/reporting/consignerReporting.js';
+import { fetchChalaanPassList } from '../services/reporting/chalaanReporting.js';
+import { fetchConsigneeChallans } from '../services/reporting/consigneeReporting.js';
+import { fetchVehicleDataList } from '../services/reporting/vehicleReporting.js';
 
 const router = express.Router();
 
@@ -297,36 +312,23 @@ function parseIsoDateInput(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-const ALL_SCOPE_SNAPSHOT_LIMIT = 100;
-
-async function resolveAllScopeSnapshots(prisma) {
-  const [totalSnapshotCount, snapshots] = await Promise.all([
-    prisma.epassSnapshot.count(),
-    prisma.epassSnapshot.findMany({
-      orderBy: { scrapedAt: 'desc' },
-      take: ALL_SCOPE_SNAPSHOT_LIMIT,
-    }),
-  ]);
-  return {
-    snapshots,
-    allScopeMeta: {
-      snapshotCount: snapshots.length,
-      totalSnapshotCount,
-      snapshotsTruncated: totalSnapshotCount > snapshots.length,
-    },
-  };
-}
-
 async function resolveSnapshotsForQuery(prisma, query) {
   const dateMode = query.dateMode === 'range' ? 'range' : 'specific';
 
   if (dateMode === 'range') {
+    const rangeError = validateReportingQuery(query);
+    if (rangeError) {
+      const err = new Error(rangeError);
+      err.statusCode = 400;
+      throw err;
+    }
     const from = typeof query.dateFrom === 'string' ? query.dateFrom : '';
     const to = typeof query.dateTo === 'string' ? query.dateTo : query.dateFrom || '';
     const reportDates = reportDateLookupVariantsInIsoRange(from, to);
     if (reportDates === null) {
-      const snapshots = await prisma.epassSnapshot.findMany({ orderBy: { scrapedAt: 'desc' } });
-      return { snapshots, allScopeMeta: null };
+      const err = new Error('dateMode=range requires dateFrom and/or dateTo bounds');
+      err.statusCode = 400;
+      throw err;
     }
     if (reportDates.length === 0) return { snapshots: [], allScopeMeta: null };
     const snapshots = await prisma.epassSnapshot.findMany({
@@ -342,20 +344,18 @@ async function resolveSnapshotsForQuery(prisma, query) {
   }
 
   if (query.reportScope === 'all') {
-    return resolveAllScopeSnapshots(prisma);
+    const err = new Error('reportScope=all requires CQRS read model');
+    err.statusCode = 400;
+    throw err;
   }
 
-  const all = await prisma.epassSnapshot.findMany({
-    orderBy: { scrapedAt: 'desc' },
-    take: ALL_SCOPE_SNAPSHOT_LIMIT,
-  });
-
   if (query.snapshotId) {
-    const one = all.find((s) => s.id === query.snapshotId);
+    const one = await prisma.epassSnapshot.findUnique({ where: { id: query.snapshotId } });
     return { snapshots: one ? [one] : [], allScopeMeta: null };
   }
 
-  return { snapshots: all.length > 0 ? [all[0]] : [], allScopeMeta: null };
+  const latest = await prisma.epassSnapshot.findFirst({ orderBy: { scrapedAt: 'desc' } });
+  return { snapshots: latest ? [latest] : [], allScopeMeta: null };
 }
 
 function buildConsignerWhereForSnapshots(snapshotIds, query) {
@@ -1181,6 +1181,21 @@ router.get('/district-rows/browse', async (req, res) => {
   if (req.query.reportScope !== 'all') {
     return res.status(400).json({ error: 'reportScope=all is required' });
   }
+  const rangeError = validateReportingQuery(req.query);
+  if (rangeError) return res.status(400).json({ error: rangeError });
+
+  if (isReportingReadModelEnabled()) {
+    const started = Date.now();
+    const payload = await fetchDistrictBrowse(prisma, req.query);
+    observeEpassQuery(
+      'district-rows/browse',
+      'all',
+      (Date.now() - started) / 1000,
+      payload.rows.length,
+      0,
+    );
+    return res.json(payload);
+  }
 
   const { snapshots, allScopeMeta } = await resolveSnapshotsForQuery(prisma, req.query);
   const snapshotIds = snapshots.map((s) => s.id);
@@ -1403,6 +1418,21 @@ router.get('/chalaan-passes', async (req, res) => {
     dateMode === 'range' &&
     (typeof req.query.dateFrom === 'string' || typeof req.query.dateTo === 'string');
 
+  if (isReportingReadModelEnabled() && (isAllScope || dateMode === 'range')) {
+    const rangeError = validateReportingQuery(req.query);
+    if (rangeError) return res.status(400).json({ error: rangeError });
+    const started = Date.now();
+    const payload = await fetchChalaanPassList(prisma, req.query);
+    observeEpassQuery(
+      'chalaan-passes',
+      isAllScope ? 'all' : 'range',
+      (Date.now() - started) / 1000,
+      payload.items.length,
+      0,
+    );
+    return res.json(payload);
+  }
+
   let snapshot = null;
   let rangeSnapshots = [];
   let allScopeMeta = null;
@@ -1533,10 +1563,43 @@ router.get('/chalaan-passes', async (req, res) => {
   });
 });
 
+router.get('/minerals/browse', async (req, res) => {
+  const prisma = getPrisma();
+  if (req.query.reportScope !== 'all') {
+    return res.status(400).json({ error: 'reportScope=all is required' });
+  }
+  if (!isReportingReadModelEnabled()) {
+    return res.status(503).json({ error: 'Mineral read model not available' });
+  }
+  const started = Date.now();
+  const payload = await fetchMineralBrowse(prisma, req.query);
+  observeEpassQuery(
+    'minerals/browse',
+    'all',
+    (Date.now() - started) / 1000,
+    payload.minerals.length,
+    0,
+  );
+  res.json(payload);
+});
+
 router.get('/filter-options', async (req, res) => {
   const prisma = getPrisma();
   if (req.query.reportScope !== 'all') {
     return res.status(400).json({ error: 'reportScope=all is required' });
+  }
+
+  if (isReportingReadModelEnabled()) {
+    const started = Date.now();
+    const payload = await fetchFilterOptions(prisma);
+    observeEpassQuery(
+      'filter-options',
+      'all',
+      (Date.now() - started) / 1000,
+      payload.districts.length,
+      0,
+    );
+    return res.json(payload);
   }
 
   const { snapshots, allScopeMeta } = await resolveSnapshotsForQuery(prisma, req.query);
@@ -1582,6 +1645,19 @@ router.get('/vehicle-data', async (req, res) => {
     typeof req.query.sort === 'string' ? req.query.sort : isAllScope ? 'lastDate' : 'vehicle';
   const dir = req.query.dir === 'desc' ? 'desc' : isAllScope && !req.query.dir ? 'desc' : 'asc';
   const portalStatusFilter = parsePortalStatusFilter(req.query);
+
+  if (isReportingReadModelEnabled() && isAllScope) {
+    const started = Date.now();
+    const payload = await fetchVehicleDataList(prisma, req.query);
+    observeEpassQuery(
+      'vehicle-data',
+      'all',
+      (Date.now() - started) / 1000,
+      payload.items.length,
+      0,
+    );
+    return res.json(payload);
+  }
 
   let snapshot = null;
   let snapshotIds = [];
@@ -1846,6 +1922,20 @@ router.get('/chalaans', async (req, res) => {
 
 router.get('/consigners/options', async (req, res) => {
   const prisma = getPrisma();
+
+  if (isReportingReadModelEnabled()) {
+    const started = Date.now();
+    const payload = await fetchConsignerOptions(prisma, req.query);
+    observeEpassQuery(
+      'consigners/options',
+      'all',
+      (Date.now() - started) / 1000,
+      payload.items.length,
+      0,
+    );
+    return res.json({ snapshot: null, items: payload.items });
+  }
+
   const { snapshots } = await resolveSnapshotsForQuery(prisma, req.query);
 
   if (snapshots.length === 0) {
@@ -1903,6 +1993,19 @@ router.get('/consigners', async (req, res) => {
   const orderBy = buildConsignerOrderBy(req.query);
 
   if (isAllScope) {
+    if (isReportingReadModelEnabled()) {
+      const started = Date.now();
+      const payload = await fetchConsignerList(prisma, req.query);
+      observeEpassQuery(
+        'consigners',
+        'all',
+        (Date.now() - started) / 1000,
+        payload.items.length,
+        0,
+      );
+      return res.json(payload);
+    }
+
     const { snapshots, allScopeMeta } = await resolveSnapshotsForQuery(prisma, req.query);
     const snapshotIds = snapshots.map((s) => s.id);
     if (snapshotIds.length === 0) {
@@ -1996,6 +2099,26 @@ router.get('/consigners/:id/challans', async (req, res) => {
 
   const dateMode = req.query.dateMode === 'range' ? 'range' : 'specific';
   const isAllScope = req.query.reportScope === 'all';
+
+  if (isReportingReadModelEnabled() && (isAllScope || dateMode === 'range')) {
+    const started = Date.now();
+    const payload = await fetchConsigneeChallans(prisma, consigner.id, req.query);
+    observeEpassQuery(
+      'consigners/challans',
+      isAllScope ? 'all' : 'range',
+      (Date.now() - started) / 1000,
+      payload.items.length,
+      0,
+    );
+    return res.json({
+      consigner: mapConsigner(consigner),
+      districtRow: payload.districtRow,
+      snapshot: payload.snapshot,
+      truncated: payload.truncated,
+      incompleteScrape: payload.incompleteScrape,
+      items: payload.items,
+    });
+  }
   const useRange =
     !isAllScope &&
     dateMode === 'range' &&

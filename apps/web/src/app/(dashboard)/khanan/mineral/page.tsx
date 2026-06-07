@@ -24,9 +24,9 @@ import {
 } from '@/lib/epass-district-filter-params';
 import {
   EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
-  fetchDistrictRowsBrowse,
   fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
+  fetchMineralsBrowse,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
@@ -120,13 +120,13 @@ function MineralPageContent() {
   }, [searchParams, updateParams, isRangeMode]);
 
   const {
-    data: allRowsData,
+    data: allMineralsData,
     isLoading: allRowsLoading,
     isError: allRowsError,
     refetch: refetchAllRows,
   } = useQuery({
-    queryKey: ['epass', 'district-rows-browse'],
-    queryFn: () => fetchDistrictRowsBrowse({ reportScope: 'all' }),
+    queryKey: ['epass', 'minerals-browse'],
+    queryFn: () => fetchMineralsBrowse({ reportScope: 'all' }),
     enabled: isAllReports && !browseEmpty,
     staleTime: SNAPSHOTS_STALE_MS,
   });
@@ -206,7 +206,7 @@ function MineralPageContent() {
     updateParams,
   ]);
 
-  const sourceRows = isAllReports ? allRowsData?.rows : rowsData?.rows;
+  const sourceRows = isAllReports ? undefined : rowsData?.rows;
 
   const minerals = useMemo(() => {
     if (sourceRows?.length) return collectMinerals(sourceRows);
@@ -221,14 +221,39 @@ function MineralPageContent() {
   }, [sourceRows, isAllReports, allFilterOptions?.districts]);
 
   const displayMinerals = useMemo(() => {
-    const canShow = isAllReports
-      ? !browseEmpty && sourceRows
-      : snapshotId && !browseEmpty && sourceRows;
+    if (isAllReports) {
+      if (browseEmpty || !allMineralsData?.minerals) return [];
+      let rows = allMineralsData.minerals;
+      if (appliedFilters.operator === 'lessee' || appliedFilters.operator === 'dealer') {
+        rows = rows.map((r) => ({
+          ...r,
+          totalPasses: appliedFilters.operator === 'lessee' ? r.lessee.passes : r.dealer.passes,
+        }));
+      }
+      if (appliedFilters.hideZeroPasses) {
+        rows = rows.filter((r) => r.totalPasses > 0);
+      }
+      if (appliedFilters.minerals.length > 0) {
+        const set = new Set(appliedFilters.minerals.map((m) => m.toLowerCase()));
+        rows = rows.filter((r) => set.has(r.mineral.toLowerCase()));
+      }
+      return sortMineralRows(rows, sortKey, sortDir);
+    }
+    const canShow = snapshotId && !browseEmpty && sourceRows;
     if (!canShow || !sourceRows) return [];
     const filtered = filterDistrictRowsForMineral(sourceRows, appliedFilters);
     const aggregated = aggregateMinerals(filtered, appliedFilters.operator);
     return sortMineralRows(aggregated, sortKey, sortDir);
-  }, [sourceRows, appliedFilters, sortKey, sortDir, snapshotId, browseEmpty, isAllReports]);
+  }, [
+    sourceRows,
+    allMineralsData,
+    appliedFilters,
+    sortKey,
+    sortDir,
+    snapshotId,
+    browseEmpty,
+    isAllReports,
+  ]);
 
   const handleApplyFilters = useCallback(
     (next: DistrictFilterValues) => {
@@ -279,14 +304,13 @@ function MineralPageContent() {
 
   return (
     <PageStack>
-      {isAllReports && allRowsData ? (
+      {isAllReports && allMineralsData ? (
         <EpassReportMetaBar
           snapshot={null}
           reportScope="all"
-          snapshotCount={allRowsData.snapshotCount}
-          totalSnapshotCount={allRowsData.totalSnapshotCount}
-          snapshotsTruncated={allRowsData.snapshotsTruncated}
-          latestScrapedAt={allRowsData.latestScrapedAt}
+          countLabel="Minerals"
+          snapshotCount={allMineralsData.entityCount ?? allMineralsData.snapshotCount}
+          latestScrapedAt={allMineralsData.latestScrapedAt}
         />
       ) : snapshotId && rowsData?.snapshot ? (
         <EpassReportMetaBar snapshot={rowsData.snapshot} />
@@ -307,7 +331,7 @@ function MineralPageContent() {
 
       {browseEmpty ? (
         <EpassEmptyState {...browseEmptyState} />
-      ) : (isAllReports && allRowsData) || (snapshotId && rowsData) ? (
+      ) : (isAllReports && allMineralsData) || (snapshotId && rowsData) ? (
         <MineralSummaryTable minerals={displayMinerals} operatorFilter={appliedFilters.operator} />
       ) : null}
     </PageStack>

@@ -10,8 +10,12 @@ export async function persistChallanPassReport(prisma, report) {
 
   const parent = await prisma.epassChallanRow.findUnique({
     where: { id: challanRowId },
-    select: { consigneeName: true },
+    select: {
+      consigneeName: true,
+      consignerRow: { select: { snapshotId: true } },
+    },
   });
+  const snapshotId = parent?.consignerRow?.snapshotId ?? null;
   const parentConsigneeName = parent?.consigneeName?.trim() || null;
 
   await prisma.epassChallanPassRow.deleteMany({
@@ -41,5 +45,5 @@ export async function persistChallanPassReport(prisma, report) {
     })),
   });
 
-  return { rowCount: created.count };
+  return { rowCount: created.count, snapshotId };
 }

@@ -10,7 +10,8 @@
     "lint": "eslint src",
     "backfill:challan-passes": "node scripts/trigger-challan-pass-backfill.mjs",
     "backfill:vehicle-status": "node scripts/trigger-vehicle-status-backfill.mjs",
-    "backfill:vehicle-status:100": "node scripts/trigger-vehicle-status-backfill.mjs --limit 100"
+    "backfill:vehicle-status:100": "node scripts/trigger-vehicle-status-backfill.mjs --limit 100",
+    "backfill:report-summaries": "node scripts/trigger-report-aggregate-rebuild.mjs"
   },
   "dependencies": {
     "@vahanplus/browser-pool": "workspace:*",
@@ -19,6 +20,7 @@
     "@vahanplus/khanan-config": "workspace:*",
     "@vahanplus/khanan-import": "workspace:*",
     "@vahanplus/rc-advance-client": "workspace:*",
+    "@vahanplus/report-aggregator": "workspace:*",
     "@vahanplus/db": "workspace:*",
     "@vahanplus/scraper-core": "workspace:*",
     "bullmq": "^5.52.2",

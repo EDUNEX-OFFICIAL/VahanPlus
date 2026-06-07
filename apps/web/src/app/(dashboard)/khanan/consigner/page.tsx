@@ -538,9 +538,8 @@ function ConsignerBrowse() {
         <EpassReportMetaBar
           snapshot={null}
           reportScope="all"
-          snapshotCount={data.snapshotCount}
-          totalSnapshotCount={data.totalSnapshotCount}
-          snapshotsTruncated={data.snapshotsTruncated}
+          countLabel="Consigners"
+          snapshotCount={data.entityCount ?? data.snapshotCount}
           latestScrapedAt={data.latestScrapedAt}
         />
       ) : snapshotId && snapshot ? (

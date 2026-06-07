@@ -22,6 +22,7 @@ apiExpress:
     exportDir: /var/lib/vahanplus/exports
   # Optional kill-switch: ALLOW_DATA_WIPE=false on api-express blocks wipe even if enabled in UI
   allowDataWipe: false
+  reportingReadModel: true
   resources:
     requests:
       cpu: 250m

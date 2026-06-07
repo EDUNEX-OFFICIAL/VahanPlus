@@ -73,7 +73,7 @@ export async function persistConsignerReport(prisma, report) {
     }
   }
 
-  return { rowCount: created.count, consignerRows: saved };
+  return { rowCount: created.count, consignerRows: saved, snapshotId };
 }
 
 function consignerGhatKey(slNo, consignerName) {

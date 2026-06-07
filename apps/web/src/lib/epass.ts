@@ -24,8 +24,17 @@ import type {
   LatestEpassResponse,
   OperatorType,
   DistrictRowsBrowseResponse,
+  MineralAggregateRow,
   SnapshotDistrictRowsResponse,
 } from '@/lib/epass-types';
+
+export type MineralsBrowseResponse = {
+  minerals: MineralAggregateRow[];
+  latestScrapedAt: string | null;
+  entityCount?: number;
+  snapshotCount: number;
+  reportScope: string;
+};
 
 export const EPASS_LATEST_QUERY_KEY = ['epass', 'latest'] as const;
 export const EPASS_SNAPSHOTS_QUERY_KEY = ['epass', 'snapshots'] as const;
@@ -51,6 +60,12 @@ export function fetchDistrictRowsBrowse(params: { reportScope: 'all' } = { repor
   const q = new URLSearchParams();
   q.set('reportScope', params.reportScope);
   return apiFetch<DistrictRowsBrowseResponse>(`/epass/district-rows/browse?${q.toString()}`);
+}
+
+export function fetchMineralsBrowse(params: { reportScope: 'all' } = { reportScope: 'all' }) {
+  const q = new URLSearchParams();
+  q.set('reportScope', params.reportScope);
+  return apiFetch<MineralsBrowseResponse>(`/epass/minerals/browse?${q.toString()}`);
 }
 
 export function fetchDistrictConsigners(districtRowId: string, operatorType: OperatorType) {

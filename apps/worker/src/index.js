@@ -30,6 +30,10 @@ import {
 } from './healthServer.js';
 import { processRcAdvanceFetch } from './rcAdvanceFetch.js';
 import { processKhananBulkExport, processKhananBulkImport } from './khananBulkHandlers.js';
+import {
+  maybeEnqueueReportAggregate,
+  processReportAggregateJob,
+} from './reportAggregateHandlers.js';
 
 const HTTP_ONLY_TYPES = new Set([
   'bihar_epass',
@@ -46,6 +50,8 @@ const pool = createBrowserPool({
 
 /** @type {Worker | null} */
 let worker = null;
+/** @type {Worker | null} */
+let reportAggregateWorker = null;
 let appliedConfigVersion = 0;
 
 function buildRawCapturePayload(result, type, startedAt, storeRawCapture) {
@@ -131,6 +137,9 @@ async function processJob(job) {
     let result;
     if (type === 'khanan_bulk_import') {
       result = await processKhananBulkImport(prisma, target);
+      if (result.success) {
+        await maybeEnqueueReportAggregate(null, 'import');
+      }
     } else if (type === 'khanan_bulk_export') {
       result = await processKhananBulkExport(prisma, target);
     } else if (type === 'rc_advance_fetch') {
@@ -154,6 +163,9 @@ async function processJob(job) {
     if (result.success && result.data && !stoppedDuringRun) {
       if (type === 'bihar_epass') {
         etlSummary = await persistEpassReport(prisma, result.data, jobId);
+        if (etlSummary?.snapshotId) {
+          await maybeEnqueueReportAggregate(etlSummary.snapshotId, 'l1');
+        }
         if (autoFanout && etlSummary?.snapshotId) {
           if (await wasJobStoppedByOperator(prisma, jobId)) {
             etlSummary = { ...etlSummary, fanout: { enqueued: 0, skipped: true } };
@@ -168,6 +180,9 @@ async function processJob(job) {
         }
       } else if (type === 'bihar_epass_consigner') {
         etlSummary = await persistConsignerReport(prisma, result.data);
+        if (etlSummary?.snapshotId) {
+          await maybeEnqueueReportAggregate(etlSummary.snapshotId, 'l2');
+        }
         if (autoFanout && etlSummary?.consignerRows?.length) {
           if (!(await wasJobStoppedByOperator(prisma, jobId))) {
             const challanFanout = await enqueueChallanJobsForConsigners(
@@ -179,6 +194,9 @@ async function processJob(job) {
         }
       } else if (type === 'bihar_epass_challan') {
         etlSummary = await persistChallanReport(prisma, result.data);
+        if (etlSummary?.snapshotId) {
+          await maybeEnqueueReportAggregate(etlSummary.snapshotId, 'l3');
+        }
         if (autoFanout && etlSummary?.challanRows?.length) {
           if (!(await wasJobStoppedByOperator(prisma, jobId))) {
             const passFanout = await enqueueChallanPassJobs(prisma, etlSummary.challanRows);
@@ -187,6 +205,9 @@ async function processJob(job) {
         }
       } else if (type === 'bihar_epass_challan_pass') {
         etlSummary = await persistChallanPassReport(prisma, result.data);
+        if (etlSummary?.snapshotId) {
+          await maybeEnqueueReportAggregate(etlSummary.snapshotId, 'l4');
+        }
         if (autoFanout && metadata?.challanRowId) {
           if (!(await wasJobStoppedByOperator(prisma, jobId))) {
             const vrns = await getVehicleRegNosForChallanRow(prisma, String(metadata.challanRowId));
@@ -266,6 +287,18 @@ async function startOrReloadWorker() {
     limiter,
   });
 
+  if (reportAggregateWorker) {
+    await reportAggregateWorker.close();
+    reportAggregateWorker = null;
+  }
+  reportAggregateWorker = new Worker(QUEUE_NAMES.REPORT_AGGREGATE, processReportAggregateJob, {
+    connection: getQueueConnection(),
+    concurrency: 1,
+  });
+  reportAggregateWorker.on('failed', (job, err) => {
+    console.error(`Report aggregate job ${job?.id} failed:`, err.message);
+  });
+
   worker.on('completed', (job) => {
     markJobActivity();
     console.log(`Job ${job.id} completed`);
@@ -293,6 +326,7 @@ setInterval(() => {
 }, 30_000);
 
 async function shutdown() {
+  if (reportAggregateWorker) await reportAggregateWorker.close();
   if (worker) await worker.close();
   await pool.close();
   await disconnectPrisma();

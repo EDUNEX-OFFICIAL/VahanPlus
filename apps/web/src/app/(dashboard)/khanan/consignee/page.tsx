@@ -401,9 +401,7 @@ function ConsigneePageContent() {
   const allReportsMeta = useMemo(() => {
     if (!isAllReports || !rangeFilterOptions) return null;
     return {
-      snapshotCount: rangeFilterOptions.snapshotCount ?? 0,
-      totalSnapshotCount: rangeFilterOptions.totalSnapshotCount,
-      snapshotsTruncated: rangeFilterOptions.snapshotsTruncated,
+      snapshotCount: rangeFilterOptions.entityCount ?? rangeFilterOptions.snapshotCount ?? 0,
       latestScrapedAt: rangeFilterOptions.latestScrapedAt ?? null,
     };
   }, [isAllReports, rangeFilterOptions]);
@@ -452,9 +450,8 @@ function ConsigneePageContent() {
         <EpassReportMetaBar
           snapshot={null}
           reportScope="all"
+          countLabel="Consignees"
           snapshotCount={allReportsMeta.snapshotCount}
-          totalSnapshotCount={allReportsMeta.totalSnapshotCount}
-          snapshotsTruncated={allReportsMeta.snapshotsTruncated}
           latestScrapedAt={allReportsMeta.latestScrapedAt}
         />
       ) : isRangeMode && rangeMeta ? (

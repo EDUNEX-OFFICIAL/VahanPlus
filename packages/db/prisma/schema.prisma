@@ -185,6 +185,202 @@ model EpassSnapshot {
   @@schema("processed")
 }
 
+/// CQRS read model — latest district state per DMO (dashboard reporting).
+model ReportDistrictSummary {
+  id                    String   @id @default(cuid())
+  entityKey             String   @unique
+  dmoName               String
+  dmoId                 String?
+  slNo                  Int
+  lesseeMineral         String?
+  lesseeUsers           Int
+  lesseePasses          Int
+  lesseeDispatchedQty   Decimal  @db.Decimal(18, 3)
+  dealerMineral         String?
+  dealerUsers           Int
+  dealerPasses          Int
+  dealerDispatchedQty   Decimal  @db.Decimal(18, 3)
+  totalUsers            Int
+  totalPasses           Int
+  lesseeMineralId       String?
+  dealerMineralId       String?
+  lesseePassDetailUrl   String?
+  dealerPassDetailUrl   String?
+  lastSnapshotId        String
+  lastReportDate        String
+  lastScrapedAt         DateTime
+  sourceRowId           String?
+  updatedAt             DateTime @updatedAt
+
+  @@index([lastReportDate, dmoName])
+  @@index([totalPasses])
+  @@index([lesseeMineral])
+  @@index([dealerMineral])
+  @@map("ReportDistrictSummary")
+  @@schema("processed")
+}
+
+model ReportMineralSummary {
+  id             String       @id @default(cuid())
+  entityKey      String       @unique
+  mineral        String
+  operatorRole   OperatorType
+  users          Int
+  passes         Int
+  dispatchedQty  Decimal      @db.Decimal(18, 3)
+  totalPasses    Int
+  updatedAt      DateTime     @updatedAt
+
+  @@index([passes])
+  @@index([mineral])
+  @@map("ReportMineralSummary")
+  @@schema("processed")
+}
+
+model ReportConsignerSummary {
+  id               String       @id @default(cuid())
+  entityKey        String       @unique
+  dmoName          String
+  operatorType     OperatorType
+  consignerName    String
+  mineral          String?
+  mineralType      String?
+  slNo             Int
+  challanCount     Int
+  challanLineCount Int          @default(0)
+  ghatNumber       String?
+  challanDetailUrl String?
+  districtRowId    String
+  districtSlNo     Int
+  lastSnapshotId   String
+  lastReportDate   String
+  lastScrapedAt    DateTime
+  sourceRowId      String?
+  updatedAt        DateTime     @updatedAt
+
+  @@index([dmoName, operatorType, consignerName])
+  @@index([challanCount])
+  @@index([lastScrapedAt])
+  @@map("ReportConsignerSummary")
+  @@schema("processed")
+}
+
+model ReportConsigneeSummary {
+  id             String       @id @default(cuid())
+  entityKey      String       @unique
+  consigneeName  String
+  mineral        String?
+  mineralCategory String?
+  slNo           Int
+  challanCount   Int
+  dispatchedQty  Decimal      @db.Decimal(18, 3)
+  unit           String?
+  ghatNumber     String?
+  dmoName        String
+  operatorType   OperatorType
+  consignerName  String
+  consignerRowId String
+  lastSnapshotId String
+  lastReportDate String
+  lastScrapedAt  DateTime
+  sourceRowId    String?
+  updatedAt      DateTime     @updatedAt
+
+  @@index([consigneeName])
+  @@index([dmoName])
+  @@index([lastReportDate])
+  @@map("ReportConsigneeSummary")
+  @@schema("processed")
+}
+
+model ReportChallanPassSummary {
+  id               String   @id @default(cuid())
+  entityKey        String   @unique
+  challanRowId     String
+  slNo             Int
+  consigneeName    String
+  challanNo        String
+  portalPassId     String?
+  mineral          String?
+  mineralCategory  String?
+  vehicleRegNo     String?
+  destination      String?
+  transportedDate  String?
+  quantity         Decimal  @db.Decimal(18, 3)
+  unit             String?
+  checkStatus      String?
+  portalChallanUrl String?
+  dmoName          String
+  operatorType     OperatorType
+  consignerName    String
+  consignerRowId   String
+  lastSnapshotId   String
+  lastReportDate   String
+  lastScrapedAt    DateTime
+  sourceRowId      String?
+  updatedAt        DateTime @updatedAt
+
+  @@index([lastReportDate])
+  @@index([consigneeName])
+  @@index([vehicleRegNo])
+  @@index([challanNo])
+  @@index([lastScrapedAt])
+  @@map("ReportChallanPassSummary")
+  @@schema("processed")
+}
+
+model ReportVehiclePassSummary {
+  id                  String    @id @default(cuid())
+  entityKey           String    @unique
+  vehicleRegNo        String
+  passCount           Int
+  totalQuantity       Decimal   @db.Decimal(18, 3)
+  quantityByUnit      Json
+  minerals            String[]
+  dmoNames            String[]
+  consignerNames      String[]
+  destinations        String[]
+  lastTransportedDate String?
+  lastScrapedAt       DateTime
+  updatedAt           DateTime  @updatedAt
+
+  @@index([passCount])
+  @@index([lastTransportedDate])
+  @@index([vehicleRegNo])
+  @@map("ReportVehiclePassSummary")
+  @@schema("processed")
+}
+
+model ReportDistrictContribution {
+  id         String   @id @default(cuid())
+  snapshotId String
+  entityKey  String
+  reportDate String
+  scrapedAt  DateTime
+  metrics    Json
+
+  @@unique([snapshotId, entityKey])
+  @@index([entityKey])
+  @@map("ReportDistrictContribution")
+  @@schema("processed")
+}
+
+model ReportPassContribution {
+  id           String   @id @default(cuid())
+  snapshotId   String
+  entityKey    String
+  reportDate   String
+  scrapedAt    DateTime
+  vehicleRegNo String?
+  quantity     Decimal? @db.Decimal(18, 3)
+
+  @@unique([snapshotId, entityKey])
+  @@index([vehicleRegNo])
+  @@index([entityKey])
+  @@map("ReportPassContribution")
+  @@schema("processed")
+}
+
 model EpassDistrictRow {
   id                  String        @id @default(cuid())
   snapshotId          String
@@ -352,4 +548,30 @@ model CrmConfig {
   updatedAt            DateTime @updatedAt
 
   @@schema("system")
+}
+
+model ReportAggregateCheckpoint {
+  id                String   @id @default("default")
+  aggregatorVersion Int      @default(1)
+  lastSnapshotId    String?
+  updatedAt         DateTime @updatedAt
+
+  @@schema("system")
+}
+
+model ReportAggregateJob {
+  id              String   @id @default(cuid())
+  snapshotId      String?
+  jobVersion      Int      @default(1)
+  trigger         String
+  status          String   @default("pending")
+  durationMs      Int?
+  entitiesUpdated Int?
+  error           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([snapshotId])
+  @@schema("ingest")
 }

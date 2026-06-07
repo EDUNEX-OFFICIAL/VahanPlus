@@ -227,12 +227,10 @@ function DistrictPageContent() {
       ? !browseEmpty && sourceRows
       : snapshotId && !browseEmpty && sourceRows;
     if (!canShow || !sourceRows) return [];
-    const aggregated = aggregateDistrictRowsByDmo(
-      sourceRows,
-      appliedFilters.operator,
-      appliedFilters.minerals,
-    );
-    const filtered = applyDistrictFilters(aggregated, {
+    const baseRows = isAllReports
+      ? sourceRows
+      : aggregateDistrictRowsByDmo(sourceRows, appliedFilters.operator, appliedFilters.minerals);
+    const filtered = applyDistrictFilters(baseRows, {
       minerals: appliedFilters.minerals,
       districts: appliedFilters.districts,
       hideZeroPasses: appliedFilters.hideZeroPasses,
@@ -308,9 +306,8 @@ function DistrictPageContent() {
         <EpassReportMetaBar
           snapshot={null}
           reportScope="all"
-          snapshotCount={allRowsData.snapshotCount}
-          totalSnapshotCount={allRowsData.totalSnapshotCount}
-          snapshotsTruncated={allRowsData.snapshotsTruncated}
+          countLabel="Districts"
+          snapshotCount={allRowsData.entityCount ?? allRowsData.snapshotCount}
           latestScrapedAt={allRowsData.latestScrapedAt}
         />
       ) : snapshotId && rowsData?.snapshot ? (

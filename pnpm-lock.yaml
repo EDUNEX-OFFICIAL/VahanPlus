@@ -242,6 +242,9 @@ importers:
       '@vahanplus/rc-advance-client':
         specifier: workspace:*
         version: link:../../packages/rc-advance-client
+      '@vahanplus/report-aggregator':
+        specifier: workspace:*
+        version: link:../../packages/report-aggregator
       '@vahanplus/scraper-core':
         specifier: workspace:*
         version: link:../../packages/scraper-core
@@ -343,6 +346,18 @@ importers:
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@22.19.19)
+
+  packages/report-aggregator:
+    dependencies:
+      '@vahanplus/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@vahanplus/db':
+        specifier: workspace:*
+        version: link:../db
+      bullmq:
+        specifier: ^5.52.2
+        version: 5.76.10
 
   packages/scraper-bihar-epass:
     dependencies:

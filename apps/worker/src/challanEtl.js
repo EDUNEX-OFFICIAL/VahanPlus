@@ -6,6 +6,12 @@ export async function persistChallanReport(prisma, report) {
   const consignerRowId = String(report.consignerRowId ?? '');
   const rows = Array.isArray(report.rows) ? report.rows : [];
 
+  const consigner = await prisma.epassConsignerRow.findUnique({
+    where: { id: consignerRowId },
+    select: { snapshotId: true },
+  });
+  const snapshotId = consigner?.snapshotId ?? null;
+
   await prisma.epassChallanRow.deleteMany({
     where: { consignerRowId },
   });
@@ -30,5 +36,5 @@ export async function persistChallanReport(prisma, report) {
     orderBy: { slNo: 'asc' },
   });
 
-  return { rowCount: created.count, challanRows: saved };
+  return { rowCount: created.count, challanRows: saved, snapshotId };
 }

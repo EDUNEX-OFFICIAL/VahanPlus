@@ -338,9 +338,8 @@ function ChalaanPageContent() {
         <EpassReportMetaBar
           snapshot={null}
           reportScope={isRangeMode ? 'range' : 'all'}
-          snapshotCount={data?.snapshotCount}
-          totalSnapshotCount={data?.totalSnapshotCount}
-          snapshotsTruncated={data?.snapshotsTruncated}
+          countLabel="Challans"
+          snapshotCount={data?.entityCount ?? data?.snapshotCount}
           latestScrapedAt={data?.latestScrapedAt}
           dateFrom={appliedFilters.dateFrom}
           dateTo={appliedFilters.dateTo}

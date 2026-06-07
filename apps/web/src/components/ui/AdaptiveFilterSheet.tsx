@@ -9,7 +9,7 @@ import { Chip } from '@/components/ui/Chip';
 import { cn } from '@/lib/utils';
 
 export const filterDropdownPanelClass =
-  'fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 flex max-h-none flex-col overflow-hidden bg-surface-primary p-0 shadow-2xl md:absolute md:inset-auto md:bottom-auto md:left-0 md:top-full md:mt-2 md:max-h-[min(78vh,680px)] md:w-[min(100vw-2rem,420px)]';
+  'fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 flex max-h-none min-h-0 flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:absolute md:inset-x-auto md:inset-y-auto md:left-0 md:right-auto md:top-full md:mt-2 md:max-h-[min(78dvh,680px)] md:w-[min(100vw-2rem,420px)]';
 
 export function FilterDropdownPanel({
   title,
@@ -22,13 +22,13 @@ export function FilterDropdownPanel({
 }) {
   return (
     <Card className={filterDropdownPanelClass}>
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin">
+      <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin">
         {title ? (
           <p className="mb-4 text-base font-bold tracking-tight text-white">{title}</p>
         ) : null}
         {children}
       </div>
-      <div className="relative z-10 shrink-0 grid grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_24px_rgba(0,0,0,0.5)]">
+      <div className="relative z-10 grid shrink-0 grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_24px_rgba(0,0,0,0.5)]">
         {footer}
       </div>
     </Card>
@@ -97,9 +97,9 @@ export function AdaptiveFilterSheet({
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm data-[state=open]:animate-fade-up" />
         <Dialog.Content
           className={cn(
-            'fixed z-50 flex flex-col overflow-hidden border border-border-default/80 bg-surface-primary/95 text-white shadow-2xl shadow-black/40 backdrop-blur-2xl focus:outline-none',
+            'fixed z-50 flex min-h-0 flex-col overflow-hidden border border-border-default/80 bg-surface-primary/95 text-white shadow-2xl shadow-black/40 backdrop-blur-2xl focus:outline-none',
             'inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] bottom-[calc(5.75rem+env(safe-area-inset-bottom))] max-h-none rounded-[1.75rem]',
-            'md:inset-auto md:bottom-auto md:left-4 md:top-[calc(5.25rem+env(safe-area-inset-top))] md:h-auto md:max-h-[min(78vh,680px)] md:w-[min(420px,calc(100vw-2rem))] md:rounded-[1.75rem]',
+            'md:inset-auto md:bottom-auto md:left-4 md:top-[calc(5.25rem+env(safe-area-inset-top))] md:h-auto md:max-h-[min(78dvh,680px)] md:w-[min(420px,calc(100vw-2rem))] md:rounded-[1.75rem]',
           )}
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border-default/70 bg-surface-primary/95 px-4 py-4 sm:px-5">
@@ -116,7 +116,7 @@ export function AdaptiveFilterSheet({
               </button>
             </Dialog.Close>
           </div>
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 scrollbar-thin">
+          <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 scrollbar-thin">
             <div className="space-y-5">{children}</div>
           </div>
           <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-3 border-t border-border-default/70 bg-surface-primary px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-5">

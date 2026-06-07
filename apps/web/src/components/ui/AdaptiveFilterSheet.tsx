@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -8,30 +9,77 @@ import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { cn } from '@/lib/utils';
 
-export const filterDropdownPanelClass =
-  'fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 flex max-h-none min-h-0 flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:absolute md:inset-x-auto md:inset-y-auto md:left-0 md:right-auto md:top-full md:mt-2 md:max-h-[min(78dvh,680px)] md:w-[min(100vw-2rem,420px)]';
+const filterPanelFooterClass =
+  'relative z-10 grid shrink-0 grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 py-3 shadow-[0_-10px_24px_rgba(0,0,0,0.5)]';
+
+function useMobileBodyScrollLock(active: boolean) {
+  useEffect(() => {
+    if (!active) return;
+    const mq = window.matchMedia('(max-width: 767px)');
+    if (!mq.matches) return;
+
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [active]);
+}
 
 export function FilterDropdownPanel({
   title,
   children,
   footer,
+  onClose,
 }: {
   title?: ReactNode;
   children: ReactNode;
   footer: ReactNode;
+  onClose?: () => void;
 }) {
-  return (
-    <Card className={filterDropdownPanelClass}>
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+  useMobileBodyScrollLock(true);
+
+  const bodyContent = (
+    <>
+      {title ? <p className="mb-4 text-base font-bold tracking-tight text-white">{title}</p> : null}
+      {children}
+    </>
+  );
+
+  const mobileSheet = (
+    <>
+      <button
+        type="button"
+        aria-label="Close filters"
+        className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-sm md:hidden"
+        onClick={onClose}
+      />
+      <Card className="fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-[101] flex max-h-[70dvh] flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:hidden">
+        <div className="touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin">
+          {bodyContent}
+        </div>
+        <div className={filterPanelFooterClass}>{footer}</div>
+      </Card>
+    </>
+  );
+
+  const desktopDropdown = (
+    <Card className="absolute left-0 top-full z-50 mt-2 hidden max-h-[min(78dvh,680px)] w-[min(100vw-2rem,420px)] flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:flex">
       <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin">
-        {title ? (
-          <p className="mb-4 text-base font-bold tracking-tight text-white">{title}</p>
-        ) : null}
-        {children}
+        {bodyContent}
       </div>
-      <div className="relative z-10 grid shrink-0 grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_24px_rgba(0,0,0,0.5)]">
-        {footer}
-      </div>
+      <div className={filterPanelFooterClass}>{footer}</div>
     </Card>
+  );
+
+  return (
+    <>
+      {mounted ? createPortal(mobileSheet, document.body) : null}
+      {desktopDropdown}
+    </>
   );
 }
 
@@ -97,12 +145,12 @@ export function AdaptiveFilterSheet({
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm data-[state=open]:animate-fade-up" />
         <Dialog.Content
           className={cn(
-            'fixed z-50 flex min-h-0 flex-col overflow-hidden border border-border-default/80 bg-surface-primary/95 text-white shadow-2xl shadow-black/40 backdrop-blur-2xl focus:outline-none',
-            'inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] bottom-[calc(5.75rem+env(safe-area-inset-bottom))] max-h-none rounded-[1.75rem]',
-            'md:inset-auto md:bottom-auto md:left-4 md:top-[calc(5.25rem+env(safe-area-inset-top))] md:h-auto md:max-h-[min(78dvh,680px)] md:w-[min(420px,calc(100vw-2rem))] md:rounded-[1.75rem]',
+            'fixed z-50 flex flex-col overflow-hidden border border-border-default/80 bg-surface-primary/95 text-white shadow-2xl shadow-black/40 backdrop-blur-2xl focus:outline-none',
+            'inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] max-h-[70dvh] rounded-[1.75rem]',
+            'md:inset-auto md:bottom-auto md:left-4 md:top-[calc(5.25rem+env(safe-area-inset-top))] md:max-h-[min(78dvh,680px)] md:w-[min(420px,calc(100vw-2rem))] md:rounded-[1.75rem]',
           )}
         >
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border-default/70 bg-surface-primary/95 px-4 py-4 sm:px-5">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border-default/70 bg-surface-primary/95 px-4 py-4 sm:px-5">
             <Dialog.Title className="text-base font-bold tracking-tight text-white">
               {title}
             </Dialog.Title>
@@ -116,10 +164,10 @@ export function AdaptiveFilterSheet({
               </button>
             </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 scrollbar-thin">
+          <div className="touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 scrollbar-thin md:min-h-0 md:flex-1">
             <div className="space-y-5">{children}</div>
           </div>
-          <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-3 border-t border-border-default/70 bg-surface-primary px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-5">
+          <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-border-default/70 bg-surface-primary px-4 py-4 sm:px-5">
             <Button variant="secondary" onClick={onReset}>
               {resetLabel}
             </Button>

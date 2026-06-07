@@ -72,131 +72,124 @@ export function VehicleStatusFilters({ values, onApply, onClear }: VehicleStatus
           </Button>
 
           {open ? (
-            <>
-              <button
-                type="button"
-                aria-label="Close filters"
-                className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden"
-                onClick={() => setOpen(false)}
-              />
-              <FilterDropdownPanel
-                title="Vehicle filters"
-                footer={
-                  <>
-                    <Button variant="secondary" className="text-sm" onClick={handleReset}>
-                      Reset
-                    </Button>
-                    <Button className="text-sm" onClick={handleApply}>
-                      Apply
-                    </Button>
-                  </>
-                }
-              >
-                <div className="space-y-5">
-                  <FilterSection title="Vehicle">
-                    <label
-                      className="text-xs uppercase tracking-wider text-text-secondary"
-                      htmlFor="vehicle-status-search"
-                    >
-                      Vehicle / KS reg no
-                    </label>
+            <FilterDropdownPanel
+              title="Vehicle filters"
+              onClose={() => setOpen(false)}
+              footer={
+                <>
+                  <Button variant="secondary" className="text-sm" onClick={handleReset}>
+                    Reset
+                  </Button>
+                  <Button className="text-sm" onClick={handleApply}>
+                    Apply
+                  </Button>
+                </>
+              }
+            >
+              <div className="space-y-5">
+                <FilterSection title="Vehicle">
+                  <label
+                    className="text-xs uppercase tracking-wider text-text-secondary"
+                    htmlFor="vehicle-status-search"
+                  >
+                    Vehicle / KS reg no
+                  </label>
+                  <input
+                    id="vehicle-status-search"
+                    type="search"
+                    value={draft.search}
+                    onChange={(e) => patch({ search: e.target.value })}
+                    placeholder="e.g. BR01GN8970"
+                    className={filterInputClass}
+                  />
+                </FilterSection>
+
+                <FilterSection title="Portal match">
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        { value: 'all' as const, label: 'All' },
+                        { value: 'found' as const, label: 'Found' },
+                        { value: 'notFound' as const, label: 'No data on portal' },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={draft.found === value ? 'primary' : 'secondary'}
+                        className="min-h-11 px-4 text-sm"
+                        onClick={() => patch({ found: value as VehicleStatusFoundFilter })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </FilterSection>
+
+                <FilterSection title="Expiry windows (days)">
+                  <div className="grid grid-cols-3 gap-2">
                     <input
-                      id="vehicle-status-search"
-                      type="search"
-                      value={draft.search}
-                      onChange={(e) => patch({ search: e.target.value })}
-                      placeholder="e.g. BR01GN8970"
-                      className={filterInputClass}
-                    />
-                  </FilterSection>
-
-                  <FilterSection title="Portal match">
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          { value: 'all' as const, label: 'All' },
-                          { value: 'found' as const, label: 'Found' },
-                          { value: 'notFound' as const, label: 'No data on portal' },
-                        ] as const
-                      ).map(({ value, label }) => (
-                        <Button
-                          key={value}
-                          variant={draft.found === value ? 'primary' : 'secondary'}
-                          className="min-h-11 px-4 text-sm"
-                          onClick={() => patch({ found: value as VehicleStatusFoundFilter })}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                  </FilterSection>
-
-                  <FilterSection title="Expiry windows (days)">
-                    <div className="grid grid-cols-3 gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        value={draft.insuranceExpiryDays}
-                        onChange={(e) => patch({ insuranceExpiryDays: e.target.value })}
-                        placeholder="Insurance"
-                        className={filterInputClass}
-                      />
-                      <input
-                        type="number"
-                        min={0}
-                        value={draft.rcExpiryDays}
-                        onChange={(e) => patch({ rcExpiryDays: e.target.value })}
-                        placeholder="RC"
-                        className={filterInputClass}
-                      />
-                      <input
-                        type="number"
-                        min={0}
-                        value={draft.fitnessExpiryDays}
-                        onChange={(e) => patch({ fitnessExpiryDays: e.target.value })}
-                        placeholder="Fitness"
-                        className={filterInputClass}
-                      />
-                    </div>
-                  </FilterSection>
-
-                  <FilterSection title="Vehicle metadata">
-                    <input
-                      type="text"
-                      value={draft.vehicleClass}
-                      onChange={(e) => patch({ vehicleClass: e.target.value })}
-                      placeholder="Vehicle class"
+                      type="number"
+                      min={0}
+                      value={draft.insuranceExpiryDays}
+                      onChange={(e) => patch({ insuranceExpiryDays: e.target.value })}
+                      placeholder="Insurance"
                       className={filterInputClass}
                     />
                     <input
-                      type="text"
-                      value={draft.esimValidity}
-                      onChange={(e) => patch({ esimValidity: e.target.value })}
-                      placeholder="eSIM validity"
+                      type="number"
+                      min={0}
+                      value={draft.rcExpiryDays}
+                      onChange={(e) => patch({ rcExpiryDays: e.target.value })}
+                      placeholder="RC"
                       className={filterInputClass}
                     />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        value={draft.grossWeightMin}
-                        onChange={(e) => patch({ grossWeightMin: e.target.value })}
-                        placeholder="Gross WT min"
-                        className={filterInputClass}
-                      />
-                      <input
-                        type="number"
-                        min={0}
-                        value={draft.grossWeightMax}
-                        onChange={(e) => patch({ grossWeightMax: e.target.value })}
-                        placeholder="Gross WT max"
-                        className={filterInputClass}
-                      />
-                    </div>
-                  </FilterSection>
-                </div>
-              </FilterDropdownPanel>
-            </>
+                    <input
+                      type="number"
+                      min={0}
+                      value={draft.fitnessExpiryDays}
+                      onChange={(e) => patch({ fitnessExpiryDays: e.target.value })}
+                      placeholder="Fitness"
+                      className={filterInputClass}
+                    />
+                  </div>
+                </FilterSection>
+
+                <FilterSection title="Vehicle metadata">
+                  <input
+                    type="text"
+                    value={draft.vehicleClass}
+                    onChange={(e) => patch({ vehicleClass: e.target.value })}
+                    placeholder="Vehicle class"
+                    className={filterInputClass}
+                  />
+                  <input
+                    type="text"
+                    value={draft.esimValidity}
+                    onChange={(e) => patch({ esimValidity: e.target.value })}
+                    placeholder="eSIM validity"
+                    className={filterInputClass}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={draft.grossWeightMin}
+                      onChange={(e) => patch({ grossWeightMin: e.target.value })}
+                      placeholder="Gross WT min"
+                      className={filterInputClass}
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      value={draft.grossWeightMax}
+                      onChange={(e) => patch({ grossWeightMax: e.target.value })}
+                      placeholder="Gross WT max"
+                      className={filterInputClass}
+                    />
+                  </div>
+                </FilterSection>
+              </div>
+            </FilterDropdownPanel>
           ) : null}
         </div>
 

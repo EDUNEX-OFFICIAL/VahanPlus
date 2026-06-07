@@ -189,71 +189,196 @@ export function ConsignerEpassFilters({
           </Button>
 
           {open ? (
-            <>
-              <button
-                type="button"
-                aria-label="Close filters"
-                className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden"
-                onClick={() => setOpen(false)}
-              />
-              <FilterDropdownPanel
-                title="Filters"
-                footer={
-                  <>
-                    <Button className="text-sm" onClick={handleApply} disabled={!rangeDatesValid}>
-                      Apply
-                    </Button>
-                    <Button variant="secondary" className="text-sm" onClick={() => setOpen(false)}>
-                      Cancel
-                    </Button>
-                  </>
-                }
-              >
-                <div className="space-y-5">
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-text-secondary">Operator</p>
-                    <div className="mt-2 flex gap-2">
-                      {(
-                        [
-                          { value: 'all' as const, label: 'All' },
-                          { value: 'lessee' as const, label: 'Lessee' },
-                          { value: 'dealer' as const, label: 'Dealer' },
-                        ] as const
-                      ).map(({ value, label }) => (
-                        <Button
-                          key={value}
-                          variant={draft.operator === value ? 'primary' : 'secondary'}
-                          className="min-h-11 px-4 text-sm"
-                          onClick={() => patch({ operator: value })}
+            <FilterDropdownPanel
+              title="Filters"
+              onClose={() => setOpen(false)}
+              footer={
+                <>
+                  <Button className="text-sm" onClick={handleApply} disabled={!rangeDatesValid}>
+                    Apply
+                  </Button>
+                  <Button variant="secondary" className="text-sm" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                </>
+              }
+            >
+              <div className="space-y-5">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-text-secondary">Operator</p>
+                  <div className="mt-2 flex gap-2">
+                    {(
+                      [
+                        { value: 'all' as const, label: 'All' },
+                        { value: 'lessee' as const, label: 'Lessee' },
+                        { value: 'dealer' as const, label: 'Dealer' },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={draft.operator === value ? 'primary' : 'secondary'}
+                        className="min-h-11 px-4 text-sm"
+                        onClick={() => patch({ operator: value })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-text-secondary">Mineral</p>
+                  <div className="mt-2 max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
+                      <input
+                        type="checkbox"
+                        checked={draft.minerals.length === 0}
+                        onChange={() => patch({ minerals: [] })}
+                        className={filterCheckClass}
+                      />
+                      All
+                    </label>
+                    {minerals.length === 0 ? (
+                      <p className="text-xs text-text-secondary/80">No minerals for this scope</p>
+                    ) : null}
+                    {minerals.map((m) => {
+                      const checked = draft.minerals.some(
+                        (x) => x.toLowerCase() === m.toLowerCase(),
+                      );
+                      return (
+                        <label
+                          key={m}
+                          className="flex cursor-pointer items-center gap-2 text-sm text-white"
                         >
-                          {label}
-                        </Button>
-                      ))}
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              if (checked) {
+                                patch({
+                                  minerals: draft.minerals.filter(
+                                    (x) => x.toLowerCase() !== m.toLowerCase(),
+                                  ),
+                                });
+                              } else {
+                                patch({ minerals: [...draft.minerals, m] });
+                              }
+                            }}
+                            className={filterCheckClass}
+                          />
+                          {m}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-text-secondary">Date</p>
+                  <div className="mt-2 flex gap-2">
+                    {(
+                      [
+                        { value: 'specific' as const, label: 'Specific' },
+                        { value: 'range' as const, label: 'Range' },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={draft.dateMode === value ? 'primary' : 'secondary'}
+                        className="min-h-11 px-4 text-sm"
+                        onClick={() =>
+                          patch({
+                            dateMode: value,
+                            ...(value === 'range'
+                              ? { snapshotId: '', reportDate: '', reportScope: 'specific' }
+                              : {}),
+                          })
+                        }
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {draft.dateMode === 'range' ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label
+                        className="text-xs uppercase tracking-wider text-text-secondary"
+                        htmlFor="consigner-date-from"
+                      >
+                        From
+                      </label>
+                      <input
+                        id="consigner-date-from"
+                        type="date"
+                        value={draft.dateFrom}
+                        onChange={(e) => patch({ dateFrom: e.target.value })}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="text-xs uppercase tracking-wider text-text-secondary"
+                        htmlFor="consigner-date-to"
+                      >
+                        To
+                      </label>
+                      <input
+                        id="consigner-date-to"
+                        type="date"
+                        value={draft.dateTo}
+                        onChange={(e) => patch({ dateTo: e.target.value })}
+                        className={inputClass}
+                      />
                     </div>
                   </div>
+                ) : null}
 
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-text-secondary">Mineral</p>
-                    <div className="mt-2 max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
-                      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
-                        <input
-                          type="checkbox"
-                          checked={draft.minerals.length === 0}
-                          onChange={() => patch({ minerals: [] })}
-                          className={filterCheckClass}
-                        />
-                        All
-                      </label>
-                      {minerals.length === 0 ? (
-                        <p className="text-xs text-text-secondary/80">No minerals for this scope</p>
-                      ) : null}
-                      {minerals.map((m) => {
-                        const checked = draft.minerals.some(
-                          (x) => x.toLowerCase() === m.toLowerCase(),
+                {draft.dateMode !== 'range' || draft.reportScope === 'all' ? (
+                  <ReportDateYearSelect
+                    idPrefix="consigner"
+                    options={dateOptions}
+                    snapshotId={effectiveSnapshotId}
+                    allowAllReports={allowAllReports}
+                    onChange={(snapshotId, reportDate) => {
+                      if (snapshotId === ALL_REPORTS_SNAPSHOT_ID) {
+                        patch({ reportScope: 'all', snapshotId: '', reportDate: '' });
+                      } else {
+                        patch({
+                          reportScope: 'specific',
+                          snapshotId,
+                          reportDate,
+                        });
+                      }
+                    }}
+                    inputClass={inputClass}
+                  />
+                ) : null}
+
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-text-secondary">District</p>
+                  <div className="mt-2 max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
+                      <input
+                        type="checkbox"
+                        checked={draft.districts.length === 0}
+                        onChange={() => patch({ districts: [] })}
+                        className={filterCheckClass}
+                      />
+                      All
+                    </label>
+                    {districts.length === 0 ? (
+                      <p className="text-xs text-text-secondary/80">No districts for this report</p>
+                    ) : (
+                      districts.map((d) => {
+                        const checked = draft.districts.some(
+                          (x) => x.toLowerCase() === d.toLowerCase(),
                         );
                         return (
                           <label
-                            key={m}
+                            key={d}
                             className="flex cursor-pointer items-center gap-2 text-sm text-white"
                           >
                             <input
@@ -262,186 +387,52 @@ export function ConsignerEpassFilters({
                               onChange={() => {
                                 if (checked) {
                                   patch({
-                                    minerals: draft.minerals.filter(
-                                      (x) => x.toLowerCase() !== m.toLowerCase(),
+                                    districts: draft.districts.filter(
+                                      (x) => x.toLowerCase() !== d.toLowerCase(),
                                     ),
                                   });
                                 } else {
-                                  patch({ minerals: [...draft.minerals, m] });
+                                  patch({ districts: [...draft.districts, d] });
                                 }
                               }}
                               className={filterCheckClass}
                             />
-                            {m}
+                            {d}
                           </label>
                         );
-                      })}
-                    </div>
+                      })
+                    )}
                   </div>
-
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-text-secondary">Date</p>
-                    <div className="mt-2 flex gap-2">
-                      {(
-                        [
-                          { value: 'specific' as const, label: 'Specific' },
-                          { value: 'range' as const, label: 'Range' },
-                        ] as const
-                      ).map(({ value, label }) => (
-                        <Button
-                          key={value}
-                          variant={draft.dateMode === value ? 'primary' : 'secondary'}
-                          className="min-h-11 px-4 text-sm"
-                          onClick={() =>
-                            patch({
-                              dateMode: value,
-                              ...(value === 'range'
-                                ? { snapshotId: '', reportDate: '', reportScope: 'specific' }
-                                : {}),
-                            })
-                          }
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {draft.dateMode === 'range' ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label
-                          className="text-xs uppercase tracking-wider text-text-secondary"
-                          htmlFor="consigner-date-from"
-                        >
-                          From
-                        </label>
-                        <input
-                          id="consigner-date-from"
-                          type="date"
-                          value={draft.dateFrom}
-                          onChange={(e) => patch({ dateFrom: e.target.value })}
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          className="text-xs uppercase tracking-wider text-text-secondary"
-                          htmlFor="consigner-date-to"
-                        >
-                          To
-                        </label>
-                        <input
-                          id="consigner-date-to"
-                          type="date"
-                          value={draft.dateTo}
-                          onChange={(e) => patch({ dateTo: e.target.value })}
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {draft.dateMode !== 'range' || draft.reportScope === 'all' ? (
-                    <ReportDateYearSelect
-                      idPrefix="consigner"
-                      options={dateOptions}
-                      snapshotId={effectiveSnapshotId}
-                      allowAllReports={allowAllReports}
-                      onChange={(snapshotId, reportDate) => {
-                        if (snapshotId === ALL_REPORTS_SNAPSHOT_ID) {
-                          patch({ reportScope: 'all', snapshotId: '', reportDate: '' });
-                        } else {
-                          patch({
-                            reportScope: 'specific',
-                            snapshotId,
-                            reportDate,
-                          });
-                        }
-                      }}
-                      inputClass={inputClass}
-                    />
-                  ) : null}
-
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-text-secondary">District</p>
-                    <div className="mt-2 max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
-                      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
-                        <input
-                          type="checkbox"
-                          checked={draft.districts.length === 0}
-                          onChange={() => patch({ districts: [] })}
-                          className={filterCheckClass}
-                        />
-                        All
-                      </label>
-                      {districts.length === 0 ? (
-                        <p className="text-xs text-text-secondary/80">
-                          No districts for this report
-                        </p>
-                      ) : (
-                        districts.map((d) => {
-                          const checked = draft.districts.some(
-                            (x) => x.toLowerCase() === d.toLowerCase(),
-                          );
-                          return (
-                            <label
-                              key={d}
-                              className="flex cursor-pointer items-center gap-2 text-sm text-white"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => {
-                                  if (checked) {
-                                    patch({
-                                      districts: draft.districts.filter(
-                                        (x) => x.toLowerCase() !== d.toLowerCase(),
-                                      ),
-                                    });
-                                  } else {
-                                    patch({ districts: [...draft.districts, d] });
-                                  }
-                                }}
-                                className={filterCheckClass}
-                              />
-                              {d}
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      className="text-xs uppercase tracking-wider text-text-secondary"
-                      htmlFor="consigner-name-search"
-                    >
-                      Consigner
-                    </label>
-                    <input
-                      id="consigner-name-search"
-                      type="search"
-                      value={draft.consignerSearch}
-                      onChange={(e) => patch({ consignerSearch: e.target.value })}
-                      placeholder="Search by name"
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
-                    <input
-                      type="checkbox"
-                      checked={draft.hideZeroChallans}
-                      onChange={(e) => patch({ hideZeroChallans: e.target.checked })}
-                      className={filterCheckClass}
-                    />
-                    Hide zero challans
-                  </label>
                 </div>
-              </FilterDropdownPanel>
-            </>
+
+                <div>
+                  <label
+                    className="text-xs uppercase tracking-wider text-text-secondary"
+                    htmlFor="consigner-name-search"
+                  >
+                    Consigner
+                  </label>
+                  <input
+                    id="consigner-name-search"
+                    type="search"
+                    value={draft.consignerSearch}
+                    onChange={(e) => patch({ consignerSearch: e.target.value })}
+                    placeholder="Search by name"
+                    className={inputClass}
+                  />
+                </div>
+
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={draft.hideZeroChallans}
+                    onChange={(e) => patch({ hideZeroChallans: e.target.checked })}
+                    className={filterCheckClass}
+                  />
+                  Hide zero challans
+                </label>
+              </div>
+            </FilterDropdownPanel>
           ) : null}
         </div>
 

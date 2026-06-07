@@ -77,192 +77,185 @@ export function CrmExpiryFilters({ values, onApply, onClear }: CrmExpiryFiltersP
           </Button>
 
           {open ? (
-            <>
-              <button
-                type="button"
-                aria-label="Close filters"
-                className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden"
-                onClick={() => setOpen(false)}
-              />
-              <FilterDropdownPanel
-                title="CRM filters"
-                footer={
-                  <>
-                    <Button variant="secondary" className="text-sm" onClick={handleReset}>
-                      Reset
-                    </Button>
-                    <Button className="text-sm" onClick={handleApply}>
-                      Apply
-                    </Button>
-                  </>
-                }
-              >
-                <div className="space-y-5">
-                  <FilterSection title="Vehicle">
-                    <input
-                      type="search"
-                      value={draft.search}
-                      onChange={(e) => patch({ search: e.target.value })}
-                      placeholder="e.g. BR01GN8970"
-                      className={filterInputClass}
-                    />
-                  </FilterSection>
+            <FilterDropdownPanel
+              title="CRM filters"
+              onClose={() => setOpen(false)}
+              footer={
+                <>
+                  <Button variant="secondary" className="text-sm" onClick={handleReset}>
+                    Reset
+                  </Button>
+                  <Button className="text-sm" onClick={handleApply}>
+                    Apply
+                  </Button>
+                </>
+              }
+            >
+              <div className="space-y-5">
+                <FilterSection title="Vehicle">
+                  <input
+                    type="search"
+                    value={draft.search}
+                    onChange={(e) => patch({ search: e.target.value })}
+                    placeholder="e.g. BR01GN8970"
+                    className={filterInputClass}
+                  />
+                </FilterSection>
 
-                  <FilterSection title="Queue">
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          { value: 'active' as const, label: 'Active' },
-                          { value: 'removed' as const, label: 'Removed' },
-                        ] as const
-                      ).map(({ value, label }) => (
-                        <Button
-                          key={value}
-                          variant={draft.status === value ? 'primary' : 'secondary'}
-                          className="min-h-11 px-4 text-sm"
-                          onClick={() => patch({ status: value as CrmExpiryStatus })}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          { value: 'all' as const, label: 'All sources' },
-                          { value: 'auto' as const, label: 'Auto' },
-                          { value: 'manual' as const, label: 'Manual' },
-                        ] as const
-                      ).map(({ value, label }) => (
-                        <Button
-                          key={value}
-                          variant={draft.source === value ? 'primary' : 'secondary'}
-                          className="min-h-11 px-4 text-sm"
-                          onClick={() => patch({ source: value as CrmExpirySourceFilter })}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                  </FilterSection>
+                <FilterSection title="Queue">
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        { value: 'active' as const, label: 'Active' },
+                        { value: 'removed' as const, label: 'Removed' },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={draft.status === value ? 'primary' : 'secondary'}
+                        className="min-h-11 px-4 text-sm"
+                        onClick={() => patch({ status: value as CrmExpiryStatus })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        { value: 'all' as const, label: 'All sources' },
+                        { value: 'auto' as const, label: 'Auto' },
+                        { value: 'manual' as const, label: 'Manual' },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={draft.source === value ? 'primary' : 'secondary'}
+                        className="min-h-11 px-4 text-sm"
+                        onClick={() => patch({ source: value as CrmExpirySourceFilter })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </FilterSection>
 
-                  <FilterSection title="Portal match">
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          { value: 'all' as const, label: 'All' },
-                          { value: 'found' as const, label: 'Found' },
-                          { value: 'notFound' as const, label: 'No data' },
-                        ] as const
-                      ).map(({ value, label }) => (
-                        <Button
-                          key={value}
-                          variant={draft.found === value ? 'primary' : 'secondary'}
-                          className="min-h-11 px-4 text-sm"
-                          onClick={() => patch({ found: value as CrmExpiryFoundFilter })}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                  </FilterSection>
+                <FilterSection title="Portal match">
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        { value: 'all' as const, label: 'All' },
+                        { value: 'found' as const, label: 'Found' },
+                        { value: 'notFound' as const, label: 'No data' },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={draft.found === value ? 'primary' : 'secondary'}
+                        className="min-h-11 px-4 text-sm"
+                        onClick={() => patch({ found: value as CrmExpiryFoundFilter })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </FilterSection>
 
-                  <FilterSection title="Expiry alert (days left)">
-                    <p className="text-xs leading-relaxed text-text-secondary">
-                      Vehicle in queue if <span className="text-white">Insurance</span>,{' '}
-                      <span className="text-white">RC tax</span>, or{' '}
-                      <span className="text-white">Fitness</span> is within these days (any one
-                      match).
-                    </p>
-                    <div className="space-y-3">
-                      <div>
-                        <label
-                          htmlFor="crm-expiry-insurance-days"
-                          className="text-xs uppercase tracking-wider text-text-secondary"
-                        >
-                          Insurance days left ≤
-                        </label>
-                        <input
-                          id="crm-expiry-insurance-days"
-                          type="number"
-                          min={0}
-                          value={draft.insuranceExpiryDays}
-                          onChange={(e) => patch({ insuranceExpiryDays: e.target.value })}
-                          className={`${filterInputClass} mt-1`}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="crm-expiry-rc-days"
-                          className="text-xs uppercase tracking-wider text-text-secondary"
-                        >
-                          RC tax days left ≤
-                        </label>
-                        <input
-                          id="crm-expiry-rc-days"
-                          type="number"
-                          min={0}
-                          value={draft.rcExpiryDays}
-                          onChange={(e) => patch({ rcExpiryDays: e.target.value })}
-                          className={`${filterInputClass} mt-1`}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="crm-expiry-fitness-days"
-                          className="text-xs uppercase tracking-wider text-text-secondary"
-                        >
-                          Fitness days left ≤
-                        </label>
-                        <input
-                          id="crm-expiry-fitness-days"
-                          type="number"
-                          min={0}
-                          value={draft.fitnessExpiryDays}
-                          onChange={(e) => patch({ fitnessExpiryDays: e.target.value })}
-                          className={`${filterInputClass} mt-1`}
-                        />
-                      </div>
-                    </div>
-                  </FilterSection>
-
-                  <FilterSection title="Vehicle metadata">
-                    <input
-                      type="text"
-                      value={draft.vehicleClass}
-                      onChange={(e) => patch({ vehicleClass: e.target.value })}
-                      placeholder="Vehicle class"
-                      className={filterInputClass}
-                    />
-                    <input
-                      type="text"
-                      value={draft.esimValidity}
-                      onChange={(e) => patch({ esimValidity: e.target.value })}
-                      placeholder="eSIM validity"
-                      className={filterInputClass}
-                    />
-                    <div className="grid grid-cols-2 gap-2">
+                <FilterSection title="Expiry alert (days left)">
+                  <p className="text-xs leading-relaxed text-text-secondary">
+                    Vehicle in queue if <span className="text-white">Insurance</span>,{' '}
+                    <span className="text-white">RC tax</span>, or{' '}
+                    <span className="text-white">Fitness</span> is within these days (any one
+                    match).
+                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <label
+                        htmlFor="crm-expiry-insurance-days"
+                        className="text-xs uppercase tracking-wider text-text-secondary"
+                      >
+                        Insurance days left ≤
+                      </label>
                       <input
+                        id="crm-expiry-insurance-days"
                         type="number"
                         min={0}
-                        value={draft.grossWeightMin}
-                        onChange={(e) => patch({ grossWeightMin: e.target.value })}
-                        placeholder="Gross min"
-                        className={filterInputClass}
-                      />
-                      <input
-                        type="number"
-                        min={0}
-                        value={draft.grossWeightMax}
-                        onChange={(e) => patch({ grossWeightMax: e.target.value })}
-                        placeholder="Gross max"
-                        className={filterInputClass}
+                        value={draft.insuranceExpiryDays}
+                        onChange={(e) => patch({ insuranceExpiryDays: e.target.value })}
+                        className={`${filterInputClass} mt-1`}
                       />
                     </div>
-                  </FilterSection>
-                </div>
-              </FilterDropdownPanel>
-            </>
+                    <div>
+                      <label
+                        htmlFor="crm-expiry-rc-days"
+                        className="text-xs uppercase tracking-wider text-text-secondary"
+                      >
+                        RC tax days left ≤
+                      </label>
+                      <input
+                        id="crm-expiry-rc-days"
+                        type="number"
+                        min={0}
+                        value={draft.rcExpiryDays}
+                        onChange={(e) => patch({ rcExpiryDays: e.target.value })}
+                        className={`${filterInputClass} mt-1`}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="crm-expiry-fitness-days"
+                        className="text-xs uppercase tracking-wider text-text-secondary"
+                      >
+                        Fitness days left ≤
+                      </label>
+                      <input
+                        id="crm-expiry-fitness-days"
+                        type="number"
+                        min={0}
+                        value={draft.fitnessExpiryDays}
+                        onChange={(e) => patch({ fitnessExpiryDays: e.target.value })}
+                        className={`${filterInputClass} mt-1`}
+                      />
+                    </div>
+                  </div>
+                </FilterSection>
+
+                <FilterSection title="Vehicle metadata">
+                  <input
+                    type="text"
+                    value={draft.vehicleClass}
+                    onChange={(e) => patch({ vehicleClass: e.target.value })}
+                    placeholder="Vehicle class"
+                    className={filterInputClass}
+                  />
+                  <input
+                    type="text"
+                    value={draft.esimValidity}
+                    onChange={(e) => patch({ esimValidity: e.target.value })}
+                    placeholder="eSIM validity"
+                    className={filterInputClass}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={draft.grossWeightMin}
+                      onChange={(e) => patch({ grossWeightMin: e.target.value })}
+                      placeholder="Gross min"
+                      className={filterInputClass}
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      value={draft.grossWeightMax}
+                      onChange={(e) => patch({ grossWeightMax: e.target.value })}
+                      placeholder="Gross max"
+                      className={filterInputClass}
+                    />
+                  </div>
+                </FilterSection>
+              </div>
+            </FilterDropdownPanel>
           ) : null}
         </div>
 

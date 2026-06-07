@@ -238,65 +238,181 @@ export function ConsigneeEpassFilters({
           </Button>
 
           {open ? (
-            <>
-              <button
-                type="button"
-                aria-label="Close filters"
-                className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden"
-                onClick={() => setOpen(false)}
-              />
-              <FilterDropdownPanel
-                footer={
-                  <>
-                    <Button className="text-sm" onClick={handleApply} disabled={applyBlocked}>
-                      Apply
-                    </Button>
-                    <Button variant="secondary" className="text-sm" onClick={() => setOpen(false)}>
-                      Cancel
-                    </Button>
-                  </>
-                }
-              >
-                <div className="space-y-5">
-                  <FilterSection title="Operator">
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          { value: 'all' as const, label: 'All' },
-                          { value: 'lessee' as const, label: 'Lessee' },
-                          { value: 'dealer' as const, label: 'Dealer' },
-                        ] as const
-                      ).map(({ value, label }) => (
-                        <Button
-                          key={value}
-                          variant={draft.operator === value ? 'primary' : 'secondary'}
-                          className="min-h-11 px-4 text-sm"
-                          onClick={() => patch({ operator: value })}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                  </FilterSection>
+            <FilterDropdownPanel
+              onClose={() => setOpen(false)}
+              footer={
+                <>
+                  <Button className="text-sm" onClick={handleApply} disabled={applyBlocked}>
+                    Apply
+                  </Button>
+                  <Button variant="secondary" className="text-sm" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                </>
+              }
+            >
+              <div className="space-y-5">
+                <FilterSection title="Operator">
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        { value: 'all' as const, label: 'All' },
+                        { value: 'lessee' as const, label: 'Lessee' },
+                        { value: 'dealer' as const, label: 'Dealer' },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={draft.operator === value ? 'primary' : 'secondary'}
+                        className="min-h-11 px-4 text-sm"
+                        onClick={() => patch({ operator: value })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </FilterSection>
 
-                  <FilterSection title="Mineral">
-                    <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
-                      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
-                        <input
-                          type="checkbox"
-                          checked={draft.minerals.length === 0}
-                          onChange={() => patch({ minerals: [] })}
-                          className={filterCheckClass}
-                        />
-                        All
+                <FilterSection title="Mineral">
+                  <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
+                      <input
+                        type="checkbox"
+                        checked={draft.minerals.length === 0}
+                        onChange={() => patch({ minerals: [] })}
+                        className={filterCheckClass}
+                      />
+                      All
+                    </label>
+                    {minerals.map((m) => {
+                      const checked = draft.minerals.some(
+                        (x) => x.toLowerCase() === m.toLowerCase(),
+                      );
+                      return (
+                        <label
+                          key={m}
+                          className="flex cursor-pointer items-center gap-2 text-sm text-white"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              if (checked) {
+                                patch({
+                                  minerals: draft.minerals.filter(
+                                    (x) => x.toLowerCase() !== m.toLowerCase(),
+                                  ),
+                                });
+                              } else {
+                                patch({ minerals: [...draft.minerals, m] });
+                              }
+                            }}
+                            className={filterCheckClass}
+                          />
+                          {m}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </FilterSection>
+
+                <FilterSection title="Date">
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        { value: 'specific' as const, label: 'Specific' },
+                        { value: 'range' as const, label: 'Range' },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={draft.dateMode === value ? 'primary' : 'secondary'}
+                        className="min-h-11 px-4 text-sm"
+                        onClick={() => patch({ dateMode: value })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </FilterSection>
+
+                {draft.dateMode === 'range' ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label
+                        className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted"
+                        htmlFor="consignee-date-from"
+                      >
+                        From
                       </label>
-                      {minerals.map((m) => {
-                        const checked = draft.minerals.some(
-                          (x) => x.toLowerCase() === m.toLowerCase(),
+                      <input
+                        id="consignee-date-from"
+                        type="date"
+                        value={draft.dateFrom}
+                        onChange={(e) => patch({ dateFrom: e.target.value })}
+                        className={filterInputClass}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted"
+                        htmlFor="consignee-date-to"
+                      >
+                        To
+                      </label>
+                      <input
+                        id="consignee-date-to"
+                        type="date"
+                        value={draft.dateTo}
+                        onChange={(e) => patch({ dateTo: e.target.value })}
+                        className={filterInputClass}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
+                {draft.dateMode !== 'range' || draft.reportScope === 'all' ? (
+                  <ReportDateYearSelect
+                    idPrefix="consignee"
+                    options={dateOptions}
+                    snapshotId={effectiveSnapshotId}
+                    allowAllReports={allowAllReports}
+                    onChange={(snapshotId, reportDate) => {
+                      if (snapshotId === ALL_REPORTS_SNAPSHOT_ID) {
+                        patch({ reportScope: 'all', snapshotId: '', reportDate: '' });
+                      } else {
+                        patch({
+                          reportScope: 'specific',
+                          snapshotId,
+                          reportDate,
+                        });
+                      }
+                    }}
+                    inputClass={filterInputClass}
+                  />
+                ) : null}
+
+                <FilterSection title="District">
+                  <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
+                      <input
+                        type="checkbox"
+                        checked={draft.districts.length === 0}
+                        onChange={() => patch({ districts: [] })}
+                        className={filterCheckClass}
+                      />
+                      All
+                    </label>
+                    {districts.length === 0 ? (
+                      <p className="text-xs text-text-secondary/80">No districts for this report</p>
+                    ) : (
+                      districts.map((d) => {
+                        const checked = draft.districts.some(
+                          (x) => x.toLowerCase() === d.toLowerCase(),
                         );
                         return (
                           <label
-                            key={m}
+                            key={d}
                             className="flex cursor-pointer items-center gap-2 text-sm text-white"
                           >
                             <input
@@ -305,227 +421,102 @@ export function ConsigneeEpassFilters({
                               onChange={() => {
                                 if (checked) {
                                   patch({
-                                    minerals: draft.minerals.filter(
-                                      (x) => x.toLowerCase() !== m.toLowerCase(),
+                                    districts: draft.districts.filter(
+                                      (x) => x.toLowerCase() !== d.toLowerCase(),
                                     ),
                                   });
                                 } else {
-                                  patch({ minerals: [...draft.minerals, m] });
+                                  patch({ districts: [...draft.districts, d] });
                                 }
                               }}
                               className={filterCheckClass}
                             />
-                            {m}
+                            {d}
                           </label>
                         );
-                      })}
-                    </div>
-                  </FilterSection>
+                      })
+                    )}
+                  </div>
+                </FilterSection>
 
-                  <FilterSection title="Date">
+                {showChallanSearch ? (
+                  <FilterSection title="Challan">
+                    <input
+                      id="challan-number-search"
+                      type="search"
+                      value={draft.challanSearch}
+                      onChange={(e) => patch({ challanSearch: e.target.value })}
+                      placeholder="Challan number"
+                      className={filterInputClass}
+                    />
+                  </FilterSection>
+                ) : null}
+
+                <FilterSection title="Consigner">
+                  <input
+                    id="consignee-consigner-search"
+                    type="search"
+                    value={draft.consignerSearch}
+                    onChange={(e) => patch({ consignerSearch: e.target.value })}
+                    placeholder="Search by name"
+                    className={filterInputClass}
+                  />
+                </FilterSection>
+
+                {showDestinationSearch ? (
+                  <FilterSection title="Destination">
+                    <input
+                      id="consignee-destination-search"
+                      type="search"
+                      value={draft.destination}
+                      onChange={(e) => patch({ destination: e.target.value })}
+                      placeholder="Search destination"
+                      className={filterInputClass}
+                    />
+                  </FilterSection>
+                ) : null}
+
+                <FilterSection title="Consignee">
+                  <input
+                    id="consignee-name-search"
+                    type="search"
+                    value={draft.consigneeSearch}
+                    onChange={(e) => patch({ consigneeSearch: e.target.value })}
+                    placeholder="Filter table rows"
+                    className={filterInputClass}
+                  />
+                </FilterSection>
+
+                {showPortalStatusFilter ? (
+                  <FilterSection title="Portal status">
                     <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          { value: 'specific' as const, label: 'Specific' },
-                          { value: 'range' as const, label: 'Range' },
-                        ] as const
-                      ).map(({ value, label }) => (
+                      {PORTAL_STATUS_OPTIONS.map(({ value, label }) => (
                         <Button
                           key={value}
-                          variant={draft.dateMode === value ? 'primary' : 'secondary'}
-                          className="min-h-11 px-4 text-sm"
-                          onClick={() => patch({ dateMode: value })}
+                          variant={draft.portalStatus === value ? 'primary' : 'secondary'}
+                          className="min-h-11 px-3 text-sm"
+                          onClick={() => patch({ portalStatus: value })}
                         >
                           {label}
                         </Button>
                       ))}
                     </div>
                   </FilterSection>
+                ) : null}
 
-                  {draft.dateMode === 'range' ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label
-                          className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted"
-                          htmlFor="consignee-date-from"
-                        >
-                          From
-                        </label>
-                        <input
-                          id="consignee-date-from"
-                          type="date"
-                          value={draft.dateFrom}
-                          onChange={(e) => patch({ dateFrom: e.target.value })}
-                          className={filterInputClass}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted"
-                          htmlFor="consignee-date-to"
-                        >
-                          To
-                        </label>
-                        <input
-                          id="consignee-date-to"
-                          type="date"
-                          value={draft.dateTo}
-                          onChange={(e) => patch({ dateTo: e.target.value })}
-                          className={filterInputClass}
-                        />
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {draft.dateMode !== 'range' || draft.reportScope === 'all' ? (
-                    <ReportDateYearSelect
-                      idPrefix="consignee"
-                      options={dateOptions}
-                      snapshotId={effectiveSnapshotId}
-                      allowAllReports={allowAllReports}
-                      onChange={(snapshotId, reportDate) => {
-                        if (snapshotId === ALL_REPORTS_SNAPSHOT_ID) {
-                          patch({ reportScope: 'all', snapshotId: '', reportDate: '' });
-                        } else {
-                          patch({
-                            reportScope: 'specific',
-                            snapshotId,
-                            reportDate,
-                          });
-                        }
-                      }}
-                      inputClass={filterInputClass}
-                    />
-                  ) : null}
-
-                  <FilterSection title="District">
-                    <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl border border-border-default bg-surface-deep p-3">
-                      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
-                        <input
-                          type="checkbox"
-                          checked={draft.districts.length === 0}
-                          onChange={() => patch({ districts: [] })}
-                          className={filterCheckClass}
-                        />
-                        All
-                      </label>
-                      {districts.length === 0 ? (
-                        <p className="text-xs text-text-secondary/80">
-                          No districts for this report
-                        </p>
-                      ) : (
-                        districts.map((d) => {
-                          const checked = draft.districts.some(
-                            (x) => x.toLowerCase() === d.toLowerCase(),
-                          );
-                          return (
-                            <label
-                              key={d}
-                              className="flex cursor-pointer items-center gap-2 text-sm text-white"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => {
-                                  if (checked) {
-                                    patch({
-                                      districts: draft.districts.filter(
-                                        (x) => x.toLowerCase() !== d.toLowerCase(),
-                                      ),
-                                    });
-                                  } else {
-                                    patch({ districts: [...draft.districts, d] });
-                                  }
-                                }}
-                                className={filterCheckClass}
-                              />
-                              {d}
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
-                  </FilterSection>
-
-                  {showChallanSearch ? (
-                    <FilterSection title="Challan">
-                      <input
-                        id="challan-number-search"
-                        type="search"
-                        value={draft.challanSearch}
-                        onChange={(e) => patch({ challanSearch: e.target.value })}
-                        placeholder="Challan number"
-                        className={filterInputClass}
-                      />
-                    </FilterSection>
-                  ) : null}
-
-                  <FilterSection title="Consigner">
+                <FilterSection title="Options">
+                  <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
                     <input
-                      id="consignee-consigner-search"
-                      type="search"
-                      value={draft.consignerSearch}
-                      onChange={(e) => patch({ consignerSearch: e.target.value })}
-                      placeholder="Search by name"
-                      className={filterInputClass}
+                      type="checkbox"
+                      checked={draft.hideZeroPasses}
+                      onChange={(e) => patch({ hideZeroPasses: e.target.checked })}
+                      className={filterCheckClass}
                     />
-                  </FilterSection>
-
-                  {showDestinationSearch ? (
-                    <FilterSection title="Destination">
-                      <input
-                        id="consignee-destination-search"
-                        type="search"
-                        value={draft.destination}
-                        onChange={(e) => patch({ destination: e.target.value })}
-                        placeholder="Search destination"
-                        className={filterInputClass}
-                      />
-                    </FilterSection>
-                  ) : null}
-
-                  <FilterSection title="Consignee">
-                    <input
-                      id="consignee-name-search"
-                      type="search"
-                      value={draft.consigneeSearch}
-                      onChange={(e) => patch({ consigneeSearch: e.target.value })}
-                      placeholder="Filter table rows"
-                      className={filterInputClass}
-                    />
-                  </FilterSection>
-
-                  {showPortalStatusFilter ? (
-                    <FilterSection title="Portal status">
-                      <div className="flex flex-wrap gap-2">
-                        {PORTAL_STATUS_OPTIONS.map(({ value, label }) => (
-                          <Button
-                            key={value}
-                            variant={draft.portalStatus === value ? 'primary' : 'secondary'}
-                            className="min-h-11 px-3 text-sm"
-                            onClick={() => patch({ portalStatus: value })}
-                          >
-                            {label}
-                          </Button>
-                        ))}
-                      </div>
-                    </FilterSection>
-                  ) : null}
-
-                  <FilterSection title="Options">
-                    <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-text-secondary">
-                      <input
-                        type="checkbox"
-                        checked={draft.hideZeroPasses}
-                        onChange={(e) => patch({ hideZeroPasses: e.target.checked })}
-                        className={filterCheckClass}
-                      />
-                      Hide zero passes
-                    </label>
-                  </FilterSection>
-                </div>
-              </FilterDropdownPanel>
-            </>
+                    Hide zero passes
+                  </label>
+                </FilterSection>
+              </div>
+            </FilterDropdownPanel>
           ) : null}
         </div>
 

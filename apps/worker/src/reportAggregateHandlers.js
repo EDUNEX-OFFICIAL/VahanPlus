@@ -74,7 +74,7 @@ export async function maybeEnqueueReportAggregate(snapshotId, trigger) {
     await queue.add(
       'report_aggregate_rebuild',
       { trigger, jobVersion: 1 },
-      { jobId: `rebuild:${trigger}:${Date.now()}`, removeOnComplete: 20 },
+      { jobId: `rebuild-${trigger}-${Date.now()}`, removeOnComplete: 20 },
     );
     await queue.close();
     return;

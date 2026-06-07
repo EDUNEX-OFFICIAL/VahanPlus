@@ -22,7 +22,7 @@ function getQueue() {
 export async function enqueueReportAggregate(snapshotId, opts = {}) {
   if (!snapshotId) return null;
   const queue = getQueue();
-  const jobId = `aggregate:${snapshotId}:v${AGGREGATOR_VERSION}`;
+  const jobId = `aggregate-${snapshotId}-v${AGGREGATOR_VERSION}`;
   const existing = await queue.getJob(jobId);
   if (existing) {
     const state = await existing.getState();

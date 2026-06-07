@@ -13,7 +13,7 @@ const queue = new Queue(QUEUE_NAMES.REPORT_AGGREGATE, { connection: getQueueConn
 const job = await queue.add(
   'report_aggregate_rebuild',
   { trigger: 'rebuild', jobVersion: 1 },
-  { jobId: `rebuild:${Date.now()}` },
+  { jobId: `rebuild-${Date.now()}` },
 );
 
 console.log(`Enqueued report aggregate rebuild: ${job.id}`);

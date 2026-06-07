@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { enqueueVehicleStatusScrape, fetchVehicleDataDetail } from '@/lib/epass';
+import { reportingQueryOptions } from '@/lib/query-config';
 import { formatQty } from '@/lib/epass-aggregate';
 import { formatVehicleDataPreview, formatVehicleDataQty } from '@/lib/epass-vehicle-data-view';
 import { formatOperatorType } from '@/lib/operator';
@@ -77,6 +78,7 @@ export function VehicleDataDetailDialog({
       return fetchVehicleDataDetail(vehicleRegNo, detailQueryParams);
     },
     enabled: open && Boolean(vehicleRegNo),
+    ...reportingQueryOptions,
   });
 
   if (!vehicleRegNo) return null;

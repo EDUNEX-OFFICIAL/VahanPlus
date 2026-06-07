@@ -25,6 +25,7 @@ import { StatCard, StatCardSkeleton } from '@/components/dashboard/StatCard';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { DASHBOARD_QUERY_KEY, fetchDashboardOverview } from '@/lib/dashboard';
+import { reportingQueryOptions } from '@/lib/query-config';
 import type { DashboardKpiView } from '@/lib/dashboard-types';
 import { buildDashboardKpis } from '@/lib/dashboard-view';
 
@@ -49,6 +50,7 @@ export function DashboardPageContent() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: DASHBOARD_QUERY_KEY,
     queryFn: fetchDashboardOverview,
+    ...reportingQueryOptions,
     refetchInterval: 30_000,
   });
 

@@ -50,6 +50,12 @@ import {
   effectiveReportScopeFromSearchParams,
 } from '@/lib/epass-report-scope';
 import { parseOperatorParam } from '@/lib/operator';
+import {
+  EPASS_FILTER_OPTIONS_ALL_PARAMS,
+  invalidateEpassReportingData,
+  reportingQueryOptions,
+  staticQueryOptions,
+} from '@/lib/query-config';
 import type {
   ConsignerSortDir,
   ConsignerSortKey,
@@ -58,7 +64,6 @@ import type {
 } from '@/lib/epass-types';
 
 const PAGE_SIZE = 50;
-const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
 
 function snapshotFromList(
   snap: { id: string; reportDate: string; scrapedAt: string } | null,
@@ -186,7 +191,7 @@ function useSaveGhatNumber() {
   return useCallback(
     async (consignerRowId: string, ghatNumber: string) => {
       await updateConsignerGhatNumber(consignerRowId, ghatNumber);
-      await queryClient.invalidateQueries({ queryKey: ['epass'] });
+      await invalidateEpassReportingData(queryClient);
     },
     [queryClient],
   );
@@ -237,6 +242,7 @@ function ConsignerDrillDown({
     queryFn: () => {
       return fetchDistrictConsigners(districtRowId, operatorType);
     },
+    ...reportingQueryOptions,
   });
 
   const displayRows = useMemo(() => {
@@ -311,7 +317,7 @@ function ConsignerBrowse() {
     queryFn: () => {
       return fetchEpassSnapshotReportDates();
     },
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const dateFilterInput = useMemo(
@@ -411,10 +417,10 @@ function ConsignerBrowse() {
   ]);
 
   const { data: allFilterOptions } = useQuery({
-    queryKey: ['epass', 'filter-options', 'all'],
-    queryFn: () => fetchEpassFilterOptions({ reportScope: 'all' }),
+    queryKey: ['epass', 'filter-options', EPASS_FILTER_OPTIONS_ALL_PARAMS],
+    queryFn: () => fetchEpassFilterOptions(EPASS_FILTER_OPTIONS_ALL_PARAMS),
     enabled: isAllReports && Boolean(snapshotsData?.items.length),
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const { data: districtRowsData } = useQuery({
@@ -424,6 +430,7 @@ function ConsignerBrowse() {
       return fetchSnapshotDistrictRows(snapshotId);
     },
     enabled: Boolean(snapshotId) && !isAllReports,
+    ...staticQueryOptions,
   });
 
   const minerals = useMemo(() => {
@@ -470,6 +477,7 @@ function ConsignerBrowse() {
       });
     },
     enabled: (isAllReports || Boolean(snapshotId)) && !browseEmpty,
+    ...reportingQueryOptions,
   });
 
   const useGroupedView = sortKey == null || sortKey === 'district';

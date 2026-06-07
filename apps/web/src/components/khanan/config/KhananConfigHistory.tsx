@@ -16,6 +16,7 @@ import {
   HISTORY_SHOW_MORE_STEP,
   sliceForHistoryPreview,
 } from '@/lib/khanan-config-history-view';
+import { pollingQueryOptions } from '@/lib/query-config';
 import {
   SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY,
   fetchScraperSnapshotHistory,
@@ -180,6 +181,7 @@ export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
   } = useQuery({
     queryKey: [...SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY, HISTORY_FETCH_LIMIT],
     queryFn: () => fetchScraperSnapshotHistory(HISTORY_FETCH_LIMIT),
+    ...pollingQueryOptions,
     refetchInterval: pollMs,
   });
 

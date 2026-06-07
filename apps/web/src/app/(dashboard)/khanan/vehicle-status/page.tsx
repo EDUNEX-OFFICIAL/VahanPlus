@@ -17,6 +17,12 @@ import {
 } from '@/lib/epass-vehicle-status-view';
 import { addVehicleToCrmExpiry } from '@/lib/crm';
 import { fetchVehicleStatusList } from '@/lib/epass';
+import {
+  invalidateCrmExpiryData,
+  invalidateVehicleStatusData,
+  liveQueryOptions,
+  VEHICLE_STATUS_QUERY_KEY,
+} from '@/lib/query-config';
 import type {
   VehicleStatusFilterValues,
   VehicleStatusSortDir,
@@ -24,7 +30,6 @@ import type {
 } from '@/lib/epass-types';
 
 const PAGE_SIZE = 50;
-const VEHICLE_STATUS_QUERY_KEY = ['epass', 'vehicle-status'] as const;
 
 function parseSortKey(raw: string | null): VehicleStatusSortKey | null {
   const keys: VehicleStatusSortKey[] = [
@@ -96,8 +101,8 @@ function VehicleStatusPageContent() {
     mutationFn: (vehicleRegNo: string) => addVehicleToCrmExpiry(vehicleRegNo),
     onSuccess: async () => {
       setAddToCrmError(null);
-      await queryClient.invalidateQueries({ queryKey: VEHICLE_STATUS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ['crm', 'vehicle-expiry'] });
+      await invalidateVehicleStatusData(queryClient);
+      await invalidateCrmExpiryData(queryClient);
     },
     onError: (e: Error) => setAddToCrmError(e.message),
   });
@@ -120,6 +125,7 @@ function VehicleStatusPageContent() {
     queryFn: () => {
       return fetchVehicleStatusList(listParams);
     },
+    ...liveQueryOptions,
   });
 
   const updateParams = useCallback(

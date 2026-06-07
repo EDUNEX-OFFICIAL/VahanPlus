@@ -12,6 +12,11 @@ function dbJobsInFlight(status: ScraperConfigStatus): number {
   return (by.pending ?? 0) + (by.active ?? 0);
 }
 
+/** Queue + DB jobs still running (used for global scrape-complete detection). */
+export function scrapeWorkInFlight(status: ScraperConfigStatus): number {
+  return scrapeQueueInProgress(status) + dbJobsInFlight(status);
+}
+
 /** Queue + DB idle enough to leave post-stop cooldown. */
 export function isScraperQueueReady(status: ScraperConfigStatus): boolean {
   if (status.queue.isPaused) return false;

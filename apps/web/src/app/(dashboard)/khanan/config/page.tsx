@@ -19,6 +19,11 @@ import type { KhananScraperConfig, KhananScraperConfigPatch } from '@/lib/scrape
 import { formatClearDataSummary } from '@/lib/format-clear-data-summary';
 import { SCRAPER_SPEED_PRESETS } from '@/lib/scraper-speed-presets';
 import {
+  invalidateEpassAndScraperData,
+  pollingQueryOptions,
+  staticQueryOptions,
+} from '@/lib/query-config';
+import {
   SCRAPER_CONFIG_QUERY_KEY,
   SCRAPER_JOBS_QUERY_KEY,
   SCRAPER_LIVE_QUERY_KEY,
@@ -65,6 +70,7 @@ export default function KhananConfigPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: SCRAPER_CONFIG_QUERY_KEY,
     queryFn: () => fetchScraperConfig(),
+    ...staticQueryOptions,
     refetchInterval: stopCooldown ? 2_000 : 10_000,
   });
 
@@ -112,6 +118,9 @@ export default function KhananConfigPage() {
     queryKey: SCRAPER_LIVE_QUERY_KEY,
     queryFn: () => fetchScraperLive(),
     enabled: Boolean(data) && scrapeActive,
+    staleTime: 0,
+    gcTime: pollingQueryOptions.gcTime,
+    refetchOnWindowFocus: false,
     refetchInterval: scrapeActive ? 4_000 : false,
   });
 
@@ -391,11 +400,7 @@ export default function KhananConfigPage() {
           setActionBusy(true);
           try {
             const result = await clearAllData('DELETE ALL DATA');
-            await queryClient.invalidateQueries({ queryKey: ['epass'] });
-            await queryClient.invalidateQueries({ queryKey: SCRAPER_CONFIG_QUERY_KEY });
-            await queryClient.invalidateQueries({ queryKey: SCRAPER_LIVE_QUERY_KEY });
-            await queryClient.invalidateQueries({ queryKey: SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY });
-            await queryClient.invalidateQueries({ queryKey: SCRAPER_JOBS_QUERY_KEY });
+            await invalidateEpassAndScraperData(queryClient);
             const d = result.deleted;
             return `Removed ${formatClearDataSummary(d)}.`;
           } finally {

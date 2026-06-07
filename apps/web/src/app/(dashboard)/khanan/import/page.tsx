@@ -12,7 +12,7 @@ import { ImportSuccessCard } from '@/components/khanan/import/ImportSuccessCard'
 import { KhananExportPanel } from '@/components/khanan/import/KhananExportPanel';
 import { useKhananImportJob } from '@/components/khanan/import/KhananImportJobProvider';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
-import { EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY, EPASS_SNAPSHOTS_QUERY_KEY } from '@/lib/epass';
+import { invalidateAfterEpassImport } from '@/lib/query-config';
 import {
   analyzeImport,
   buildDuplicateVrnWarnings,
@@ -184,9 +184,10 @@ export default function ImportDataPage() {
           refreshVehicleStatus:
             analysis.detectedType === 'khanan_pass' ? refreshVehicleStatus : undefined,
         });
-        await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOTS_QUERY_KEY });
-        await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY });
-        await queryClient.invalidateQueries({ queryKey: ['epass'] });
+        await invalidateAfterEpassImport(queryClient, {
+          refreshVehicleStatus:
+            analysis.detectedType === 'khanan_pass' ? refreshVehicleStatus : undefined,
+        });
         if (result.passesImported != null) {
           const queueNote =
             result.vrnsQueued != null && result.vrnsQueued > 0

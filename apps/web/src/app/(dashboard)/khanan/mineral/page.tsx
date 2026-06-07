@@ -37,8 +37,11 @@ import {
   sortMineralRows,
   type MineralSortDir,
 } from '@/lib/epass-mineral-view';
-
-const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
+import {
+  EPASS_FILTER_OPTIONS_ALL_PARAMS,
+  reportingQueryOptions,
+  staticQueryOptions,
+} from '@/lib/query-config';
 
 function MineralPageContent() {
   const router = useRouter();
@@ -74,7 +77,7 @@ function MineralPageContent() {
     queryFn: () => {
       return fetchEpassSnapshotReportDates();
     },
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const dateFilterInput = useMemo(
@@ -128,7 +131,7 @@ function MineralPageContent() {
     queryKey: ['epass', 'minerals-browse'],
     queryFn: () => fetchMineralsBrowse({ reportScope: 'all' }),
     enabled: isAllReports && !browseEmpty,
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...reportingQueryOptions,
   });
 
   const {
@@ -143,13 +146,14 @@ function MineralPageContent() {
       return fetchSnapshotDistrictRows(snapshotId);
     },
     enabled: Boolean(snapshotId) && !isAllReports,
+    ...reportingQueryOptions,
   });
 
   const { data: allFilterOptions } = useQuery({
-    queryKey: ['epass', 'filter-options', 'all'],
-    queryFn: () => fetchEpassFilterOptions({ reportScope: 'all' }),
+    queryKey: ['epass', 'filter-options', EPASS_FILTER_OPTIONS_ALL_PARAMS],
+    queryFn: () => fetchEpassFilterOptions(EPASS_FILTER_OPTIONS_ALL_PARAMS),
     enabled: isAllReports && Boolean(snapshotsData?.items.length),
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   useEffect(() => {

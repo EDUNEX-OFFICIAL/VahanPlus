@@ -38,8 +38,11 @@ import {
   districtParamsFromFilters,
   parseDistrictSortKey,
 } from '@/lib/epass-district-filter-params';
-
-const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
+import {
+  EPASS_FILTER_OPTIONS_ALL_PARAMS,
+  reportingQueryOptions,
+  staticQueryOptions,
+} from '@/lib/query-config';
 
 function DistrictPageContent() {
   const router = useRouter();
@@ -75,7 +78,7 @@ function DistrictPageContent() {
     queryFn: () => {
       return fetchEpassSnapshotReportDates();
     },
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const dateFilterInput = useMemo(
@@ -129,7 +132,7 @@ function DistrictPageContent() {
     queryKey: ['epass', 'district-rows-browse'],
     queryFn: () => fetchDistrictRowsBrowse({ reportScope: 'all' }),
     enabled: isAllReports && !browseEmpty,
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...reportingQueryOptions,
   });
 
   const {
@@ -144,13 +147,14 @@ function DistrictPageContent() {
       return fetchSnapshotDistrictRows(snapshotId);
     },
     enabled: Boolean(snapshotId) && !isAllReports,
+    ...reportingQueryOptions,
   });
 
   const { data: allFilterOptions } = useQuery({
-    queryKey: ['epass', 'filter-options', 'all'],
-    queryFn: () => fetchEpassFilterOptions({ reportScope: 'all' }),
+    queryKey: ['epass', 'filter-options', EPASS_FILTER_OPTIONS_ALL_PARAMS],
+    queryFn: () => fetchEpassFilterOptions(EPASS_FILTER_OPTIONS_ALL_PARAMS),
     enabled: isAllReports && Boolean(snapshotsData?.items.length),
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   useEffect(() => {

@@ -41,9 +41,9 @@ import type {
   VehicleDataSortDir,
   VehicleDataSortKey,
 } from '@/lib/epass-types';
+import { reportingQueryOptions, staticQueryOptions } from '@/lib/query-config';
 
 const PAGE_SIZE = 50;
-const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
 
 function snapshotFromList(
   snap: { id: string; reportDate: string; scrapedAt: string } | null,
@@ -142,7 +142,7 @@ function VehicleDataPageContent() {
   } = useQuery({
     queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
     queryFn: () => fetchEpassSnapshotReportDates(),
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const dateFilterInput = useMemo(
@@ -273,7 +273,7 @@ function VehicleDataPageContent() {
     queryKey: ['epass', 'filter-options', filterOptionsParams],
     queryFn: () => fetchEpassFilterOptions(filterOptionsParams),
     enabled: isAllReports && Boolean(snapshotsData?.items.length),
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const { data: districtRowsData } = useQuery({
@@ -283,6 +283,7 @@ function VehicleDataPageContent() {
       return fetchSnapshotDistrictRows(snapshotId);
     },
     enabled: Boolean(snapshotId) && !isAllReports,
+    ...staticQueryOptions,
   });
 
   const minerals = useMemo(() => {
@@ -313,6 +314,7 @@ function VehicleDataPageContent() {
     queryKey: ['epass', 'vehicle-data', listParams],
     queryFn: () => fetchVehicleDataList(listParams),
     enabled: listEnabled,
+    ...reportingQueryOptions,
   });
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);

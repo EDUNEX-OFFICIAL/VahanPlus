@@ -38,6 +38,7 @@ import {
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import { allReportsBootstrapPatch, allReportsClearPatch } from '@/lib/epass-report-scope';
+import { reportingQueryOptions, staticQueryOptions } from '@/lib/query-config';
 import type { ConsigneeEpassFilterExtras } from '@/components/khanan/ConsigneeEpassFilters';
 import type {
   ConsigneeSortDir,
@@ -45,13 +46,6 @@ import type {
   EpassSnapshotDto,
   EpassSnapshotReportDateItemDto,
 } from '@/lib/epass-types';
-
-const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
-
-const EPASS_BROWSE_QUERY_OPTS = {
-  staleTime: SNAPSHOTS_STALE_MS,
-  retry: (failureCount: number, error: Error) => failureCount < 1 && !error.message.includes('503'),
-} as const;
 
 function queryErrorMessage(error: unknown): string | undefined {
   return error instanceof Error ? error.message : undefined;
@@ -112,7 +106,7 @@ function ConsigneePageContent() {
     queryFn: () => {
       return fetchEpassSnapshotReportDates();
     },
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const resolvedSnapshotId = useMemo(() => {
@@ -216,7 +210,7 @@ function ConsigneePageContent() {
     queryKey: ['epass', 'filter-options', filterOptionsParams],
     queryFn: () => fetchEpassFilterOptions(filterOptionsParams),
     enabled: (isRangeMode || isAllReports) && Boolean(snapshotsData?.items.length),
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const optionsEnabled =
@@ -228,7 +222,7 @@ function ConsigneePageContent() {
     queryFn: () =>
       fetchConsignerOptions(toConsignerOptionsQueryParams(appliedFilters, resolvedSnapshotId)),
     enabled: optionsEnabled,
-    ...EPASS_BROWSE_QUERY_OPTS,
+    ...reportingQueryOptions,
   });
 
   const { data: districtRowsData } = useQuery({
@@ -238,6 +232,7 @@ function ConsigneePageContent() {
       return fetchSnapshotDistrictRows(resolvedSnapshotId);
     },
     enabled: Boolean(resolvedSnapshotId) && !isRangeMode && !isAllReports,
+    ...staticQueryOptions,
   });
 
   const minerals = useMemo(() => {
@@ -257,7 +252,7 @@ function ConsigneePageContent() {
       if (!consignerRowId) throw new Error('Consigner required');
       return fetchConsignerChallans(consignerRowId, toConsignerChallansQueryParams(appliedFilters));
     },
-    ...EPASS_BROWSE_QUERY_OPTS,
+    ...reportingQueryOptions,
   });
 
   const displayRows = useMemo(() => {

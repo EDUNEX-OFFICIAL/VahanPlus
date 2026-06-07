@@ -4,11 +4,13 @@ import { type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DataStateShell } from '@/components/ui/DataStateShell';
 import { EPASS_LATEST_QUERY_KEY, fetchLatestEpass } from '@/lib/epass';
+import { staticQueryOptions } from '@/lib/query-config';
 
 export function useLatestEpassQuery() {
   return useQuery({
     queryKey: EPASS_LATEST_QUERY_KEY,
     queryFn: () => fetchLatestEpass(),
+    ...staticQueryOptions,
   });
 }
 

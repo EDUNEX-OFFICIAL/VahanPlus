@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import { CRM_CONFIG_QUERY_KEY, fetchCrmConfig, patchCrmConfig } from '@/lib/crm-config';
+import { invalidateCrmExpiryData, staticQueryOptions } from '@/lib/query-config';
 import type { CrmConfigDto } from '@/lib/crm-config-types';
 
 const PRESET_DAYS = [7, 10, 15, 30, 45, 60] as const;
@@ -27,6 +28,7 @@ export default function CrmConfigPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: CRM_CONFIG_QUERY_KEY,
     queryFn: () => fetchCrmConfig(),
+    ...staticQueryOptions,
   });
 
   const [draft, setDraft] = useState<CrmConfigDto | null>(null);
@@ -50,7 +52,7 @@ export default function CrmConfigPage() {
       setJustSaved(true);
       setDraft(res.config);
       queryClient.setQueryData(CRM_CONFIG_QUERY_KEY, res);
-      queryClient.invalidateQueries({ queryKey: ['crm', 'vehicle-expiry'] });
+      void invalidateCrmExpiryData(queryClient);
     },
     onError: (e: Error) => setSaveError(e.message),
   });

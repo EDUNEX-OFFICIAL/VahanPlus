@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { KhananImportJobProvider } from '@/components/khanan/import/KhananImportJobProvider';
 import { AppShell } from '@/components/shell/AppShell';
 import { AuthChecking } from '@/components/shell/AuthChecking';
+import { EpassQueryPrefetch } from '@/components/shell/EpassQueryPrefetch';
+import { EpassScrapeInvalidation } from '@/components/shell/EpassScrapeInvalidation';
 import { clearSession, fetchSessionUser } from '@/lib/api';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -42,6 +44,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <KhananImportJobProvider>
+      <EpassQueryPrefetch enabled />
+      <EpassScrapeInvalidation enabled />
       <AppShell>{children}</AppShell>
     </KhananImportJobProvider>
   );

@@ -21,6 +21,13 @@ import {
 } from '@/lib/crm';
 import { CRM_CONFIG_QUERY_KEY, crmConfigToExpiryDefaults, fetchCrmConfig } from '@/lib/crm-config';
 import {
+  CRM_EXPIRY_QUERY_KEY,
+  invalidateCrmExpiryData,
+  invalidateVehicleStatusData,
+  reportingQueryOptions,
+  staticQueryOptions,
+} from '@/lib/query-config';
+import {
   DEFAULT_CRM_EXPIRY_DAYS,
   parseCrmExpiryFilters,
   serializeCrmExpiryFoundFilter,
@@ -29,7 +36,6 @@ import type { CrmExpiryFilterValues, CrmExpirySortKey } from '@/lib/crm-types';
 import type { VehicleStatusSortDir } from '@/lib/epass-types';
 
 const PAGE_SIZE = 50;
-const CRM_EXPIRY_QUERY_KEY = ['crm', 'vehicle-expiry'] as const;
 
 function parseSortKey(raw: string | null): CrmExpirySortKey | null {
   const keys: CrmExpirySortKey[] = [
@@ -65,6 +71,7 @@ function CrmVehicleExpiryPageContent() {
   const { data: crmConfigData } = useQuery({
     queryKey: CRM_CONFIG_QUERY_KEY,
     queryFn: () => fetchCrmConfig(),
+    ...staticQueryOptions,
   });
   const expiryDefaults = useMemo(
     () => crmConfigToExpiryDefaults(crmConfigData?.config),
@@ -115,6 +122,7 @@ function CrmVehicleExpiryPageContent() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [...CRM_EXPIRY_QUERY_KEY, listParams],
     queryFn: () => fetchCrmVehicleExpiryList(listParams),
+    ...reportingQueryOptions,
   });
 
   const removeMutation = useMutation({
@@ -131,8 +139,8 @@ function CrmVehicleExpiryPageContent() {
         for (const vrn of removed) next.delete(vrn);
         return next;
       });
-      await queryClient.invalidateQueries({ queryKey: CRM_EXPIRY_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ['epass', 'vehicle-status'] });
+      await invalidateCrmExpiryData(queryClient);
+      await invalidateVehicleStatusData(queryClient);
     },
     onError: (e: Error) => setActionError(e.message),
   });

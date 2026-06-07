@@ -32,6 +32,7 @@ import {
 } from '@/lib/epass-filter-params';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import { allReportsBootstrapPatch, allReportsClearPatch } from '@/lib/epass-report-scope';
+import { reportingQueryOptions, staticQueryOptions } from '@/lib/query-config';
 import type { ConsigneeEpassFilterExtras } from '@/components/khanan/ConsigneeEpassFilters';
 import type {
   ChallanSortDir,
@@ -41,7 +42,6 @@ import type {
 } from '@/lib/epass-types';
 
 const PAGE_SIZE = 50;
-const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
 
 function snapshotFromList(
   snap: { id: string; reportDate: string; scrapedAt: string } | null,
@@ -128,7 +128,7 @@ function ChallanPageContent() {
     queryFn: () => {
       return fetchEpassSnapshotReportDates();
     },
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const dateFilterInput = useMemo(
@@ -240,7 +240,7 @@ function ChallanPageContent() {
     queryKey: ['epass', 'filter-options', filterOptionsParams],
     queryFn: () => fetchEpassFilterOptions(filterOptionsParams),
     enabled: (isRangeMode || isAllReports) && Boolean(snapshotsData?.items.length),
-    staleTime: SNAPSHOTS_STALE_MS,
+    ...staticQueryOptions,
   });
 
   const { data: districtRowsData } = useQuery({
@@ -250,6 +250,7 @@ function ChallanPageContent() {
       return fetchSnapshotDistrictRows(snapshotId);
     },
     enabled: Boolean(snapshotId) && !isRangeMode && !isAllReports,
+    ...staticQueryOptions,
   });
 
   const minerals = useMemo(() => {
@@ -276,6 +277,7 @@ function ChallanPageContent() {
       return fetchChallanPassList(listParams);
     },
     enabled: listEnabled,
+    ...reportingQueryOptions,
   });
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);

@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY, EPASS_SNAPSHOTS_QUERY_KEY } from '@/lib/epass';
+import { invalidateAfterEpassImport } from '@/lib/query-config';
 import {
   clearStoredImportJob,
   deriveImportPhase,
@@ -158,9 +158,9 @@ export function KhananImportJobProvider({ children }: { children: ReactNode }) {
         setImportSuccessSummary(summary);
         setErrorMessage(null);
         setJob(batchToJob(batch, stored, 'done'));
-        await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOTS_QUERY_KEY });
-        await queryClient.invalidateQueries({ queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY });
-        await queryClient.invalidateQueries({ queryKey: ['epass'] });
+        await invalidateAfterEpassImport(queryClient, {
+          refreshVehicleStatus: Boolean(batch.options?.refreshVehicleStatus),
+        });
       } else {
         const err = batch.error ?? 'Import failed';
         setErrorMessage(err);

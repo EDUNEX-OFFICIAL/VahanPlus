@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useEpassRoutePrefetch } from '@/hooks/useEpassNavPrefetch';
 import { navItems, type NavGroup } from '@/lib/nav-config';
 import { cn } from '@/lib/utils';
 import { NavIconView } from './NavIcon';
@@ -20,6 +21,7 @@ export function SidebarNav({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const prefetchRoute = useEpassRoutePrefetch();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -113,6 +115,7 @@ export function SidebarNav({
                             <Link
                               href={child.href}
                               onClick={onNavigate}
+                              onMouseEnter={() => prefetchRoute(child.href)}
                               className={cn(
                                 'flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70',
                                 active

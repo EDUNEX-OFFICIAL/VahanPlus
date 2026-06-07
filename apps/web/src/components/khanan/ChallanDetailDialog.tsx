@@ -41,6 +41,7 @@ export function ChallanDetailDialog({ row, open, onClose }: ChallanDetailDialogP
   return (
     <AdaptiveDialog
       open={open}
+      collapsible
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}

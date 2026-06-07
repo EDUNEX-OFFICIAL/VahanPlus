@@ -438,6 +438,7 @@ function ConsignerBrowse() {
         consignerRowId: '',
         destination: '',
         challanSearch: '',
+        vehicleSearch: '',
       }),
       sort: null,
       dir: null,

@@ -99,17 +99,6 @@ export function DistrictEpassFilters({
     if (!open) setDraft({ ...values, reportScope: values.reportScope ?? reportScope });
   }, [open, values, reportScope]);
 
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [open]);
-
   const filteredSnapshots = useMemo(
     () => snapshotsForDateMode(snapshots, draft.dateMode, draft.dateFrom, draft.dateTo),
     [snapshots, draft.dateMode, draft.dateFrom, draft.dateTo],
@@ -179,7 +168,7 @@ export function DistrictEpassFilters({
             type="button"
             variant="secondary"
             className="min-h-11 gap-2 px-4 text-sm"
-            onClick={() => setOpen(true)}
+            onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
           >
             Filter
@@ -192,6 +181,8 @@ export function DistrictEpassFilters({
 
           {open ? (
             <FilterDropdownPanel
+              open={open}
+              anchorRef={panelRef}
               onClose={() => setOpen(false)}
               footer={
                 <>

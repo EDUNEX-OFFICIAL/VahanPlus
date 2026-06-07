@@ -710,6 +710,12 @@ function buildChallanPassBrowseWhere(snapshotIdOrIds, query) {
   if (challan) {
     where.challanNo = { contains: challan, mode: 'insensitive' };
   }
+  const vehicle =
+    (typeof query.vehicle === 'string' ? query.vehicle.trim() : '') ||
+    (typeof query.vehicleRegNo === 'string' ? query.vehicleRegNo.trim() : '');
+  if (vehicle) {
+    where.vehicleRegNo = { contains: vehicle, mode: 'insensitive' };
+  }
 
   const minerals = parseMineralList(query);
   if (minerals.length > 0) {

@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useId, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+import { Maximize2, Minimize2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AdaptiveDialog({
@@ -14,6 +14,7 @@ export function AdaptiveDialog({
   children,
   footer,
   className,
+  collapsible = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,7 +24,19 @@ export function AdaptiveDialog({
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  collapsible?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const contentId = useId();
+
+  useEffect(() => {
+    if (!open) setExpanded(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!collapsible) setExpanded(false);
+  }, [collapsible]);
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -52,18 +65,51 @@ export function AdaptiveDialog({
                 </Dialog.Description>
               ) : null}
             </div>
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                aria-label="Close"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-text-secondary transition hover:bg-surface-deep hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
-              >
-                <X className="h-5 w-5" aria-hidden />
-              </button>
-            </Dialog.Close>
+            <div className="flex shrink-0 items-center gap-1">
+              {collapsible ? (
+                <button
+                  type="button"
+                  aria-label={expanded ? 'Collapse details' : 'Expand details'}
+                  aria-expanded={expanded}
+                  aria-controls={contentId}
+                  onClick={() => setExpanded((v) => !v)}
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-text-secondary transition hover:bg-surface-deep hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                >
+                  {expanded ? (
+                    <Minimize2 className="h-5 w-5" aria-hidden />
+                  ) : (
+                    <Maximize2 className="h-5 w-5" aria-hidden />
+                  )}
+                </button>
+              ) : null}
+              <Dialog.Close asChild>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-text-secondary transition hover:bg-surface-deep hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                >
+                  <X className="h-5 w-5" aria-hidden />
+                </button>
+              </Dialog.Close>
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto overscroll-contain p-5 scrollbar-thin">
-            {children}
+          <div
+            id={contentId}
+            aria-hidden={collapsible && !expanded ? true : undefined}
+            className={cn(
+              'relative flex-1 overscroll-contain p-5',
+              collapsible && !expanded
+                ? 'max-h-[min(42vh,320px)] overflow-hidden'
+                : 'overflow-y-auto scrollbar-none',
+            )}
+          >
+            <div className={cn(collapsible && !expanded && 'pointer-events-none')}>{children}</div>
+            {collapsible && !expanded ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-surface-primary/95 to-transparent"
+              />
+            ) : null}
           </div>
           {footer ? (
             <div className="sticky bottom-0 z-10 border-t border-border-default/70 bg-surface-primary/95 px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">

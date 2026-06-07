@@ -158,6 +158,7 @@ export function fetchChallanPassList(params: ChallanListParams = {}) {
   appendChallanBrowseQuery(q, params);
   if (params.destination) q.set('destination', params.destination);
   if (params.challan) q.set('challan', params.challan);
+  if (params.vehicle) q.set('vehicle', params.vehicle);
   const qs = q.toString();
   return apiFetch<ChallanPassListResponse>(`/epass/challan-passes${qs ? `?${qs}` : ''}`);
 }

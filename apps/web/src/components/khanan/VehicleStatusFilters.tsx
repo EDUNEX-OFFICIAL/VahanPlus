@@ -25,17 +25,6 @@ export function VehicleStatusFilters({ values, onApply, onClear }: VehicleStatus
     if (!open) setDraft(values);
   }, [open, values]);
 
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [open]);
-
   const chips = buildVehicleStatusFilterChips(values);
 
   function patch(partial: Partial<VehicleStatusFilterValues>) {
@@ -60,7 +49,7 @@ export function VehicleStatusFilters({ values, onApply, onClear }: VehicleStatus
             type="button"
             variant="secondary"
             className="min-h-11 gap-2 px-4 text-sm"
-            onClick={() => setOpen(true)}
+            onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
           >
             Filter
@@ -73,6 +62,8 @@ export function VehicleStatusFilters({ values, onApply, onClear }: VehicleStatus
 
           {open ? (
             <FilterDropdownPanel
+              open={open}
+              anchorRef={panelRef}
               title="Vehicle filters"
               onClose={() => setOpen(false)}
               footer={

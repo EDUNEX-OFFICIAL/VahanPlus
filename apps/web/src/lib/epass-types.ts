@@ -107,6 +107,7 @@ export interface EpassBrowseFilterValues {
   consignerRowId: string;
   destination: string;
   challanSearch: string;
+  vehicleSearch: string;
 }
 
 export type ConsigneeSortKey = 'date' | 'consignee' | 'mineral' | 'passes' | 'qty' | 'slNo';
@@ -423,6 +424,7 @@ export interface ChallanListParams {
   consignee?: string;
   destination?: string;
   challan?: string;
+  vehicle?: string;
   hideZeroPasses?: boolean;
   sort?: ChallanSortKey;
   dir?: ChallanSortDir;

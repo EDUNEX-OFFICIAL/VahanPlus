@@ -30,17 +30,6 @@ export function CrmExpiryFilters({ values, onApply, onClear }: CrmExpiryFiltersP
     if (!open) setDraft(values);
   }, [open, values]);
 
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [open]);
-
   const chips = buildCrmExpiryFilterChips(values);
 
   function patch(partial: Partial<CrmExpiryFilterValues>) {
@@ -65,7 +54,7 @@ export function CrmExpiryFilters({ values, onApply, onClear }: CrmExpiryFiltersP
             type="button"
             variant="secondary"
             className="min-h-11 gap-2 px-4 text-sm"
-            onClick={() => setOpen(true)}
+            onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
           >
             Filter
@@ -78,6 +67,8 @@ export function CrmExpiryFilters({ values, onApply, onClear }: CrmExpiryFiltersP
 
           {open ? (
             <FilterDropdownPanel
+              open={open}
+              anchorRef={panelRef}
               title="CRM filters"
               onClose={() => setOpen(false)}
               footer={

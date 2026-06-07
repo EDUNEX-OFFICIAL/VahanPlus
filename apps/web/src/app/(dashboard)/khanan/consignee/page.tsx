@@ -302,6 +302,8 @@ function ConsigneePageContent() {
       hideZeroPasses: null,
       destination: null,
       consignerRowId: null,
+      challan: null,
+      vehicle: null,
     });
   }, [updateParams]);
 

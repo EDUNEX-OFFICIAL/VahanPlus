@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { isFilterPanelTarget } from '@/components/ui/AdaptiveFilterSheet';
 import type { ConsignerOptionDto } from '@/lib/epass-types';
 import { appendGhatSuffix } from '@/lib/consigner-display';
 
@@ -82,13 +83,13 @@ export function ConsignerCombobox({
 
   useEffect(() => {
     if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    function onPointerDown(e: PointerEvent) {
+      if (rootRef.current?.contains(e.target as Node)) return;
+      if (isFilterPanelTarget(e.target)) return;
+      setOpen(false);
     }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [open]);
 
   const displayValue = open ? query : selected ? formatConsignerOption(selected) : '';

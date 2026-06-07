@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { CSSProperties, ReactNode, RefObject, useEffect, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Filter, X } from 'lucide-react';
@@ -9,38 +9,177 @@ import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { cn } from '@/lib/utils';
 
+const FILTER_PANEL_ATTR = 'data-filter-dropdown-panel';
+
+export function isFilterPanelTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(target.closest(`[${FILTER_PANEL_ATTR}]`));
+}
+
 const filterPanelFooterClass =
   'relative z-10 grid shrink-0 grid-cols-2 gap-3 border-t border-border-default bg-surface-primary px-4 py-3 shadow-[0_-10px_24px_rgba(0,0,0,0.5)]';
 
-function useMobileBodyScrollLock(active: boolean) {
+function useFilterBodyScrollLock(active: boolean) {
   useEffect(() => {
     if (!active) return;
-    const mq = window.matchMedia('(max-width: 767px)');
-    if (!mq.matches) return;
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    if (!isMobile) return;
 
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const scrollY = window.scrollY;
+    const { body, documentElement: html } = document;
+    const prev = {
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      htmlOverflow: html.style.overflow,
+    };
+
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    html.style.overflow = 'hidden';
+
     return () => {
-      document.body.style.overflow = prev;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.width = prev.bodyWidth;
+      html.style.overflow = prev.htmlOverflow;
+      window.scrollTo(0, scrollY);
     };
   }, [active]);
 }
 
+function computeDesktopPanelStyle(anchorRef: RefObject<HTMLElement | null>): CSSProperties | null {
+  const el = anchorRef.current;
+  if (!el) return null;
+
+  const rect = el.getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const width = Math.min(420, vw - 32);
+  const left = Math.min(Math.max(16, rect.left), vw - width - 16);
+  const gap = 8;
+  const maxPanelH = 680;
+  const spaceBelow = vh - rect.bottom - gap - 16;
+  const spaceAbove = rect.top - gap - 16;
+
+  let top: number;
+  let maxHeight: number;
+
+  if (spaceBelow >= 200 || spaceBelow >= spaceAbove) {
+    top = rect.bottom + gap;
+    maxHeight = Math.min(maxPanelH, Math.max(200, spaceBelow));
+  } else {
+    maxHeight = Math.min(maxPanelH, Math.max(200, spaceAbove));
+    top = Math.max(16, rect.top - gap - maxHeight);
+  }
+
+  return {
+    position: 'fixed',
+    top,
+    left,
+    width,
+    maxHeight,
+  };
+}
+
+function useFilterPanelPosition(
+  anchorRef: RefObject<HTMLElement | null>,
+  open: boolean,
+): CSSProperties | null {
+  const [style, setStyle] = useState<CSSProperties | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setStyle(null);
+      return;
+    }
+
+    function update() {
+      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+      if (!isDesktop) {
+        setStyle(null);
+        return;
+      }
+      setStyle(computeDesktopPanelStyle(anchorRef));
+    }
+
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [open, anchorRef]);
+
+  return style;
+}
+
+function useFilterEscapeDismiss(open: boolean, onClose?: () => void) {
+  useEffect(() => {
+    const dismiss = onClose;
+    if (!open || !dismiss) return;
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') dismiss?.();
+    }
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
+}
+
+function useFilterOutsideDismiss(
+  open: boolean,
+  anchorRef: RefObject<HTMLElement | null>,
+  onClose?: () => void,
+) {
+  useEffect(() => {
+    const dismiss = onClose;
+    if (!open || !dismiss) return;
+
+    function onPointerDown(e: PointerEvent) {
+      const target = e.target as Node;
+      if (anchorRef.current?.contains(target)) return;
+      if ((target as Element).closest?.(`[${FILTER_PANEL_ATTR}]`)) return;
+      dismiss?.();
+    }
+
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [open, anchorRef, onClose]);
+}
+
 export function FilterDropdownPanel({
+  open,
+  anchorRef,
   title,
   children,
   footer,
   onClose,
 }: {
+  open: boolean;
+  anchorRef: RefObject<HTMLElement | null>;
   title?: ReactNode;
   children: ReactNode;
   footer: ReactNode;
   onClose?: () => void;
 }) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(() => typeof document !== 'undefined');
+  const desktopStyle = useFilterPanelPosition(anchorRef, open);
 
-  useEffect(() => setMounted(true), []);
-  useMobileBodyScrollLock(true);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  useFilterBodyScrollLock(open);
+  useFilterOutsideDismiss(open, anchorRef, onClose);
+  useFilterEscapeDismiss(open, onClose);
+
+  if (!open) return null;
 
   const bodyContent = (
     <>
@@ -49,36 +188,50 @@ export function FilterDropdownPanel({
     </>
   );
 
+  const panelBodyClass =
+    'min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin';
+
   const mobileSheet = (
     <>
       <button
         type="button"
         aria-label="Close filters"
-        className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-sm md:hidden"
+        className="fixed inset-0 z-[35] touch-none bg-black/65 backdrop-blur-sm md:hidden"
         onClick={onClose}
       />
-      <Card className="fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-[101] flex max-h-[70dvh] flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:hidden">
-        <div className="touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin">
-          {bodyContent}
-        </div>
+      <Card
+        data-filter-dropdown-panel=""
+        className="fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-[36] flex max-h-[70dvh] flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:hidden"
+      >
+        <div className={panelBodyClass}>{bodyContent}</div>
         <div className={filterPanelFooterClass}>{footer}</div>
       </Card>
     </>
   );
 
-  const desktopDropdown = (
-    <Card className="absolute left-0 top-full z-50 mt-2 hidden max-h-[min(78dvh,680px)] w-[min(100vw-2rem,420px)] flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:flex">
-      <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 scrollbar-thin">
-        {bodyContent}
+  const desktopPanel = desktopStyle ? (
+    <>
+      <button
+        type="button"
+        aria-label="Close filters"
+        className="fixed inset-0 z-[35] hidden touch-none bg-black/20 md:block"
+        onClick={onClose}
+      />
+      <div
+        data-filter-dropdown-panel=""
+        style={desktopStyle}
+        className="z-[36] hidden flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:flex"
+      >
+        <div className={panelBodyClass}>{bodyContent}</div>
+        <div className={filterPanelFooterClass}>{footer}</div>
       </div>
-      <div className={filterPanelFooterClass}>{footer}</div>
-    </Card>
-  );
+    </>
+  ) : null;
 
   return (
     <>
       {mounted ? createPortal(mobileSheet, document.body) : null}
-      {desktopDropdown}
+      {mounted && desktopPanel ? createPortal(desktopPanel, document.body) : null}
     </>
   );
 }

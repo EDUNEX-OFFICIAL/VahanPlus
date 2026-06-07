@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/Alert';
 import { AdaptiveDialog } from '@/components/ui/AdaptiveDialog';
@@ -47,6 +48,84 @@ function formatWeight(value: number | null): string {
   return value.toLocaleString('en-IN', { maximumFractionDigits: 4 });
 }
 
+function PassLinesSection({
+  passes,
+}: {
+  passes: NonNullable<Awaited<ReturnType<typeof fetchVehicleDataDetail>>>['passes'];
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="mb-3 flex w-full items-center justify-between gap-2 text-left text-xs font-semibold uppercase tracking-wider text-text-secondary transition hover:text-white"
+      >
+        <span>Pass lines ({passes.length})</span>
+        {expanded ? (
+          <ChevronUp className="h-4 w-4 shrink-0" aria-hidden />
+        ) : (
+          <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
+        )}
+      </button>
+      {expanded ? (
+        <div className="overflow-x-auto rounded-xl border border-border-default/60 scrollbar-none">
+          <table className="w-full min-w-[720px] border-collapse text-left text-xs">
+            <thead className="bg-surface-deep">
+              <tr className="border-b border-border-default text-text-secondary">
+                <th className="px-3 py-2">Challan</th>
+                <th className="px-3 py-2">Consignee</th>
+                <th className="px-3 py-2">Mineral</th>
+                <th className="px-3 py-2 text-right">Qty</th>
+                <th className="px-3 py-2">Destination</th>
+                <th className="px-3 py-2">Date</th>
+                <th className="px-3 py-2">District</th>
+                <th className="px-3 py-2">Consigner</th>
+              </tr>
+            </thead>
+            <tbody>
+              {passes.map((pass) => (
+                <tr key={pass.id} className="border-b border-border-default/40 text-white">
+                  <td className="px-3 py-2 font-mono text-indigo-200">
+                    {pass.portalChallanUrl ? (
+                      <a
+                        href={pass.portalChallanUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        {pass.challanNo}
+                      </a>
+                    ) : (
+                      pass.challanNo
+                    )}
+                  </td>
+                  <td className="px-3 py-2">{pass.consigneeName}</td>
+                  <td className="px-3 py-2">{pass.mineral ?? '—'}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {`${formatQty(pass.quantity)} ${pass.unit ?? ''}`.trim()}
+                  </td>
+                  <td className="px-3 py-2">{pass.destination ?? '—'}</td>
+                  <td className="px-3 py-2 text-text-secondary">{pass.transportedDate ?? '—'}</td>
+                  <td className="px-3 py-2">{pass.dmoName}</td>
+                  <td className="px-3 py-2">
+                    {pass.consignerName}
+                    <span className="ml-1 text-text-secondary">
+                      ({formatOperatorType(pass.operatorType ?? pass.role)})
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function VehicleDataDetailDialog({
   vehicleRegNo,
   open,
@@ -90,6 +169,7 @@ export function VehicleDataDetailDialog({
   return (
     <AdaptiveDialog
       open={open}
+      collapsible
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}
@@ -209,65 +289,7 @@ export function VehicleDataDetailDialog({
             )}
           </div>
 
-          {data.passes.length > 0 ? (
-            <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                Pass lines
-              </p>
-              <div className="max-h-64 overflow-auto rounded-xl border border-border-default/60 scrollbar-thin">
-                <table className="w-full min-w-[720px] border-collapse text-left text-xs">
-                  <thead className="sticky top-0 bg-surface-deep">
-                    <tr className="border-b border-border-default text-text-secondary">
-                      <th className="px-3 py-2">Challan</th>
-                      <th className="px-3 py-2">Consignee</th>
-                      <th className="px-3 py-2">Mineral</th>
-                      <th className="px-3 py-2 text-right">Qty</th>
-                      <th className="px-3 py-2">Destination</th>
-                      <th className="px-3 py-2">Date</th>
-                      <th className="px-3 py-2">District</th>
-                      <th className="px-3 py-2">Consigner</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.passes.map((pass) => (
-                      <tr key={pass.id} className="border-b border-border-default/40 text-white">
-                        <td className="px-3 py-2 font-mono text-indigo-200">
-                          {pass.portalChallanUrl ? (
-                            <a
-                              href={pass.portalChallanUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:underline"
-                            >
-                              {pass.challanNo}
-                            </a>
-                          ) : (
-                            pass.challanNo
-                          )}
-                        </td>
-                        <td className="px-3 py-2">{pass.consigneeName}</td>
-                        <td className="px-3 py-2">{pass.mineral ?? '—'}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">
-                          {`${formatQty(pass.quantity)} ${pass.unit ?? ''}`.trim()}
-                        </td>
-                        <td className="px-3 py-2">{pass.destination ?? '—'}</td>
-                        <td className="px-3 py-2 text-text-secondary">
-                          {pass.transportedDate ?? '—'}
-                        </td>
-                        <td className="px-3 py-2">{pass.dmoName}</td>
-                        <td className="px-3 py-2">
-                          {pass.consignerName}
-                          <span className="ml-1 text-text-secondary">
-                            ({formatOperatorType(pass.operatorType ?? pass.role)})
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : null}
+          {data.passes.length > 0 ? <PassLinesSection passes={data.passes} /> : null}
         </div>
       ) : null}
     </AdaptiveDialog>

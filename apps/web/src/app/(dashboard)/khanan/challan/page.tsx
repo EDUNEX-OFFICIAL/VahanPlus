@@ -309,6 +309,7 @@ function ChallanPageContent() {
         consignerRowId: '',
         destination: '',
         challanSearch: '',
+        vehicleSearch: '',
       }),
       sort: null,
       dir: null,
@@ -358,6 +359,7 @@ function ChallanPageContent() {
         onApply={handleApplyFilters}
         onClear={handleClearFilters}
         showChallanSearch
+        showVehicleSearch
         showDestinationSearch
         allowAllReports
         reportScope={appliedFilters.reportScope ?? 'specific'}

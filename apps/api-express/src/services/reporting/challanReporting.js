@@ -52,7 +52,7 @@ function mapPassRow(row) {
   };
 }
 
-function buildPassWhere(query) {
+export function buildPassWhere(query) {
   const where = {};
   const operator = query.operator ?? query.role;
   if (operator === 'lessee' || operator === 'dealer') {
@@ -76,9 +76,17 @@ function buildPassWhere(query) {
   if (destination) {
     where.destination = { contains: destination, mode: 'insensitive' };
   }
-  const challanNo = typeof query.challanNo === 'string' ? query.challanNo.trim() : '';
-  if (challanNo) {
-    where.challanNo = { contains: challanNo, mode: 'insensitive' };
+  const challanRaw =
+    (typeof query.challan === 'string' ? query.challan.trim() : '') ||
+    (typeof query.challanNo === 'string' ? query.challanNo.trim() : '');
+  if (challanRaw) {
+    where.challanNo = { contains: challanRaw, mode: 'insensitive' };
+  }
+  const vehicle =
+    (typeof query.vehicle === 'string' ? query.vehicle.trim() : '') ||
+    (typeof query.vehicleRegNo === 'string' ? query.vehicleRegNo.trim() : '');
+  if (vehicle) {
+    where.vehicleRegNo = { contains: vehicle, mode: 'insensitive' };
   }
   const minerals = parseCsvQueryParam(query, 'mineral', 'minerals');
   if (minerals.length > 0) {

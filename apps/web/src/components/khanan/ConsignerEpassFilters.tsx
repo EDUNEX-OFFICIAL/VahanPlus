@@ -84,26 +84,6 @@ export function ConsignerEpassFilters({
     if (!open) setDraft({ ...values, reportScope: values.reportScope ?? reportScope });
   }, [open, values, reportScope]);
 
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open]);
-
   const filteredSnapshots = useMemo(
     () => snapshotsForDateMode(snapshots, draft.dateMode, draft.dateFrom, draft.dateTo),
     [snapshots, draft.dateMode, draft.dateFrom, draft.dateTo],
@@ -177,7 +157,7 @@ export function ConsignerEpassFilters({
             type="button"
             variant="secondary"
             className="min-h-11 gap-2 px-4 text-sm"
-            onClick={() => setOpen(true)}
+            onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
           >
             Filter
@@ -190,6 +170,8 @@ export function ConsignerEpassFilters({
 
           {open ? (
             <FilterDropdownPanel
+              open={open}
+              anchorRef={panelRef}
               title="Filters"
               onClose={() => setOpen(false)}
               footer={

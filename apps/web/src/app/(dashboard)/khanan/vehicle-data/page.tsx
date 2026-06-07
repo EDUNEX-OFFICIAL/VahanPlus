@@ -362,6 +362,7 @@ function VehicleDataPageContent() {
         consignerRowId: '',
         destination: '',
         challanSearch: '',
+        vehicleSearch: '',
       }),
       reportScope: 'all',
       portalStatus: null,

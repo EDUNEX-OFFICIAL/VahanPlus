@@ -22,6 +22,12 @@ import { mcvPortalStatusLabel } from '@/lib/mcv-portal-status';
 import { operatorFilterLabel } from '@/lib/operator';
 import type { EpassSnapshotReportDateItemDto, McvPortalStatus } from '@/lib/epass-types';
 
+const INDIAN_VRN_PATTERN = /^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{1,4}$/i;
+
+function looksLikeVehicleRegistration(value: string): boolean {
+  return INDIAN_VRN_PATTERN.test(value.trim());
+}
+
 export const ALL_REPORTS_SNAPSHOT_ID = 'all';
 
 interface ConsigneeEpassFiltersProps {
@@ -33,6 +39,8 @@ interface ConsigneeEpassFiltersProps {
   onClear: () => void;
   /** Show challan number search (Challan page only). */
   showChallanSearch?: boolean;
+  /** Show vehicle registration search (Challan page only). */
+  showVehicleSearch?: boolean;
   /** Show destination search (Challan + Consignee; pass-level field). */
   showDestinationSearch?: boolean;
   /** Vehicle Data: allow "All reports" in date selector. */
@@ -48,6 +56,8 @@ interface ConsigneeEpassFiltersProps {
 export interface ConsigneeEpassFilterExtras {
   reportScope?: 'all' | 'specific';
   portalStatus?: McvPortalStatus | 'all';
+  showChallanSearch?: boolean;
+  showVehicleSearch?: boolean;
 }
 
 type DraftState = EpassBrowseFilterValues & {
@@ -92,7 +102,12 @@ export function buildConsigneeFilterChips(
   if (values.consignerSearch.trim()) chips.push(values.consignerSearch.trim());
   if (values.consigneeSearch.trim()) chips.push(`Consignee: ${values.consigneeSearch.trim()}`);
   if (values.destination.trim()) chips.push(`Destination: ${values.destination.trim()}`);
-  if (values.challanSearch.trim()) chips.push(`Challan: ${values.challanSearch.trim()}`);
+  if (values.challanSearch.trim() && extras?.showChallanSearch) {
+    chips.push(`Challan: ${values.challanSearch.trim()}`);
+  }
+  if (values.vehicleSearch.trim() && extras?.showVehicleSearch) {
+    chips.push(`Vehicle: ${values.vehicleSearch.trim()}`);
+  }
   if (values.hideZeroPasses) chips.push('No zero passes');
   if (extras?.portalStatus && extras.portalStatus !== 'all') {
     chips.push(`Portal: ${mcvPortalStatusLabel(extras.portalStatus)}`);
@@ -108,6 +123,7 @@ export function ConsigneeEpassFilters({
   onApply,
   onClear,
   showChallanSearch = false,
+  showVehicleSearch = false,
   showDestinationSearch = false,
   allowAllReports = false,
   reportScope = 'specific',
@@ -128,17 +144,6 @@ export function ConsigneeEpassFilters({
       setDraft({ ...values, reportScope, portalStatus });
     }
   }, [open, values, reportScope, portalStatus]);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [open]);
 
   const filteredSnapshots = useMemo(
     () => snapshotsForDateMode(snapshots, draft.dateMode, draft.dateFrom, draft.dateTo),
@@ -168,7 +173,12 @@ export function ConsigneeEpassFilters({
     }
   }, [open, dateOptions, draft.snapshotId, draft.reportScope]);
 
-  const chips = buildConsigneeFilterChips(values, { reportScope, portalStatus });
+  const chips = buildConsigneeFilterChips(values, {
+    reportScope,
+    portalStatus,
+    showChallanSearch,
+    showVehicleSearch,
+  });
 
   function patch(partial: Partial<DraftState>) {
     setDraft((d) => ({ ...d, ...partial }));
@@ -226,7 +236,7 @@ export function ConsigneeEpassFilters({
             type="button"
             variant="secondary"
             className="min-h-11 gap-2 px-4 text-sm"
-            onClick={() => setOpen(true)}
+            onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
           >
             Filter
@@ -239,6 +249,8 @@ export function ConsigneeEpassFilters({
 
           {open ? (
             <FilterDropdownPanel
+              open={open}
+              anchorRef={panelRef}
               onClose={() => setOpen(false)}
               footer={
                 <>
@@ -447,6 +459,26 @@ export function ConsigneeEpassFilters({
                       value={draft.challanSearch}
                       onChange={(e) => patch({ challanSearch: e.target.value })}
                       placeholder="Challan number"
+                      className={filterInputClass}
+                    />
+                    {looksLikeVehicleRegistration(draft.challanSearch) &&
+                    showVehicleSearch &&
+                    !draft.vehicleSearch.trim() ? (
+                      <p className="mt-2 text-xs text-amber-300/90">
+                        This looks like a vehicle registration — use the Vehicle filter.
+                      </p>
+                    ) : null}
+                  </FilterSection>
+                ) : null}
+
+                {showVehicleSearch ? (
+                  <FilterSection title="Vehicle">
+                    <input
+                      id="challan-vehicle-search"
+                      type="search"
+                      value={draft.vehicleSearch}
+                      onChange={(e) => patch({ vehicleSearch: e.target.value })}
+                      placeholder="e.g. BR26GC5753"
                       className={filterInputClass}
                     />
                   </FilterSection>

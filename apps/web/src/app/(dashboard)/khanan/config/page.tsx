@@ -381,7 +381,7 @@ export default function KhananConfigPage() {
         />
       ) : null}
 
-      <KhananConfigHistory status={data.status} scrapeActive={scrapeActive} />
+      <KhananConfigHistory scrapeActive={scrapeActive} />
 
       <KhananConfigDangerZone
         allowDataWipe={draft.allowDataWipe}

@@ -21,11 +21,10 @@ import {
   SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY,
   fetchScraperSnapshotHistory,
 } from '@/lib/scraper-config';
-import type { LiveSnapshotRow, ScraperConfigStatus } from '@/lib/scraper-config-types';
+import type { LiveSnapshotRow } from '@/lib/scraper-config-types';
 import { cn } from '@/lib/utils';
 
 interface Props {
-  status: ScraperConfigStatus;
   scrapeActive?: boolean;
 }
 
@@ -43,51 +42,6 @@ function districtHref(row: LiveSnapshotRow): string {
     reportDate: row.reportDate,
   });
   return `/khanan/district?${params.toString()}`;
-}
-
-/** Current BullMQ queue — what is in line / running right now (not lifetime DB totals). */
-function QueueStatusChips({
-  status,
-  scrapeActive,
-}: {
-  status: ScraperConfigStatus;
-  scrapeActive: boolean;
-}) {
-  const q = status.queue;
-  const waiting = q.waiting ?? 0;
-  const active = q.active ?? 0;
-  const delayed = q.delayed ?? 0;
-  const inQueue = waiting + delayed;
-
-  if (!scrapeActive && inQueue === 0 && active === 0) return null;
-
-  const chips: Array<{ key: string; label: string; tone: 'amber' | 'emerald' }> = [];
-  if (inQueue > 0) {
-    chips.push({ key: 'queue', label: `In queue: ${formatCount(inQueue)}`, tone: 'amber' });
-  }
-  if (active > 0) {
-    chips.push({ key: 'active', label: `Running: ${formatCount(active)}`, tone: 'emerald' });
-  }
-  if (chips.length === 0 && scrapeActive) {
-    chips.push({ key: 'busy', label: 'Finishing up…', tone: 'amber' });
-  }
-
-  if (chips.length === 0) return null;
-
-  return (
-    <div className="mt-3 space-y-2">
-      <div className="flex flex-wrap gap-2">
-        {chips.map((chip) => (
-          <Chip key={chip.key} tone={chip.tone}>
-            {chip.label}
-          </Chip>
-        ))}
-      </div>
-      <p className="text-xs text-text-secondary">
-        Queue status for the current scrape session — not total rows scraped.
-      </p>
-    </div>
-  );
 }
 
 function HistorySnapshotRow({ row }: { row: LiveSnapshotRow }) {
@@ -169,7 +123,7 @@ function HistoryFooter({
   );
 }
 
-export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
+export function KhananConfigHistory({ scrapeActive = false }: Props) {
   const [runsVisible, setRunsVisible] = useState(HISTORY_INITIAL_VISIBLE);
 
   const pollMs = scrapeActive ? 4_000 : 60_000;
@@ -195,7 +149,6 @@ export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
   return (
     <Card>
       <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary">History</h3>
-      <QueueStatusChips status={status} scrapeActive={scrapeActive} />
 
       <div className="mt-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary">

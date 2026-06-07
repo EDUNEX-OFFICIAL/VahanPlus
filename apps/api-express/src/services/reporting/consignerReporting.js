@@ -4,6 +4,13 @@ import {
 } from '../../lib/epass-query-normalize.js';
 import { isReportDateInRange } from '../../utils/epassDates.js';
 import { resolvePageParams } from './cursor.js';
+import { parseCsvQueryParam } from './queryParams.js';
+import {
+  buildConsigneeSummaryBrowseWhere,
+  filterRowsByReportDateRange,
+} from './consigneeReporting.js';
+
+const CONSIGNER_OPTIONS_CAP = 500;
 
 function mapConsignerSummary(row) {
   return {
@@ -37,15 +44,13 @@ function buildConsignerWhere(query) {
   if (consigner) {
     applyConsignerNameFilter(where, consigner);
   }
-  const districts =
-    typeof query.districts === 'string' ? query.districts.split(',').filter(Boolean) : [];
+  const districts = parseCsvQueryParam(query, 'district', 'districts', 'dmo');
   if (districts.length === 1) {
     where.dmoName = { equals: districts[0], mode: 'insensitive' };
   } else if (districts.length > 1) {
     where.dmoName = { in: districts, mode: 'insensitive' };
   }
-  const minerals =
-    typeof query.minerals === 'string' ? query.minerals.split(',').filter(Boolean) : [];
+  const minerals = parseCsvQueryParam(query, 'mineral', 'minerals');
   if (minerals.length === 1) {
     where.mineral = { equals: minerals[0], mode: 'insensitive' };
   } else if (minerals.length > 1) {
@@ -118,9 +123,11 @@ export async function fetchConsignerList(prisma, query) {
     select: { lastScrapedAt: true },
   });
 
+  const reportScope = query.dateMode === 'range' ? 'range' : 'all';
+
   return {
     snapshot: null,
-    reportScope: 'all',
+    reportScope,
     entityCount: total,
     snapshotCount: total,
     snapshotsTruncated: false,
@@ -133,29 +140,99 @@ export async function fetchConsignerList(prisma, query) {
 }
 
 export async function fetchConsignerOptions(prisma, query) {
+  const minerals = parseCsvQueryParam(query, 'mineral', 'minerals');
+
+  if (minerals.length > 0) {
+    const hideZeroPasses =
+      query.hideZeroPasses === '1' ||
+      query.hideZeroPasses === 'true' ||
+      query.hideZeroChallans === '1' ||
+      query.hideZeroChallans === 'true';
+    const where = buildConsigneeSummaryBrowseWhere(query);
+    let rows = await prisma.reportConsigneeSummary.findMany({
+      where,
+      orderBy: [{ dmoName: 'asc' }, { operatorType: 'asc' }, { consignerName: 'asc' }],
+    });
+    rows = filterRowsByReportDateRange(rows, query);
+
+    const byConsigner = new Map();
+    for (const row of rows) {
+      if (hideZeroPasses && row.challanCount <= 0) continue;
+      const key = row.consignerRowId;
+      const prev = byConsigner.get(key);
+      if (!prev) {
+        byConsigner.set(key, {
+          id: row.consignerRowId,
+          consignerName: row.consignerName,
+          operatorType: row.operatorType,
+          dmoName: row.dmoName,
+          challanCount: row.challanCount,
+          ghatNumber: row.ghatNumber ?? null,
+          lastScrapedAt: row.lastScrapedAt,
+        });
+        continue;
+      }
+      prev.challanCount += row.challanCount;
+      if (row.lastScrapedAt > prev.lastScrapedAt) {
+        prev.lastScrapedAt = row.lastScrapedAt;
+        prev.ghatNumber = row.ghatNumber ?? prev.ghatNumber;
+      }
+    }
+
+    let all = [...byConsigner.values()];
+    if (hideZeroPasses) {
+      all = all.filter((r) => r.challanCount > 0);
+    }
+    all.sort((a, b) => {
+      const dmo = a.dmoName.localeCompare(b.dmoName);
+      if (dmo !== 0) return dmo;
+      const op = a.operatorType.localeCompare(b.operatorType);
+      if (op !== 0) return op;
+      return a.consignerName.localeCompare(b.consignerName);
+    });
+
+    const total = all.length;
+    const truncated = total > CONSIGNER_OPTIONS_CAP;
+    const page = all.slice(0, CONSIGNER_OPTIONS_CAP);
+
+    return {
+      items: page.map((r) => ({
+        id: r.id,
+        consignerName: r.consignerName,
+        operatorType: r.operatorType,
+        dmoName: r.dmoName,
+        challanCount: r.challanCount,
+        challanLineCount: r.challanCount,
+        ghatNumber: r.ghatNumber,
+      })),
+      total,
+      truncated,
+    };
+  }
+
   const where = buildConsignerWhere(query);
   let rows = await prisma.reportConsignerSummary.findMany({
     where,
     orderBy: [{ dmoName: 'asc' }, { operatorType: 'asc' }, { consignerName: 'asc' }],
-    take: 500,
   });
 
-  const dateFrom = typeof query.dateFrom === 'string' ? query.dateFrom : '';
-  const dateTo = typeof query.dateTo === 'string' ? query.dateTo : '';
-  if (query.dateMode === 'range' && (dateFrom || dateTo)) {
-    rows = rows.filter((r) =>
-      isReportDateInRange(r.lastReportDate, dateFrom || null, dateTo || null),
-    );
-  }
+  rows = filterRowsByReportDateRange(rows, query);
+
+  const total = rows.length;
+  const truncated = total > CONSIGNER_OPTIONS_CAP;
+  const page = rows.slice(0, CONSIGNER_OPTIONS_CAP);
 
   return {
-    items: rows.map((r) => ({
+    items: page.map((r) => ({
       id: r.sourceRowId ?? r.id,
       consignerName: r.consignerName,
       operatorType: r.operatorType,
       dmoName: r.dmoName,
-      mineral: r.mineral,
-      scrapedAt: r.lastScrapedAt.toISOString(),
+      challanCount: r.challanCount,
+      challanLineCount: r.challanLineCount ?? r.challanCount,
+      ghatNumber: r.ghatNumber ?? null,
     })),
+    total,
+    truncated,
   };
 }

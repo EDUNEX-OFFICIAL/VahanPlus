@@ -1,6 +1,7 @@
 import { parseDateFlexible } from '../../utils/epassDates.js';
 import { isReportDateInRange } from '../../utils/epassDates.js';
 import { resolvePageParams } from './cursor.js';
+import { parseCsvQueryParam } from './queryParams.js';
 
 function toNumber(value) {
   if (value == null) return 0;
@@ -57,8 +58,7 @@ function buildPassWhere(query) {
   if (operator === 'lessee' || operator === 'dealer') {
     where.operatorType = operator;
   }
-  const districts =
-    typeof query.districts === 'string' ? query.districts.split(',').filter(Boolean) : [];
+  const districts = parseCsvQueryParam(query, 'district', 'districts', 'dmo');
   if (districts.length === 1) {
     where.dmoName = { equals: districts[0], mode: 'insensitive' };
   } else if (districts.length > 1) {
@@ -80,8 +80,7 @@ function buildPassWhere(query) {
   if (challanNo) {
     where.challanNo = { contains: challanNo, mode: 'insensitive' };
   }
-  const minerals =
-    typeof query.minerals === 'string' ? query.minerals.split(',').filter(Boolean) : [];
+  const minerals = parseCsvQueryParam(query, 'mineral', 'minerals');
   if (minerals.length > 0) {
     where.OR = minerals.map((m) => ({ mineral: { contains: m, mode: 'insensitive' } }));
   }

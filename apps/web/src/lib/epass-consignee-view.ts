@@ -28,6 +28,12 @@ export function applyConsigneeFilters(
     if (from || to) {
       if (!isReportDateInRange(row.reportDate, from, to)) return false;
     }
+    const selectedMinerals = filters.minerals?.filter((m) => m.trim()) ?? [];
+    if (selectedMinerals.length > 0) {
+      const mineral = (row.mineral ?? '').toLowerCase();
+      const hasMatch = selectedMinerals.some((m) => mineral === m.toLowerCase());
+      if (!hasMatch) return false;
+    }
     if (consigneeSearch && !row.consigneeName.toLowerCase().includes(consigneeSearch)) {
       return false;
     }

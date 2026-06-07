@@ -6,7 +6,9 @@ import { appendGhatSuffix } from '@/lib/consigner-display';
 
 export function formatConsignerOption(o: ConsignerOptionDto): string {
   const op = o.operatorType ?? o.role ?? 'lessee';
-  const base = `${o.dmoName} · ${op} · ${o.consignerName} (${o.challanCount})`;
+  const count =
+    o.challanCount != null && Number.isFinite(o.challanCount) ? ` (${o.challanCount})` : '';
+  const base = `${o.dmoName} · ${op} · ${o.consignerName}${count}`;
   return appendGhatSuffix(base, o.ghatNumber);
 }
 
@@ -27,7 +29,10 @@ interface ConsignerComboboxProps {
   value: string;
   onChange: (id: string) => void;
   loading?: boolean;
+  refetching?: boolean;
   disabled?: boolean;
+  total?: number;
+  truncated?: boolean;
   /** Highlights picker when consigners exist but none is selected yet. */
   awaitingSelection?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -41,7 +46,10 @@ export function ConsignerCombobox({
   value,
   onChange,
   loading = false,
+  refetching = false,
   disabled = false,
+  total,
+  truncated = false,
   awaitingSelection = false,
   onOpenChange,
 }: ConsignerComboboxProps) {
@@ -85,12 +93,24 @@ export function ConsignerCombobox({
 
   const displayValue = open ? query : selected ? formatConsignerOption(selected) : '';
 
-  const showAwaitingHint = awaitingSelection && !value && !loading && options.length > 0;
+  const showAwaitingHint =
+    awaitingSelection && !value && !loading && !refetching && options.length > 0;
+  const availableCount = total ?? options.length;
+  const capCount = truncated ? (total ?? options.length) : availableCount;
+  const availabilityLabel = loading
+    ? 'Loading…'
+    : refetching
+      ? 'Updating…'
+      : truncated
+        ? `${capCount}+ available`
+        : `${availableCount} available`;
   const inputPlaceholder = loading
     ? 'Loading consigners…'
-    : showAwaitingHint
-      ? 'Select consigner…'
-      : 'Search or select consigner…';
+    : refetching
+      ? 'Updating consigners…'
+      : showAwaitingHint
+        ? 'Select consigner…'
+        : 'Search or select consigner…';
 
   const selectOption = useCallback(
     (o: ConsignerOptionDto) => {
@@ -139,9 +159,9 @@ export function ConsignerCombobox({
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">
             Consigner
           </span>
-          {showAwaitingHint ? (
+          {showAwaitingHint || loading || refetching ? (
             <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-indigo-200">
-              {options.length} available
+              {availabilityLabel}
             </span>
           ) : null}
         </span>
@@ -164,7 +184,7 @@ export function ConsignerCombobox({
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
-            className={`${fieldClass} truncate ${showAwaitingHint ? 'border-indigo-500/50 ring-1 ring-indigo-500/20' : ''}`}
+            className={`${fieldClass} truncate ${showAwaitingHint ? 'border-indigo-500/50 ring-1 ring-indigo-500/20' : ''} ${refetching ? 'opacity-70' : ''}`}
           />
           {value && !loading && !disabled ? (
             <button

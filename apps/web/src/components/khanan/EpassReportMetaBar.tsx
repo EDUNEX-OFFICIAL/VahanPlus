@@ -15,6 +15,12 @@ interface EpassReportMetaBarProps {
   snapshotCount?: number;
   /** Override column label when scope is all/range (default: Rows). */
   countLabel?: string;
+  /** Override column label for snapshot row count (default: Rows). */
+  rowCountLabel?: string;
+  /** Override snapshot row count (default: snapshot.rowCount). */
+  rowCount?: number;
+  /** Optional second metric column (snapshot or all-reports scope). */
+  secondaryMetric?: { label: string; value: number };
   latestScrapedAt?: string | null;
   dateFrom?: string;
   dateTo?: string;
@@ -26,6 +32,9 @@ export function EpassReportMetaBar({
   reportScope,
   snapshotCount,
   countLabel = 'Rows',
+  rowCountLabel = 'Rows',
+  rowCount,
+  secondaryMetric,
   latestScrapedAt,
   dateFrom,
   dateTo,
@@ -51,10 +60,18 @@ export function EpassReportMetaBar({
             <p className="text-xs uppercase tracking-wider text-text-secondary">Scope</p>
             <p className="mt-1 font-semibold text-white">{scopeLabel}</p>
           </div>
-          {snapshotCount != null && snapshotCount > 0 ? (
+          {snapshotCount != null ? (
             <div>
               <p className="text-xs uppercase tracking-wider text-text-secondary">{countLabel}</p>
               <p className="mt-1 font-semibold tabular-nums text-white">{snapshotCount}</p>
+            </div>
+          ) : null}
+          {secondaryMetric ? (
+            <div>
+              <p className="text-xs uppercase tracking-wider text-text-secondary">
+                {secondaryMetric.label}
+              </p>
+              <p className="mt-1 font-semibold tabular-nums text-white">{secondaryMetric.value}</p>
             </div>
           ) : null}
           <div>
@@ -92,10 +109,20 @@ export function EpassReportMetaBar({
           <p className="text-xs uppercase tracking-wider text-text-secondary">Scraped at</p>
           <p className="mt-1 font-semibold text-white">{scrapedDate}</p>
         </div>
-        {snapshot.rowCount > 0 ? (
+        {(rowCount ?? snapshot.rowCount) > 0 ? (
           <div>
-            <p className="text-xs uppercase tracking-wider text-text-secondary">Rows</p>
-            <p className="mt-1 font-semibold tabular-nums text-white">{snapshot.rowCount}</p>
+            <p className="text-xs uppercase tracking-wider text-text-secondary">{rowCountLabel}</p>
+            <p className="mt-1 font-semibold tabular-nums text-white">
+              {rowCount ?? snapshot.rowCount}
+            </p>
+          </div>
+        ) : null}
+        {secondaryMetric ? (
+          <div>
+            <p className="text-xs uppercase tracking-wider text-text-secondary">
+              {secondaryMetric.label}
+            </p>
+            <p className="mt-1 font-semibold tabular-nums text-white">{secondaryMetric.value}</p>
           </div>
         ) : null}
       </div>

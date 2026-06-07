@@ -109,6 +109,9 @@ export function fetchConsignerList(params: ConsignerListParams = {}) {
   const q = new URLSearchParams();
   if (params.reportScope === 'all') q.set('reportScope', 'all');
   else if (params.snapshotId) q.set('snapshotId', params.snapshotId);
+  if (params.dateMode === 'range') q.set('dateMode', 'range');
+  if (params.dateFrom) q.set('dateFrom', params.dateFrom);
+  if (params.dateTo) q.set('dateTo', params.dateTo);
   const operator = params.operator ?? params.role;
   if (operator) q.set('operator', operator);
   const district = params.district ?? params.dmo;

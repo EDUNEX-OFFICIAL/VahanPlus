@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { DataErrorCard } from '@/components/ui/DataErrorCard';
+import { Card } from '@/components/ui/Card';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
 import {
   DistrictEpassFilters,
@@ -244,6 +245,18 @@ function DistrictPageContent() {
     return sortDistrictRows(filtered, sortKey, sortDir);
   }, [sourceRows, appliedFilters, sortKey, sortDir, snapshotId, browseEmpty, isAllReports]);
 
+  const totals = useMemo(() => {
+    return displayRows.reduce(
+      (acc, row) => {
+        acc.totalUsers += row.totalUsers;
+        acc.totalPasses += row.passes;
+        acc.totalQuantity += row.quantity;
+        return acc;
+      },
+      { totalUsers: 0, totalPasses: 0, totalQuantity: 0 },
+    );
+  }, [displayRows]);
+
   const handleApplyFilters = useCallback(
     (next: DistrictFilterValues) => {
       const patch = districtParamsFromFilters(next, sortKey, sortDir);
@@ -349,6 +362,25 @@ function DistrictPageContent() {
             <p className="text-xs text-text-secondary tabular-nums">
               Showing {displayRows.length} row{displayRows.length === 1 ? '' : 's'}
             </p>
+          ) : null}
+          {displayRows.length > 0 ? (
+            <Card>
+              <div className="flex flex-wrap gap-6 text-sm">
+                <p className="tabular-nums text-text-secondary">
+                  Total Users: <span className="font-semibold text-white">{totals.totalUsers}</span>
+                </p>
+                <p className="tabular-nums text-text-secondary">
+                  Total Passes:{' '}
+                  <span className="font-semibold text-white">{totals.totalPasses}</span>
+                </p>
+                <p className="tabular-nums text-text-secondary">
+                  Total Quantity:{' '}
+                  <span className="font-semibold text-white">
+                    {totals.totalQuantity.toFixed(2)}
+                  </span>
+                </p>
+              </div>
+            </Card>
           ) : null}
         </>
       )}

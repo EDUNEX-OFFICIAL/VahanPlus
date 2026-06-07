@@ -15,6 +15,10 @@ function addStats(target: MineralRoleStats, row: MineralRoleStats) {
   target.dispatchedQty += row.dispatchedQty;
 }
 
+function mineralGroupKey(mineral: string): string {
+  return mineral.trim().toLowerCase();
+}
+
 export function aggregateMinerals(
   rows: EpassDistrictRowDto[],
   operator: OperatorTypeFilter = 'all',
@@ -22,7 +26,8 @@ export function aggregateMinerals(
   const map = new Map<string, MineralAggregateRow>();
 
   function getOrCreate(mineral: string): MineralAggregateRow {
-    let entry = map.get(mineral);
+    const key = mineralGroupKey(mineral);
+    let entry = map.get(key);
     if (!entry) {
       entry = {
         mineral,
@@ -30,7 +35,7 @@ export function aggregateMinerals(
         dealer: emptyStats(),
         totalPasses: 0,
       };
-      map.set(mineral, entry);
+      map.set(key, entry);
     }
     return entry;
   }

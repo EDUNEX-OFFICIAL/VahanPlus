@@ -1,43 +1,31 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FilterDropdownPanel } from '@/components/ui/AdaptiveFilterSheet';
+import { FilterDropdownPanel, filterCheckClass } from '@/components/ui/AdaptiveFilterSheet';
 import { Button } from '@/components/ui/Button';
 import { formatMineralLabel } from '@/lib/epass-district-view';
 import { ALL_REPORTS_SNAPSHOT_ID } from '@/components/khanan/ConsigneeEpassFilters';
 import { ReportDateYearSelect } from '@/components/khanan/ReportDateYearSelect';
 import {
   formatReportDateNumeric,
+  isValidRangeSelection,
+  normalizeDateRange,
   reportDateOptions,
   snapshotsForDateMode,
 } from '@/lib/epass-report-date';
 import { operatorFilterLabel } from '@/lib/operator';
-import type { DistrictOperatorFilter, EpassSnapshotReportDateItemDto } from '@/lib/epass-types';
+import type { EpassBrowseFilterValues, EpassSnapshotReportDateItemDto } from '@/lib/epass-types';
 
 export type ConsignerDateMode = 'specific' | 'range';
 
-export interface ConsignerFilterDraft {
-  operator: DistrictOperatorFilter;
-  minerals: string[];
-  dateMode: ConsignerDateMode;
-  dateFrom: string;
-  dateTo: string;
-  reportDate: string;
-  snapshotId: string;
-  reportScope: 'all' | 'specific';
-  districts: string[];
-  consignerSearch: string;
-  hideZeroChallans: boolean;
-}
-
-export type ConsignerFilterValues = ConsignerFilterDraft;
+export type ConsignerFilterValues = EpassBrowseFilterValues;
 
 interface ConsignerEpassFiltersProps {
   snapshots: EpassSnapshotReportDateItemDto[];
   minerals: string[];
   districts: string[];
-  values: ConsignerFilterValues;
-  onApply: (next: ConsignerFilterValues) => void;
+  values: EpassBrowseFilterValues;
+  onApply: (next: EpassBrowseFilterValues) => void;
   onClear: () => void;
   allowAllReports?: boolean;
   reportScope?: 'all' | 'specific';
@@ -46,7 +34,7 @@ interface ConsignerEpassFiltersProps {
 const inputClass =
   'mt-2 h-11 w-full rounded-xl border border-border-default bg-surface-deep px-3 text-sm text-white outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20';
 
-export function buildConsignerFilterChips(values: ConsignerFilterValues): string[] {
+export function buildConsignerFilterChips(values: EpassBrowseFilterValues): string[] {
   const chips: string[] = [operatorFilterLabel(values.operator)];
   if (values.minerals.length > 0) chips.push(formatMineralLabel(values.minerals));
   if (values.dateMode === 'range' && (values.dateFrom || values.dateTo)) {
@@ -60,7 +48,7 @@ export function buildConsignerFilterChips(values: ConsignerFilterValues): string
   }
   if (values.reportScope === 'all') {
     chips.push('All reports');
-  } else if (values.reportDate) {
+  } else if (values.reportDate && values.dateMode !== 'range') {
     chips.push(formatReportDateNumeric(values.reportDate));
   }
   if (values.districts.length > 0) {
@@ -86,7 +74,7 @@ export function ConsignerEpassFilters({
   reportScope = 'specific',
 }: ConsignerEpassFiltersProps) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<ConsignerFilterDraft>(() => ({
+  const [draft, setDraft] = useState<EpassBrowseFilterValues>(() => ({
     ...values,
     reportScope: values.reportScope ?? reportScope,
   }));
@@ -105,6 +93,15 @@ export function ConsignerEpassFilters({
     }
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   const filteredSnapshots = useMemo(
@@ -137,11 +134,16 @@ export function ConsignerEpassFilters({
 
   const chips = buildConsignerFilterChips(values);
 
-  function patch(partial: Partial<ConsignerFilterDraft>) {
+  function patch(partial: Partial<EpassBrowseFilterValues>) {
     setDraft((d) => ({ ...d, ...partial }));
   }
 
+  const rangeDatesValid = isValidRangeSelection(draft.dateMode, draft.dateFrom, draft.dateTo);
+
   function handleApply() {
+    if (!rangeDatesValid) return;
+
+    const normalizedDates = normalizeDateRange(draft.dateFrom, draft.dateTo);
     let snapshotId = '';
     let reportDate = '';
     let nextReportScope = draft.reportScope;
@@ -163,7 +165,7 @@ export function ConsignerEpassFilters({
       nextReportScope = 'specific';
     }
 
-    onApply({ ...draft, snapshotId, reportDate, reportScope: nextReportScope });
+    onApply({ ...draft, ...normalizedDates, snapshotId, reportDate, reportScope: nextReportScope });
     setOpen(false);
   }
 
@@ -195,9 +197,10 @@ export function ConsignerEpassFilters({
                 onClick={() => setOpen(false)}
               />
               <FilterDropdownPanel
+                title="Filters"
                 footer={
                   <>
-                    <Button className="text-sm" onClick={handleApply}>
+                    <Button className="text-sm" onClick={handleApply} disabled={!rangeDatesValid}>
                       Apply
                     </Button>
                     <Button variant="secondary" className="text-sm" onClick={() => setOpen(false)}>
@@ -237,10 +240,13 @@ export function ConsignerEpassFilters({
                           type="checkbox"
                           checked={draft.minerals.length === 0}
                           onChange={() => patch({ minerals: [] })}
-                          className="h-5 w-5 rounded border-border-default"
+                          className={filterCheckClass}
                         />
                         All
                       </label>
+                      {minerals.length === 0 ? (
+                        <p className="text-xs text-text-secondary/80">No minerals for this scope</p>
+                      ) : null}
                       {minerals.map((m) => {
                         const checked = draft.minerals.some(
                           (x) => x.toLowerCase() === m.toLowerCase(),
@@ -264,7 +270,7 @@ export function ConsignerEpassFilters({
                                   patch({ minerals: [...draft.minerals, m] });
                                 }
                               }}
-                              className="h-5 w-5 rounded border-border-default"
+                              className={filterCheckClass}
                             />
                             {m}
                           </label>
@@ -286,7 +292,14 @@ export function ConsignerEpassFilters({
                           key={value}
                           variant={draft.dateMode === value ? 'primary' : 'secondary'}
                           className="min-h-11 px-4 text-sm"
-                          onClick={() => patch({ dateMode: value })}
+                          onClick={() =>
+                            patch({
+                              dateMode: value,
+                              ...(value === 'range'
+                                ? { snapshotId: '', reportDate: '', reportScope: 'specific' }
+                                : {}),
+                            })
+                          }
                         >
                           {label}
                         </Button>
@@ -358,7 +371,7 @@ export function ConsignerEpassFilters({
                           type="checkbox"
                           checked={draft.districts.length === 0}
                           onChange={() => patch({ districts: [] })}
-                          className="h-5 w-5 rounded border-border-default"
+                          className={filterCheckClass}
                         />
                         All
                       </label>
@@ -390,7 +403,7 @@ export function ConsignerEpassFilters({
                                     patch({ districts: [...draft.districts, d] });
                                   }
                                 }}
-                                className="h-5 w-5 rounded border-border-default"
+                                className={filterCheckClass}
                               />
                               {d}
                             </label>
@@ -422,7 +435,7 @@ export function ConsignerEpassFilters({
                       type="checkbox"
                       checked={draft.hideZeroChallans}
                       onChange={(e) => patch({ hideZeroChallans: e.target.checked })}
-                      className="h-5 w-5 rounded border-border-default"
+                      className={filterCheckClass}
                     />
                     Hide zero challans
                   </label>

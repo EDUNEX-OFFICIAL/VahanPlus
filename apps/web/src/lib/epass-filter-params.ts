@@ -3,7 +3,11 @@ import {
   serializeConsignerMinerals,
 } from '@/lib/epass-consigner-view';
 import { parseDistrictsParam, serializeDistricts } from '@/lib/epass-district-view';
-import type { ChallanListParams, EpassBrowseFilterValues } from '@/lib/epass-types';
+import type {
+  ChallanListParams,
+  ConsignerListParams,
+  EpassBrowseFilterValues,
+} from '@/lib/epass-types';
 import { normalizeDateRange, type EpassDateMode } from '@/lib/epass-report-date';
 import { effectiveReportScopeFromSearchParams } from '@/lib/epass-report-scope';
 import { parseOperatorParam } from '@/lib/operator';
@@ -158,6 +162,7 @@ export function toConsignerOptionsQueryParams(
     district: serializeDistricts(filters.districts) ?? undefined,
     consigner: filters.consignerSearch.trim() || undefined,
     hideZeroChallans: filters.hideZeroChallans ? '1' : undefined,
+    hideZeroPasses: filters.hideZeroPasses ? '1' : undefined,
   };
 }
 
@@ -171,9 +176,42 @@ export function toConsignerChallansQueryParams(
     dateMode: filters.dateMode === 'range' ? filters.dateMode : undefined,
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
+    mineral: serializeConsignerMinerals(filters.minerals),
     consignee: filters.consigneeSearch.trim() || undefined,
     destination: filters.destination.trim() || undefined,
     hideZeroPasses: filters.hideZeroPasses ? '1' : undefined,
+  };
+}
+
+export function toConsignerListQueryParams(
+  filters: EpassBrowseFilterValues,
+  resolvedSnapshotId: string | null,
+  sortKey: string | null,
+  sortDir: 'asc' | 'desc',
+  offset: number,
+  limit: number,
+): ConsignerListParams {
+  const normalized =
+    filters.dateMode === 'range'
+      ? normalizeDateRange(filters.dateFrom, filters.dateTo)
+      : { dateFrom: filters.dateFrom, dateTo: filters.dateTo };
+  const isRange = filters.dateMode === 'range' && (normalized.dateFrom || normalized.dateTo);
+  const isAllScope = filters.reportScope === 'all' && !isRange;
+  return {
+    reportScope: isAllScope ? 'all' : undefined,
+    snapshotId: isRange || isAllScope ? undefined : (resolvedSnapshotId ?? undefined),
+    dateMode: isRange ? 'range' : undefined,
+    dateFrom: isRange ? normalized.dateFrom || undefined : undefined,
+    dateTo: isRange ? normalized.dateTo || normalized.dateFrom || undefined : undefined,
+    operator: filters.operator === 'all' ? undefined : filters.operator,
+    district: serializeDistricts(filters.districts) ?? undefined,
+    mineral: serializeConsignerMinerals(filters.minerals),
+    consigner: filters.consignerSearch.trim() || undefined,
+    hideZeroChallans: filters.hideZeroChallans,
+    sort: sortKey as ConsignerListParams['sort'],
+    dir: sortKey ? sortDir : undefined,
+    limit,
+    offset,
   };
 }
 

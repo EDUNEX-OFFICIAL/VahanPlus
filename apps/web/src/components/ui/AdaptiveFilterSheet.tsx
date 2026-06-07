@@ -9,7 +9,7 @@ import { Chip } from '@/components/ui/Chip';
 import { cn } from '@/lib/utils';
 
 export const filterDropdownPanelClass =
-  'fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] z-50 flex max-h-[min(72dvh,calc(100dvh-11rem),640px)] flex-col overflow-hidden bg-surface-primary p-0 shadow-2xl md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:max-h-[min(78vh,680px)] md:w-[min(100vw-2rem,420px)]';
+  'fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 flex max-h-none flex-col overflow-hidden bg-surface-primary p-0 shadow-2xl md:absolute md:inset-auto md:bottom-auto md:left-0 md:top-full md:mt-2 md:max-h-[min(78vh,680px)] md:w-[min(100vw-2rem,420px)]';
 
 export function FilterDropdownPanel({
   title,
@@ -98,9 +98,8 @@ export function AdaptiveFilterSheet({
         <Dialog.Content
           className={cn(
             'fixed z-50 flex flex-col overflow-hidden border border-border-default/80 bg-surface-primary/95 text-white shadow-2xl shadow-black/40 backdrop-blur-2xl focus:outline-none',
-            'inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] max-h-[min(72dvh,calc(100dvh-11rem),640px)] rounded-[1.75rem]',
-            'md:inset-auto md:left-4 md:top-[calc(5.25rem+env(safe-area-inset-top))] md:h-auto md:w-[min(420px,calc(100vw-2rem))] md:rounded-[1.75rem]',
-            'xl:top-24 xl:left-8 xl:max-h-[calc(100dvh-8rem)]',
+            'inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] bottom-[calc(5.75rem+env(safe-area-inset-bottom))] max-h-none rounded-[1.75rem]',
+            'md:inset-auto md:bottom-auto md:left-4 md:top-[calc(5.25rem+env(safe-area-inset-top))] md:h-auto md:max-h-[min(78vh,680px)] md:w-[min(420px,calc(100vw-2rem))] md:rounded-[1.75rem]',
           )}
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border-default/70 bg-surface-primary/95 px-4 py-4 sm:px-5">

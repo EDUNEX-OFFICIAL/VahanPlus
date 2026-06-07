@@ -15,10 +15,11 @@ import { ConsignerCombobox } from '@/components/khanan/ConsignerCombobox';
 import { ConsigneeTable } from '@/components/khanan/ConsigneeTable';
 import { IncompleteScrapeBanner } from '@/components/khanan/IncompleteScrapeBanner';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
-import { ConsigneePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
+import { EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
+import { EpassReportMetaBarSkeleton } from '@/components/khanan/skeletons/EpassReportMetaBarSkeleton';
+import { EpassTableSkeleton } from '@/components/khanan/skeletons/EpassTableSkeleton';
 import { isSnapshotResolving } from '@/lib/epass-page-loading';
 import { formatOperatorType } from '@/lib/operator';
-import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import { applyConsigneeFilters, sortConsigneeRows } from '@/lib/epass-consignee-view';
 import { normalizeConsigneeFilterQuery } from '@/lib/epass-query-normalize';
 import {
@@ -34,7 +35,6 @@ import {
   fetchConsignerOptions,
   fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
-  fetchSnapshotDistrictRows,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import { allReportsBootstrapPatch, allReportsClearPatch } from '@/lib/epass-report-scope';
@@ -43,6 +43,7 @@ import type { ConsigneeEpassFilterExtras } from '@/components/khanan/ConsigneeEp
 import type {
   ConsigneeSortDir,
   ConsigneeSortKey,
+  ConsignerChallansResponse,
   EpassSnapshotDto,
   EpassSnapshotReportDateItemDto,
 } from '@/lib/epass-types';
@@ -103,9 +104,7 @@ function ConsigneePageContent() {
     refetch: refetchSnapshots,
   } = useQuery({
     queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
-    queryFn: () => {
-      return fetchEpassSnapshotReportDates();
-    },
+    queryFn: () => fetchEpassSnapshotReportDates(),
     ...staticQueryOptions,
   });
 
@@ -152,8 +151,14 @@ function ConsigneePageContent() {
     appliedFilters.snapshotId || null,
     appliedFilters.reportDate || null,
     updateParams,
-    isAllReports,
+    isAllReports || isRangeMode,
   );
+
+  useEffect(() => {
+    if (!isRangeMode) return;
+    if (!appliedFilters.snapshotId && !appliedFilters.reportDate) return;
+    updateParams({ snapshotId: null, reportDate: null, reportScope: null });
+  }, [isRangeMode, appliedFilters.snapshotId, appliedFilters.reportDate, updateParams]);
 
   useEffect(() => {
     const hasScope = searchParams.has('reportScope');
@@ -162,14 +167,6 @@ function ConsigneePageContent() {
       updateParams(allReportsBootstrapPatch());
     }
   }, [searchParams, updateParams, isRangeMode]);
-
-  useEffect(() => {
-    if (isAllReports) return;
-    if (snapshotsLoading || !snapshotsData?.items.length) return;
-    if (resolvedSnapshotId) return;
-    if (browseEmpty) return;
-    if (isRangeMode) return;
-  }, [isAllReports, snapshotsLoading, snapshotsData, resolvedSnapshotId, browseEmpty, isRangeMode]);
 
   useEffect(() => {
     if (isAllReports) return;
@@ -199,17 +196,27 @@ function ConsigneePageContent() {
   const filterOptionsParams = useMemo(
     () => ({
       reportScope: 'all' as const,
+      snapshotId:
+        !isRangeMode && !isAllReports && resolvedSnapshotId ? resolvedSnapshotId : undefined,
       dateMode: isRangeMode ? ('range' as const) : undefined,
       dateFrom: appliedFilters.dateFrom || undefined,
       dateTo: appliedFilters.dateTo || undefined,
     }),
-    [isRangeMode, appliedFilters.dateFrom, appliedFilters.dateTo],
+    [isRangeMode, isAllReports, resolvedSnapshotId, appliedFilters.dateFrom, appliedFilters.dateTo],
   );
 
-  const { data: rangeFilterOptions } = useQuery({
+  const filterOptionsEnabled =
+    Boolean(snapshotsData?.items.length) &&
+    (isAllReports || isRangeMode || Boolean(resolvedSnapshotId));
+
+  const {
+    data: filterOptionsData,
+    isLoading: filterOptionsLoading,
+    isFetching: filterOptionsFetching,
+  } = useQuery({
     queryKey: ['epass', 'filter-options', filterOptionsParams],
     queryFn: () => fetchEpassFilterOptions(filterOptionsParams),
-    enabled: (isRangeMode || isAllReports) && Boolean(snapshotsData?.items.length),
+    enabled: filterOptionsEnabled,
     ...staticQueryOptions,
   });
 
@@ -225,25 +232,8 @@ function ConsigneePageContent() {
     ...reportingQueryOptions,
   });
 
-  const { data: districtRowsData } = useQuery({
-    queryKey: ['epass', 'snapshot-rows', resolvedSnapshotId, 'consignee-filters'],
-    queryFn: () => {
-      if (!resolvedSnapshotId) throw new Error('Snapshot required');
-      return fetchSnapshotDistrictRows(resolvedSnapshotId);
-    },
-    enabled: Boolean(resolvedSnapshotId) && !isRangeMode && !isAllReports,
-    ...staticQueryOptions,
-  });
-
-  const minerals = useMemo(() => {
-    if (isRangeMode || isAllReports) return rangeFilterOptions?.minerals ?? [];
-    return districtRowsData?.rows ? collectMinerals(districtRowsData.rows) : [];
-  }, [isRangeMode, isAllReports, rangeFilterOptions?.minerals, districtRowsData?.rows]);
-
-  const districts = useMemo(() => {
-    if (isRangeMode || isAllReports) return rangeFilterOptions?.districts ?? [];
-    return districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : [];
-  }, [isRangeMode, isAllReports, rangeFilterOptions?.districts, districtRowsData?.rows]);
+  const minerals = filterOptionsData?.minerals ?? [];
+  const districts = filterOptionsData?.districts ?? [];
 
   const challansQuery = useQuery({
     queryKey: ['epass', 'challans', consignerRowId, appliedFilters],
@@ -252,12 +242,19 @@ function ConsigneePageContent() {
       if (!consignerRowId) throw new Error('Consigner required');
       return fetchConsignerChallans(consignerRowId, toConsignerChallansQueryParams(appliedFilters));
     },
+    placeholderData: (previousData, previousQuery) => {
+      if (previousQuery?.queryKey[2] === consignerRowId) {
+        return previousData;
+      }
+      return undefined;
+    },
     ...reportingQueryOptions,
   });
 
   const displayRows = useMemo(() => {
     if (!challansQuery.data?.items) return [];
     const filtered = applyConsigneeFilters(challansQuery.data.items, {
+      minerals: appliedFilters.minerals,
       consigneeSearch: appliedFilters.consigneeSearch,
       hideZeroPasses: appliedFilters.hideZeroPasses,
       dateFrom: appliedFilters.dateMode === 'range' ? appliedFilters.dateFrom : undefined,
@@ -308,7 +305,6 @@ function ConsigneePageContent() {
     });
   }, [updateParams]);
 
-  // Clear consigner when it no longer matches filtered options
   useEffect(() => {
     if (browseEmpty || optionsQuery.isFetching || !optionsQuery.data || !consignerRowId) {
       return;
@@ -327,7 +323,6 @@ function ConsigneePageContent() {
     updateParams,
   ]);
 
-  // Single consigner in scope — select automatically
   useEffect(() => {
     if (browseEmpty || consignerRowId || optionsQuery.isLoading || !optionsQuery.data) {
       return;
@@ -368,11 +363,12 @@ function ConsigneePageContent() {
 
   const handleConsignerChange = useCallback(
     (id: string) => {
-      const patch = serializeEpassFilterParams({
-        ...appliedFilters,
-        consignerRowId: id,
-      });
-      updateParams(patch);
+      updateParams(
+        serializeEpassFilterParams({
+          ...appliedFilters,
+          consignerRowId: id,
+        }),
+      );
     },
     [appliedFilters, updateParams],
   );
@@ -383,96 +379,85 @@ function ConsigneePageContent() {
     return snap ? snapshotFromListItem(snap) : null;
   }, [resolvedSnapshotId, snapshotsData?.items]);
 
-  const rangeMeta = useMemo(() => {
-    if (!isRangeMode || !snapshotsData?.items.length) return null;
-    const inRange = snapshotsForDateMode(
-      snapshotsData.items,
-      appliedFilters.dateMode,
-      appliedFilters.dateFrom,
-      appliedFilters.dateTo,
-    );
-    if (inRange.length === 0) return null;
-    const latestScrapedAt = inRange.reduce(
-      (latest, s) => (s.scrapedAt > latest ? s.scrapedAt : latest),
-      inRange[0].scrapedAt,
-    );
-    return { snapshotCount: inRange.length, latestScrapedAt };
-  }, [
-    isRangeMode,
-    snapshotsData?.items,
-    appliedFilters.dateMode,
-    appliedFilters.dateFrom,
-    appliedFilters.dateTo,
-  ]);
-
-  const allReportsMeta = useMemo(() => {
-    if (!isAllReports || !rangeFilterOptions) return null;
+  const scopedFilterMeta = useMemo(() => {
+    if (!filterOptionsData) return null;
+    const count =
+      filterOptionsData.consigneeCount ??
+      filterOptionsData.entityCount ??
+      filterOptionsData.snapshotCount ??
+      0;
     return {
-      snapshotCount: rangeFilterOptions.entityCount ?? rangeFilterOptions.snapshotCount ?? 0,
-      latestScrapedAt: rangeFilterOptions.latestScrapedAt ?? null,
+      consigneeCount: count,
+      latestScrapedAt: filterOptionsData.latestScrapedAt ?? null,
     };
-  }, [isAllReports, rangeFilterOptions]);
+  }, [filterOptionsData]);
 
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
   const snapshotResolving =
     !isRangeMode &&
     !isAllReports &&
     isSnapshotResolving(snapshotsLoaded, resolvedSnapshotId, browseEmpty);
-  const pageLoading =
-    snapshotsLoading ||
-    snapshotResolving ||
-    (!browseEmpty && !consignerRowId && optionsQuery.isLoading) ||
-    (Boolean(consignerRowId) && challansQuery.isLoading);
+  const filterMetaPending =
+    (isAllReports || isRangeMode || Boolean(resolvedSnapshotId)) &&
+    filterOptionsEnabled &&
+    (filterOptionsLoading || filterOptionsFetching) &&
+    !filterOptionsData;
+  const metaLoading = snapshotsLoading || snapshotResolving || filterMetaPending;
 
-  const consignerOptionCount = optionsQuery.data?.items.length ?? 0;
+  const optionsLoading = optionsEnabled && optionsQuery.isLoading && !optionsQuery.data;
+  const optionsRefetching = optionsEnabled && optionsQuery.isFetching && Boolean(optionsQuery.data);
+  const challansInitialLoading =
+    Boolean(consignerRowId) && !challansQuery.data && challansQuery.isLoading;
+  const challansRefetching = Boolean(challansQuery.data) && challansQuery.isFetching;
+
+  const consignerOptionCount = optionsQuery.data?.total ?? optionsQuery.data?.items.length ?? 0;
+  const consignerOptionsTruncated = optionsQuery.data?.truncated ?? false;
   const awaitingConsignerSelection =
-    !browseEmpty && !consignerRowId && consignerOptionCount > 0 && !optionsQuery.isLoading;
+    !browseEmpty &&
+    !consignerRowId &&
+    consignerOptionCount > 0 &&
+    !optionsLoading &&
+    !optionsRefetching;
 
-  const criticalLoadError = snapshotsError
-    ? queryErrorMessage(snapshotsQueryError)
-    : optionsEnabled && optionsQuery.isError
-      ? queryErrorMessage(optionsQuery.error)
-      : undefined;
+  const selectedConsignerOption = useMemo(
+    () => optionsQuery.data?.items.find((o) => o.id === consignerRowId),
+    [optionsQuery.data?.items, consignerRowId],
+  );
 
-  if (criticalLoadError) {
+  const challansPayload: ConsignerChallansResponse | undefined = challansQuery.data;
+  const showConsignerHeader = Boolean(challansPayload ?? selectedConsignerOption);
+
+  const snapshotsFatalError = snapshotsError ? queryErrorMessage(snapshotsQueryError) : undefined;
+  const optionsInlineError =
+    optionsEnabled && optionsQuery.isError ? queryErrorMessage(optionsQuery.error) : undefined;
+
+  if (snapshotsFatalError) {
     return (
       <PageStack>
-        <DataErrorCard
-          message={criticalLoadError}
-          onRetry={() => {
-            void refetchSnapshots();
-            void optionsQuery.refetch();
-          }}
-        />
+        <DataErrorCard message={snapshotsFatalError} onRetry={() => void refetchSnapshots()} />
       </PageStack>
-    );
-  }
-
-  if (pageLoading) {
-    return (
-      <ConsigneePageLoading
-        showConsignerPicker={!browseEmpty}
-        showTable={Boolean(consignerRowId)}
-      />
     );
   }
 
   return (
     <PageStack>
-      {isAllReports && allReportsMeta ? (
+      {metaLoading ? (
+        <EpassReportMetaBarSkeleton />
+      ) : isAllReports && scopedFilterMeta ? (
         <EpassReportMetaBar
           snapshot={null}
           reportScope="all"
           countLabel="Consignees"
-          snapshotCount={allReportsMeta.snapshotCount}
-          latestScrapedAt={allReportsMeta.latestScrapedAt}
+          snapshotCount={scopedFilterMeta.consigneeCount}
+          latestScrapedAt={scopedFilterMeta.latestScrapedAt}
         />
-      ) : isRangeMode && rangeMeta ? (
+      ) : isRangeMode && scopedFilterMeta ? (
         <EpassReportMetaBar
           snapshot={null}
           reportScope="range"
-          snapshotCount={rangeMeta.snapshotCount}
-          latestScrapedAt={rangeMeta.latestScrapedAt}
+          countLabel="Consignees"
+          snapshotCount={scopedFilterMeta.consigneeCount}
+          latestScrapedAt={scopedFilterMeta.latestScrapedAt}
           dateFrom={appliedFilters.dateFrom}
           dateTo={appliedFilters.dateTo}
         />
@@ -480,18 +465,17 @@ function ConsigneePageContent() {
         <EpassReportMetaBar snapshot={metaSnapshot} />
       ) : null}
 
-      {snapshotsData ? (
-        <ConsigneeEpassFilters
-          snapshots={snapshotsData.items}
-          minerals={minerals}
-          districts={districts}
-          values={appliedFilters}
-          onApply={handleApplyFilters}
-          onClear={handleClearFilters}
-          allowAllReports
-          reportScope={appliedFilters.reportScope ?? 'specific'}
-        />
-      ) : null}
+      <ConsigneeEpassFilters
+        snapshots={snapshotsData?.items ?? []}
+        minerals={minerals}
+        districts={districts}
+        values={appliedFilters}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        allowAllReports
+        reportScope={appliedFilters.reportScope ?? 'specific'}
+        applyDisabled={!snapshotsLoaded}
+      />
 
       {browseEmpty ? (
         <EpassEmptyState {...browseEmptyState} />
@@ -509,41 +493,65 @@ function ConsigneePageContent() {
             options={optionsQuery.data?.items ?? []}
             value={consignerRowId}
             onChange={handleConsignerChange}
-            loading={false}
+            loading={optionsLoading}
+            refetching={optionsRefetching}
+            total={consignerOptionCount}
+            truncated={consignerOptionsTruncated}
             awaitingSelection={awaitingConsignerSelection}
             onOpenChange={setConsignerListOpen}
           />
+          {optionsInlineError ? (
+            <div className="mt-3">
+              <DataErrorCard
+                message={optionsInlineError}
+                onRetry={() => {
+                  void optionsQuery.refetch();
+                }}
+              />
+            </div>
+          ) : null}
         </Card>
       )}
 
-      {!browseEmpty && !consignerRowId && (optionsQuery.data?.items.length ?? 0) === 0 ? (
+      {!browseEmpty && !consignerRowId && !optionsLoading && consignerOptionCount === 0 ? (
         <EmptyStateCard message="No consigners found" />
       ) : null}
 
       {consignerRowId ? (
         <>
-          {challansQuery.isError ? (
+          {challansInitialLoading ? (
+            <EpassTableSkeleton rows={6} />
+          ) : challansQuery.isError ? (
             <DataErrorCard
               message={queryErrorMessage(challansQuery.error)}
               onRetry={() => {
                 void challansQuery.refetch();
               }}
             />
-          ) : challansQuery.data ? (
+          ) : showConsignerHeader ? (
             <>
               <h2 className="text-xl font-semibold text-white">
-                {challansQuery.data.consigner.consignerName}
+                {challansPayload?.consigner.consignerName ??
+                  selectedConsignerOption?.consignerName ??
+                  'Consigner'}
                 <span className="ml-2 text-sm font-normal text-text-secondary">
-                  {challansQuery.data.districtRow.dmoName} ·{' '}
+                  {(challansPayload?.districtRow.dmoName ?? selectedConsignerOption?.dmoName) &&
+                    `${challansPayload?.districtRow.dmoName ?? selectedConsignerOption?.dmoName} · `}
                   {formatOperatorType(
-                    challansQuery.data.consigner.operatorType ?? challansQuery.data.consigner.role,
+                    challansPayload?.consigner.operatorType ??
+                      challansPayload?.consigner.role ??
+                      selectedConsignerOption?.operatorType ??
+                      selectedConsignerOption?.role ??
+                      'lessee',
                   )}
-                  {challansQuery.data.consigner.ghatNumber?.trim()
-                    ? ` · ${challansQuery.data.consigner.ghatNumber.trim()}`
+                  {(
+                    challansPayload?.consigner.ghatNumber ?? selectedConsignerOption?.ghatNumber
+                  )?.trim()
+                    ? ` · ${(challansPayload?.consigner.ghatNumber ?? selectedConsignerOption?.ghatNumber)?.trim()}`
                     : ''}
                 </span>
               </h2>
-              {challansQuery.data.incompleteScrape ? (
+              {challansPayload?.incompleteScrape ? (
                 <IncompleteScrapeBanner
                   portalCount={displayRows.reduce((sum, row) => sum + row.challanCount, 0)}
                   storedCount={displayRows.reduce(
@@ -552,13 +560,22 @@ function ConsigneePageContent() {
                   )}
                 />
               ) : null}
-              {displayRows.length > 0 ? (
+              {!challansRefetching && displayRows.length > 0 ? (
                 <p className="text-xs text-text-secondary tabular-nums">
                   Showing {displayRows.length} line{displayRows.length === 1 ? '' : 's'}
                   {appliedFilters.dateMode === 'range' ? ' in date range' : ''}
                 </p>
               ) : null}
-              {displayRows.length === 0 ? (
+              {challansRefetching ? (
+                <ConsigneeTable
+                  rows={[]}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  bodyLoading
+                  bodyLoadingRows={6}
+                />
+              ) : displayRows.length === 0 ? (
                 <Card>
                   <p className="text-sm text-text-secondary">No consignee lines found</p>
                 </Card>
@@ -569,12 +586,12 @@ function ConsigneePageContent() {
                   sortDir={sortDir}
                   onSort={handleSort}
                   getChallanHref={
-                    challansQuery.data
+                    challansPayload
                       ? (row) =>
                           row.challanCount > 0
                             ? buildChallanHref(searchParams, {
-                                district: challansQuery.data!.districtRow.dmoName,
-                                consigner: challansQuery.data!.consigner.consignerName,
+                                district: challansPayload.districtRow.dmoName,
+                                consigner: challansPayload.consigner.consignerName,
                                 consignee: normalizeConsigneeFilterQuery(row.consigneeName),
                                 snapshotId: resolvedSnapshotId ?? null,
                               })
@@ -583,7 +600,7 @@ function ConsigneePageContent() {
                   }
                 />
               )}
-              {displayRows.length > 0 ? (
+              {!challansRefetching && displayRows.length > 0 ? (
                 <Card>
                   <div className="flex flex-wrap gap-6 text-sm">
                     <p className="tabular-nums text-text-secondary">
@@ -600,7 +617,7 @@ function ConsigneePageContent() {
                         {totals.totalQuantity.toFixed(2)}
                       </span>
                     </p>
-                    {challansQuery.data?.truncated ? (
+                    {challansPayload?.truncated ? (
                       <p className="text-xs text-text-secondary">Capped at 25000 rows</p>
                     ) : null}
                   </div>

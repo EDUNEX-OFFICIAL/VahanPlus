@@ -9,11 +9,15 @@ import type { MineralAggregateRow, OperatorTypeFilter } from '@/lib/epass-types'
 interface MineralSummaryTableProps {
   minerals: MineralAggregateRow[];
   operatorFilter?: OperatorTypeFilter;
+  districtCount?: number;
+  allReportsHint?: boolean;
 }
 
 export function MineralSummaryTable({
   minerals,
   operatorFilter = 'all',
+  districtCount,
+  allReportsHint = false,
 }: MineralSummaryTableProps) {
   const showLessee = operatorShowsLessee(operatorFilter);
   const showDealer = operatorShowsDealer(operatorFilter);
@@ -44,8 +48,65 @@ export function MineralSummaryTable({
     },
   );
 
+  const contextLine =
+    districtCount != null
+      ? `Showing ${minerals.length} mineral${minerals.length === 1 ? '' : 's'} from ${districtCount} district${districtCount === 1 ? '' : 's'}`
+      : `Showing ${minerals.length} mineral${minerals.length === 1 ? '' : 's'}`;
+
+  const footerCard = (
+    <Card>
+      <div className="flex flex-wrap gap-6 text-sm">
+        {showLessee ? (
+          <>
+            <p className="tabular-nums text-text-secondary">
+              Total Lessee Users:{' '}
+              <span className="font-semibold text-white">{formatInt(footer.lesseeUsers)}</span>
+            </p>
+            <p className="tabular-nums text-text-secondary">
+              Total Lessee Passes:{' '}
+              <span className="font-semibold text-white">{formatInt(footer.lesseePasses)}</span>
+            </p>
+            <p className="tabular-nums text-text-secondary">
+              Total Lessee Quantity:{' '}
+              <span className="font-semibold text-white">{formatQty(footer.lesseeQty)}</span>
+            </p>
+          </>
+        ) : null}
+        {showDealer ? (
+          <>
+            <p className="tabular-nums text-text-secondary">
+              Total Dealer Users:{' '}
+              <span className="font-semibold text-white">{formatInt(footer.dealerUsers)}</span>
+            </p>
+            <p className="tabular-nums text-text-secondary">
+              Total Dealer Passes:{' '}
+              <span className="font-semibold text-white">{formatInt(footer.dealerPasses)}</span>
+            </p>
+            <p className="tabular-nums text-text-secondary">
+              Total Dealer Quantity:{' '}
+              <span className="font-semibold text-white">{formatQty(footer.dealerQty)}</span>
+            </p>
+          </>
+        ) : null}
+        <p className="tabular-nums text-text-secondary">
+          Total Passes:{' '}
+          <span className="font-semibold text-white">{formatInt(footer.totalPasses)}</span>
+        </p>
+      </div>
+    </Card>
+  );
+
   return (
     <>
+      <div className="space-y-2">
+        <p className="text-xs text-text-secondary tabular-nums">{contextLine}</p>
+        {allReportsHint ? (
+          <p className="text-xs text-text-secondary/80">
+            Totals reflect each district&apos;s latest report, not a single day&apos;s snapshot.
+          </p>
+        ) : null}
+      </div>
+
       <div className="space-y-3 md:hidden">
         {minerals.map((row) => (
           <MobileDataCard
@@ -72,65 +133,36 @@ export function MineralSummaryTable({
             </div>
           </MobileDataCard>
         ))}
-        <MobileDataCard eyebrow="Total" title="All minerals">
-          <div className="grid grid-cols-2 gap-2">
-            {showLessee ? (
-              <DataField label="Lessee passes" value={formatInt(footer.lesseePasses)} />
-            ) : null}
-            {showDealer ? (
-              <DataField label="Dealer passes" value={formatInt(footer.dealerPasses)} />
-            ) : null}
-            <DataField
-              className="col-span-2"
-              label="Total passes"
-              value={formatInt(footer.totalPasses)}
-            />
-          </div>
-        </MobileDataCard>
+        {footerCard}
       </div>
+
       <Card className="hidden overflow-hidden p-0 md:block">
         <div className="overflow-x-auto scrollbar-thin">
-          <table className="w-full min-w-[900px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[640px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-border-default bg-surface-primary text-xs uppercase tracking-wider text-text-secondary">
-                <th className="px-4 py-3 font-semibold" rowSpan={2}>
-                  Mineral
-                </th>
+                <th className="px-4 py-3 font-semibold">Mineral</th>
                 {showLessee ? (
-                  <th
-                    className="border-l border-border-default px-4 py-2 text-center font-semibold text-indigo-300"
-                    colSpan={3}
-                  >
-                    Operator (Lessee)
-                  </th>
+                  <>
+                    <th className="border-l border-border-default px-3 py-3 font-semibold">
+                      Lessee users
+                    </th>
+                    <th className="px-3 py-3 font-semibold">Lessee passes</th>
+                    <th className="px-3 py-3 font-semibold">Lessee qty</th>
+                  </>
                 ) : null}
                 {showDealer ? (
-                  <th
-                    className="border-l border-border-default px-4 py-2 text-center font-semibold text-emerald-300"
-                    colSpan={3}
-                  >
-                    Operator (Dealer)
-                  </th>
+                  <>
+                    <th className="border-l border-border-default px-3 py-3 font-semibold">
+                      Dealer users
+                    </th>
+                    <th className="px-3 py-3 font-semibold">Dealer passes</th>
+                    <th className="px-3 py-3 font-semibold">Dealer qty</th>
+                  </>
                 ) : null}
-                <th className="border-l border-border-default px-4 py-3 font-semibold" rowSpan={2}>
+                <th className="border-l border-border-default px-3 py-3 font-semibold">
                   Total passes
                 </th>
-              </tr>
-              <tr className="border-b border-border-default text-[10px] uppercase tracking-wider text-text-secondary">
-                {showLessee ? (
-                  <>
-                    <th className="border-l border-border-default px-3 py-2">Users</th>
-                    <th className="px-3 py-2">Passes</th>
-                    <th className="px-3 py-2">Qty</th>
-                  </>
-                ) : null}
-                {showDealer ? (
-                  <>
-                    <th className="border-l border-border-default px-3 py-2">Users</th>
-                    <th className="px-3 py-2">Passes</th>
-                    <th className="px-3 py-2">Qty</th>
-                  </>
-                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -172,39 +204,11 @@ export function MineralSummaryTable({
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr className="bg-surface-deep/80 font-semibold text-white">
-                <td className="px-4 py-3">All minerals</td>
-                {showLessee ? (
-                  <>
-                    <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
-                      {formatInt(footer.lesseeUsers)}
-                    </td>
-                    <td className="px-3 py-3 tabular-nums text-indigo-300">
-                      {formatInt(footer.lesseePasses)}
-                    </td>
-                    <td className="px-3 py-3 tabular-nums">{formatQty(footer.lesseeQty)}</td>
-                  </>
-                ) : null}
-                {showDealer ? (
-                  <>
-                    <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
-                      {formatInt(footer.dealerUsers)}
-                    </td>
-                    <td className="px-3 py-3 tabular-nums text-emerald-300">
-                      {formatInt(footer.dealerPasses)}
-                    </td>
-                    <td className="px-3 py-3 tabular-nums">{formatQty(footer.dealerQty)}</td>
-                  </>
-                ) : null}
-                <td className="border-l border-border-default/40 px-3 py-3 tabular-nums">
-                  {formatInt(footer.totalPasses)}
-                </td>
-              </tr>
-            </tfoot>
           </table>
         </div>
       </Card>
+
+      <div className="hidden md:block">{footerCard}</div>
     </>
   );
 }

@@ -24,9 +24,9 @@ import {
 } from '@/lib/epass-district-filter-params';
 import {
   EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
+  fetchDistrictRowsBrowse,
   fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
-  fetchMineralsBrowse,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
@@ -123,13 +123,13 @@ function MineralPageContent() {
   }, [searchParams, updateParams, isRangeMode]);
 
   const {
-    data: allMineralsData,
+    data: allDistrictBrowse,
     isLoading: allRowsLoading,
     isError: allRowsError,
     refetch: refetchAllRows,
   } = useQuery({
-    queryKey: ['epass', 'minerals-browse'],
-    queryFn: () => fetchMineralsBrowse({ reportScope: 'all' }),
+    queryKey: ['epass', 'district-rows-browse'],
+    queryFn: () => fetchDistrictRowsBrowse({ reportScope: 'all' }),
     enabled: isAllReports && !browseEmpty,
     ...reportingQueryOptions,
   });
@@ -210,7 +210,7 @@ function MineralPageContent() {
     updateParams,
   ]);
 
-  const sourceRows = isAllReports ? undefined : rowsData?.rows;
+  const sourceRows = isAllReports ? allDistrictBrowse?.rows : rowsData?.rows;
 
   const minerals = useMemo(() => {
     if (sourceRows?.length) return collectMinerals(sourceRows);
@@ -224,40 +224,29 @@ function MineralPageContent() {
     return [];
   }, [sourceRows, isAllReports, allFilterOptions?.districts]);
 
+  const filteredSourceRows = useMemo(() => {
+    if (!sourceRows?.length) return [];
+    return filterDistrictRowsForMineral(sourceRows, appliedFilters);
+  }, [sourceRows, appliedFilters]);
+
   const displayMinerals = useMemo(() => {
-    if (isAllReports) {
-      if (browseEmpty || !allMineralsData?.minerals) return [];
-      let rows = allMineralsData.minerals;
-      if (appliedFilters.operator === 'lessee' || appliedFilters.operator === 'dealer') {
-        rows = rows.map((r) => ({
-          ...r,
-          totalPasses: appliedFilters.operator === 'lessee' ? r.lessee.passes : r.dealer.passes,
-        }));
-      }
-      if (appliedFilters.hideZeroPasses) {
-        rows = rows.filter((r) => r.totalPasses > 0);
-      }
-      if (appliedFilters.minerals.length > 0) {
-        const set = new Set(appliedFilters.minerals.map((m) => m.toLowerCase()));
-        rows = rows.filter((r) => set.has(r.mineral.toLowerCase()));
-      }
-      return sortMineralRows(rows, sortKey, sortDir);
-    }
-    const canShow = snapshotId && !browseEmpty && sourceRows;
-    if (!canShow || !sourceRows) return [];
-    const filtered = filterDistrictRowsForMineral(sourceRows, appliedFilters);
-    const aggregated = aggregateMinerals(filtered, appliedFilters.operator);
-    return sortMineralRows(aggregated, sortKey, sortDir);
+    if (browseEmpty || !sourceRows) return [];
+    const aggregated = aggregateMinerals(filteredSourceRows, appliedFilters.operator);
+    const rows = appliedFilters.hideZeroPasses
+      ? aggregated.filter((r) => r.totalPasses > 0)
+      : aggregated;
+    return sortMineralRows(rows, sortKey, sortDir);
   }, [
     sourceRows,
-    allMineralsData,
-    appliedFilters,
+    filteredSourceRows,
+    appliedFilters.operator,
+    appliedFilters.hideZeroPasses,
     sortKey,
     sortDir,
-    snapshotId,
     browseEmpty,
-    isAllReports,
   ]);
+
+  const districtCount = filteredSourceRows.length;
 
   const handleApplyFilters = useCallback(
     (next: DistrictFilterValues) => {
@@ -298,6 +287,8 @@ function MineralPageContent() {
     else if (snapshotId) void refetchRows();
   };
 
+  const hasBrowseData = isAllReports ? Boolean(allDistrictBrowse) : Boolean(snapshotId && rowsData);
+
   if (isError) {
     return <DataErrorCard onRetry={() => refetch()} />;
   }
@@ -308,16 +299,28 @@ function MineralPageContent() {
 
   return (
     <PageStack>
-      {isAllReports && allMineralsData ? (
+      {isAllReports && allDistrictBrowse ? (
         <EpassReportMetaBar
           snapshot={null}
           reportScope="all"
           countLabel="Minerals"
-          snapshotCount={allMineralsData.entityCount ?? allMineralsData.snapshotCount}
-          latestScrapedAt={allMineralsData.latestScrapedAt}
+          snapshotCount={displayMinerals.length}
+          secondaryMetric={{
+            label: 'Districts',
+            value: allDistrictBrowse.rows.length,
+          }}
+          latestScrapedAt={allDistrictBrowse.latestScrapedAt}
         />
       ) : snapshotId && rowsData?.snapshot ? (
-        <EpassReportMetaBar snapshot={rowsData.snapshot} />
+        <EpassReportMetaBar
+          snapshot={rowsData.snapshot}
+          rowCountLabel="Districts"
+          rowCount={rowsData.rows.length}
+          secondaryMetric={{
+            label: 'Minerals',
+            value: displayMinerals.length,
+          }}
+        />
       ) : null}
 
       {snapshotsData ? (
@@ -335,8 +338,13 @@ function MineralPageContent() {
 
       {browseEmpty ? (
         <EpassEmptyState {...browseEmptyState} />
-      ) : (isAllReports && allMineralsData) || (snapshotId && rowsData) ? (
-        <MineralSummaryTable minerals={displayMinerals} operatorFilter={appliedFilters.operator} />
+      ) : hasBrowseData ? (
+        <MineralSummaryTable
+          minerals={displayMinerals}
+          operatorFilter={appliedFilters.operator}
+          districtCount={districtCount}
+          allReportsHint={isAllReports}
+        />
       ) : null}
     </PageStack>
   );

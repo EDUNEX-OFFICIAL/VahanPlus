@@ -41,6 +41,8 @@ interface ConsigneeEpassFiltersProps {
   /** Vehicle Data: portal status filter section. */
   showPortalStatusFilter?: boolean;
   portalStatus?: McvPortalStatus | 'all';
+  /** Disable Apply until reference data (e.g. snapshots) is loaded. */
+  applyDisabled?: boolean;
 }
 
 export interface ConsigneeEpassFilterExtras {
@@ -111,6 +113,7 @@ export function ConsigneeEpassFilters({
   reportScope = 'specific',
   showPortalStatusFilter = false,
   portalStatus = 'all',
+  applyDisabled = false,
 }: ConsigneeEpassFiltersProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DraftState>(() => ({
@@ -172,6 +175,7 @@ export function ConsigneeEpassFilters({
   }
 
   const rangeDatesValid = isValidRangeSelection(draft.dateMode, draft.dateFrom, draft.dateTo);
+  const applyBlocked = applyDisabled || !rangeDatesValid;
 
   function handleApply() {
     if (!rangeDatesValid) return;
@@ -244,7 +248,7 @@ export function ConsigneeEpassFilters({
               <FilterDropdownPanel
                 footer={
                   <>
-                    <Button className="text-sm" onClick={handleApply} disabled={!rangeDatesValid}>
+                    <Button className="text-sm" onClick={handleApply} disabled={applyBlocked}>
                       Apply
                     </Button>
                     <Button variant="secondary" className="text-sm" onClick={() => setOpen(false)}>

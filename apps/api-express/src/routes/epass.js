@@ -1594,7 +1594,7 @@ router.get('/filter-options', async (req, res) => {
 
   if (isReportingReadModelEnabled()) {
     const started = Date.now();
-    const payload = await fetchFilterOptions(prisma);
+    const payload = await fetchFilterOptions(prisma, req.query);
     observeEpassQuery(
       'filter-options',
       'all',
@@ -1936,7 +1936,7 @@ router.get('/consigners/options', async (req, res) => {
       payload.items.length,
       0,
     );
-    return res.json({ snapshot: null, items: payload.items });
+    return res.json({ snapshot: null, ...payload, items: payload.items });
   }
 
   const { snapshots } = await resolveSnapshotsForQuery(prisma, req.query);
@@ -1965,6 +1965,8 @@ router.get('/consigners/options', async (req, res) => {
 
   const deduped = dedupeConsignerOptions(consigners);
   const meta = snapshots[0];
+  const total = deduped.length;
+  const truncated = total > 500;
 
   res.json({
     snapshot: {
@@ -1972,6 +1974,8 @@ router.get('/consigners/options', async (req, res) => {
       reportDate: meta.reportDate,
       scrapedAt: meta.scrapedAt.toISOString(),
     },
+    total,
+    truncated,
     items: deduped.slice(0, 500).map((row) => {
       const { ghatNumber } = ghatFieldsFromConsigner(row);
       return {
@@ -1991,24 +1995,27 @@ router.get('/consigners/options', async (req, res) => {
 router.get('/consigners', async (req, res) => {
   const prisma = getPrisma();
   const isAllScope = req.query.reportScope === 'all';
+  const dateMode = req.query.dateMode === 'range' ? 'range' : 'specific';
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
   const orderBy = buildConsignerOrderBy(req.query);
 
-  if (isAllScope) {
-    if (isReportingReadModelEnabled()) {
-      const started = Date.now();
-      const payload = await fetchConsignerList(prisma, req.query);
-      observeEpassQuery(
-        'consigners',
-        'all',
-        (Date.now() - started) / 1000,
-        payload.items.length,
-        0,
-      );
-      return res.json(payload);
-    }
+  if (isReportingReadModelEnabled() && (isAllScope || dateMode === 'range')) {
+    const rangeError = validateReportingQuery(req.query);
+    if (rangeError) return res.status(400).json({ error: rangeError });
+    const started = Date.now();
+    const payload = await fetchConsignerList(prisma, req.query);
+    observeEpassQuery(
+      'consigners',
+      isAllScope ? 'all' : 'range',
+      (Date.now() - started) / 1000,
+      payload.items.length,
+      0,
+    );
+    return res.json(payload);
+  }
 
+  if (isAllScope) {
     const { snapshots, allScopeMeta } = await resolveSnapshotsForQuery(prisma, req.query);
     const snapshotIds = snapshots.map((s) => s.id);
     if (snapshotIds.length === 0) {

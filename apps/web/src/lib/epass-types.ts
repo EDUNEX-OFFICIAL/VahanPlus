@@ -116,6 +116,7 @@ export type ConsigneeSortDir = 'asc' | 'desc';
 export interface ConsigneeViewFilters {
   consigneeSearch?: string;
   hideZeroPasses?: boolean;
+  minerals?: string[];
   dateFrom?: string;
   dateTo?: string;
 }
@@ -219,7 +220,7 @@ export interface EpassConsignerListItemDto extends EpassConsignerRowDto {
 
 export interface ConsignerListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
-  reportScope?: 'all';
+  reportScope?: 'all' | 'range';
   entityCount?: number;
   snapshotCount?: number;
   totalSnapshotCount?: number;
@@ -246,6 +247,8 @@ export interface ConsignerOptionDto {
 export interface ConsignerOptionsResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
   items: ConsignerOptionDto[];
+  total?: number;
+  truncated?: boolean;
 }
 
 export interface ConsignerOptionsParams {
@@ -261,6 +264,7 @@ export interface ConsignerOptionsParams {
   mineral?: string;
   consigner?: string;
   hideZeroChallans?: boolean;
+  hideZeroPasses?: boolean;
 }
 
 export interface ConsignerChallansParams {
@@ -269,6 +273,7 @@ export interface ConsignerChallansParams {
   dateMode?: 'specific' | 'range';
   dateFrom?: string;
   dateTo?: string;
+  mineral?: string;
   consignee?: string;
   hideZeroPasses?: boolean;
 }
@@ -294,6 +299,9 @@ export interface ConsignerViewFilters {
 export interface ConsignerListParams {
   snapshotId?: string;
   reportScope?: 'all';
+  dateMode?: 'specific' | 'range';
+  dateFrom?: string;
+  dateTo?: string;
   operator?: OperatorType;
   /** @deprecated Use operator */
   role?: OperatorType;
@@ -566,6 +574,7 @@ export interface EpassFilterOptionsResponse {
   minerals: string[];
   latestScrapedAt: string | null;
   entityCount?: number;
+  consigneeCount?: number;
   snapshotCount?: number;
   totalSnapshotCount?: number;
   snapshotsTruncated?: boolean;

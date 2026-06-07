@@ -1,4 +1,5 @@
 import { isReportDateInRange } from '../../utils/epassDates.js';
+import { filterRowsByReportDateRange } from './consigneeReporting.js';
 function toNumber(value) {
   if (value == null) return 0;
   return Number(value);
@@ -220,22 +221,44 @@ export async function fetchMineralBrowse(prisma, query) {
   };
 }
 
-export async function fetchFilterOptions(prisma) {
-  const [districts, minerals, latest] = await Promise.all([
-    prisma.reportDistrictSummary.findMany({ select: { dmoName: true }, distinct: ['dmoName'] }),
-    prisma.reportMineralSummary.findMany({ select: { mineral: true }, distinct: ['mineral'] }),
-    prisma.reportDistrictSummary.findFirst({
+export async function fetchFilterOptions(prisma, query = {}) {
+  const snapshotId = typeof query.snapshotId === 'string' ? query.snapshotId.trim() : '';
+  const snapshotWhere = snapshotId ? { lastSnapshotId: snapshotId } : {};
+
+  const [districtRowsRaw, consigneeRowsRaw, latest] = await Promise.all([
+    prisma.reportDistrictSummary.findMany({
+      where: snapshotWhere,
+      select: { dmoName: true, lastReportDate: true },
+    }),
+    prisma.reportConsigneeSummary.findMany({
+      where: snapshotWhere,
+      select: { dmoName: true, mineral: true, lastReportDate: true },
+    }),
+    prisma.reportConsigneeSummary.findFirst({
       orderBy: { lastScrapedAt: 'desc' },
       select: { lastScrapedAt: true },
     }),
   ]);
 
+  const districtRows = filterRowsByReportDateRange(districtRowsRaw, query);
+  const consigneeRows = filterRowsByReportDateRange(consigneeRowsRaw, query);
+
+  const districtSet = new Set(districtRows.map((d) => d.dmoName));
+  const mineralSet = new Set(
+    consigneeRows.map((r) => r.mineral).filter((m) => m != null && String(m).trim()),
+  );
+
+  const districts = [...districtSet].sort((a, b) => a.localeCompare(b));
+  const minerals = [...mineralSet].sort((a, b) => a.localeCompare(b));
+  const consigneeCount = consigneeRows.length;
+
   return {
-    districts: districts.map((d) => d.dmoName).sort((a, b) => a.localeCompare(b)),
-    minerals: minerals.map((m) => m.mineral).sort((a, b) => a.localeCompare(b)),
+    districts,
+    minerals,
     latestScrapedAt: latest?.lastScrapedAt?.toISOString() ?? null,
-    entityCount: districts.length,
-    snapshotCount: districts.length,
+    entityCount: consigneeCount,
+    consigneeCount,
+    snapshotCount: consigneeCount,
     snapshotsTruncated: false,
   };
 }

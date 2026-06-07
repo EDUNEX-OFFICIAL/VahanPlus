@@ -173,6 +173,7 @@ export interface SnapshotDistrictRowsResponse {
 }
 
 export interface EpassAllScopeMeta {
+  entityCount?: number;
   snapshotCount: number;
   totalSnapshotCount?: number;
   snapshotsTruncated?: boolean;
@@ -181,6 +182,7 @@ export interface EpassAllScopeMeta {
 export interface DistrictRowsBrowseResponse {
   snapshot: null;
   reportScope: 'all';
+  entityCount?: number;
   snapshotCount: number;
   totalSnapshotCount?: number;
   snapshotsTruncated?: boolean;
@@ -218,6 +220,7 @@ export interface EpassConsignerListItemDto extends EpassConsignerRowDto {
 export interface ConsignerListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
   reportScope?: 'all';
+  entityCount?: number;
   snapshotCount?: number;
   totalSnapshotCount?: number;
   snapshotsTruncated?: boolean;
@@ -368,6 +371,7 @@ export interface ChalaanListResponse {
 export interface ChalaanPassListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
   reportScope?: 'range' | 'all';
+  entityCount?: number;
   snapshotCount?: number;
   totalSnapshotCount?: number;
   snapshotsTruncated?: boolean;
@@ -561,6 +565,7 @@ export interface EpassFilterOptionsResponse {
   districts: string[];
   minerals: string[];
   latestScrapedAt: string | null;
+  entityCount?: number;
   snapshotCount?: number;
   totalSnapshotCount?: number;
   snapshotsTruncated?: boolean;

@@ -227,9 +227,11 @@ function DistrictPageContent() {
       ? !browseEmpty && sourceRows
       : snapshotId && !browseEmpty && sourceRows;
     if (!canShow || !sourceRows) return [];
-    const baseRows = isAllReports
-      ? sourceRows
-      : aggregateDistrictRowsByDmo(sourceRows, appliedFilters.operator, appliedFilters.minerals);
+    const baseRows = aggregateDistrictRowsByDmo(
+      sourceRows,
+      appliedFilters.operator,
+      appliedFilters.minerals,
+    );
     const filtered = applyDistrictFilters(baseRows, {
       minerals: appliedFilters.minerals,
       districts: appliedFilters.districts,

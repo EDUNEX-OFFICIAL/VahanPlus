@@ -3,6 +3,7 @@ import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Card } from '@/components/ui/Card';
 import { DataField, MobileDataCard } from '@/components/ui/MobileDataCard';
 import { formatInt, formatQty } from '@/lib/epass-aggregate';
+import { formatReportDateLong } from '@/lib/epass-report-date';
 import { operatorShowsDealer, operatorShowsLessee } from '@/lib/epass-mineral-view';
 import type { MineralAggregateRow, OperatorTypeFilter } from '@/lib/epass-types';
 
@@ -11,6 +12,7 @@ interface MineralSummaryTableProps {
   operatorFilter?: OperatorTypeFilter;
   districtCount?: number;
   allReportsHint?: boolean;
+  allReportsReportDate?: string | null;
 }
 
 export function MineralSummaryTable({
@@ -18,6 +20,7 @@ export function MineralSummaryTable({
   operatorFilter = 'all',
   districtCount,
   allReportsHint = false,
+  allReportsReportDate = null,
 }: MineralSummaryTableProps) {
   const showLessee = operatorShowsLessee(operatorFilter);
   const showDealer = operatorShowsDealer(operatorFilter);
@@ -102,7 +105,9 @@ export function MineralSummaryTable({
         <p className="text-xs text-text-secondary tabular-nums">{contextLine}</p>
         {allReportsHint ? (
           <p className="text-xs text-text-secondary/80">
-            Totals reflect each district&apos;s latest report, not a single day&apos;s snapshot.
+            {allReportsReportDate
+              ? `Totals from the latest scraped report (${formatReportDateLong(allReportsReportDate)}). Pick a specific date to view that day's snapshot.`
+              : "Totals from the latest scraped report. Pick a specific date to view that day's snapshot."}
           </p>
         ) : null}
       </div>

@@ -183,6 +183,8 @@ export interface EpassAllScopeMeta {
 export interface DistrictRowsBrowseResponse {
   snapshot: null;
   reportScope: 'all';
+  /** Report date of the latest scraped snapshot (All Reports mode). */
+  reportDate?: string | null;
   entityCount?: number;
   snapshotCount: number;
   totalSnapshotCount?: number;

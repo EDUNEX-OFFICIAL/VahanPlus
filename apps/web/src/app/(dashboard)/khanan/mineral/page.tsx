@@ -310,6 +310,7 @@ function MineralPageContent() {
             value: allDistrictBrowse.rows.length,
           }}
           latestScrapedAt={allDistrictBrowse.latestScrapedAt}
+          reportDate={allDistrictBrowse.reportDate}
         />
       ) : snapshotId && rowsData?.snapshot ? (
         <EpassReportMetaBar
@@ -344,6 +345,7 @@ function MineralPageContent() {
           operatorFilter={appliedFilters.operator}
           districtCount={districtCount}
           allReportsHint={isAllReports}
+          allReportsReportDate={allDistrictBrowse?.reportDate}
         />
       ) : null}
     </PageStack>

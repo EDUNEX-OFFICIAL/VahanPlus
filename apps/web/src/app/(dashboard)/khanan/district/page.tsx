@@ -328,6 +328,7 @@ function DistrictPageContent() {
           countLabel="Districts"
           snapshotCount={allRowsData.entityCount ?? allRowsData.snapshotCount}
           latestScrapedAt={allRowsData.latestScrapedAt}
+          reportDate={allRowsData.reportDate}
         />
       ) : snapshotId && rowsData?.snapshot ? (
         <EpassReportMetaBar snapshot={rowsData.snapshot} />

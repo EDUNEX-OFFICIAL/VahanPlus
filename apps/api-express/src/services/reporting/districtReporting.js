@@ -1,11 +1,19 @@
 import { isReportDateInRange } from '../../utils/epassDates.js';
 import { filterRowsByReportDateRange } from './consigneeReporting.js';
+
 function toNumber(value) {
   if (value == null) return 0;
   return Number(value);
 }
 
-function mapSummaryRow(row, consignerCounts = null) {
+function scrapeStatus(expectedPasses, counts) {
+  if (expectedPasses <= 0) return 'n/a';
+  if (counts.consigners === 0) return 'pending';
+  if (counts.challanExpected > 0 && counts.challans < counts.challanExpected) return 'partial';
+  return 'complete';
+}
+
+function mapDistrictDto(row, consignerCounts = null) {
   const operators = {
     lessee: {
       mineral: row.lesseeMineral,
@@ -23,9 +31,10 @@ function mapSummaryRow(row, consignerCounts = null) {
     },
   };
 
+  const rowId = row.sourceRowId ?? row.id;
   const base = {
-    id: row.sourceRowId ?? row.id,
-    snapshotId: row.lastSnapshotId,
+    id: rowId,
+    snapshotId: row.lastSnapshotId ?? row.snapshotId,
     slNo: row.slNo,
     dmoName: row.dmoName,
     dmoId: row.dmoId,
@@ -46,16 +55,17 @@ function mapSummaryRow(row, consignerCounts = null) {
     dealerPassDetailUrl: row.dealerPassDetailUrl ?? null,
   };
 
-  if (!consignerCounts || !row.sourceRowId) return base;
+  if (!consignerCounts || !rowId) return base;
 
-  const lessee = consignerCounts.get(`${row.sourceRowId}:lessee`) ?? { consigners: 0, challans: 0 };
-  const dealer = consignerCounts.get(`${row.sourceRowId}:dealer`) ?? { consigners: 0, challans: 0 };
-
-  const scrapeStatus = (expectedPasses, counts) => {
-    if (expectedPasses <= 0) return 'n/a';
-    if (counts.consigners === 0) return 'pending';
-    if (counts.challanExpected > 0 && counts.challans < counts.challanExpected) return 'partial';
-    return 'complete';
+  const lessee = consignerCounts.get(`${rowId}:lessee`) ?? {
+    consigners: 0,
+    challans: 0,
+    challanExpected: 0,
+  };
+  const dealer = consignerCounts.get(`${rowId}:dealer`) ?? {
+    consigners: 0,
+    challans: 0,
+    challanExpected: 0,
   };
 
   return {
@@ -67,11 +77,6 @@ function mapSummaryRow(row, consignerCounts = null) {
 
 function buildDistrictWhere(query) {
   const where = {};
-  const dateFrom = typeof query.dateFrom === 'string' ? query.dateFrom : '';
-  const dateTo = typeof query.dateTo === 'string' ? query.dateTo : '';
-  if (query.dateMode === 'range' && (dateFrom || dateTo)) {
-    // Filter applied post-fetch via isReportDateInRange on lastReportDate
-  }
   const districts =
     typeof query.districts === 'string' ? query.districts.split(',').filter(Boolean) : [];
   if (districts.length > 0) {
@@ -81,6 +86,30 @@ function buildDistrictWhere(query) {
     where.totalPasses = { gt: 0 };
   }
   return where;
+}
+
+function applyPostFetchDistrictFilters(rows, query) {
+  let filtered = rows;
+
+  const operator = query.operator ?? query.role;
+  if (operator === 'lessee' || operator === 'dealer') {
+    filtered = filtered.filter(
+      (r) => (operator === 'lessee' ? r.lesseePasses : r.dealerPasses) > 0,
+    );
+  }
+
+  const minerals =
+    typeof query.minerals === 'string' ? query.minerals.split(',').filter(Boolean) : [];
+  if (minerals.length > 0) {
+    const set = new Set(minerals.map((m) => m.toLowerCase()));
+    filtered = filtered.filter((r) => {
+      const lm = (r.lesseeMineral ?? '').toLowerCase();
+      const dm = (r.dealerMineral ?? '').toLowerCase();
+      return [...set].some((m) => lm.includes(m) || dm.includes(m));
+    });
+  }
+
+  return filtered;
 }
 
 async function buildConsignerCountMap(prisma, districtRowIds) {
@@ -108,10 +137,50 @@ async function buildConsignerCountMap(prisma, districtRowIds) {
   return map;
 }
 
-/**
- * @param {import('@vahanplus/db').PrismaClient} prisma
- */
-export async function fetchDistrictBrowse(prisma, query) {
+async function fetchLatestSnapshotDistrictBrowse(prisma, query) {
+  const latest = await prisma.epassSnapshot.findFirst({
+    orderBy: { scrapedAt: 'desc' },
+  });
+
+  if (!latest) {
+    return {
+      snapshot: null,
+      reportScope: 'all',
+      entityCount: 0,
+      snapshotCount: 0,
+      snapshotsTruncated: false,
+      latestScrapedAt: null,
+      reportDate: null,
+      rows: [],
+    };
+  }
+
+  const where = { snapshotId: latest.id, ...buildDistrictWhere(query) };
+  let rows = await prisma.epassDistrictRow.findMany({
+    where,
+    orderBy: [{ slNo: 'asc' }, { dmoName: 'asc' }],
+  });
+
+  rows = applyPostFetchDistrictFilters(rows, query);
+
+  const consignerCounts = await buildConsignerCountMap(
+    prisma,
+    rows.map((r) => r.id),
+  );
+
+  return {
+    snapshot: null,
+    reportScope: 'all',
+    reportDate: latest.reportDate,
+    entityCount: rows.length,
+    snapshotCount: rows.length,
+    snapshotsTruncated: false,
+    latestScrapedAt: latest.scrapedAt.toISOString(),
+    rows: rows.map((r) => mapDistrictDto(r, consignerCounts)),
+  };
+}
+
+async function fetchReadModelDistrictBrowse(prisma, query) {
   const where = buildDistrictWhere(query);
   let rows = await prisma.reportDistrictSummary.findMany({
     where,
@@ -126,21 +195,7 @@ export async function fetchDistrictBrowse(prisma, query) {
     );
   }
 
-  const operator = query.operator ?? query.role;
-  if (operator === 'lessee' || operator === 'dealer') {
-    rows = rows.filter((r) => (operator === 'lessee' ? r.lesseePasses : r.dealerPasses) > 0);
-  }
-
-  const minerals =
-    typeof query.minerals === 'string' ? query.minerals.split(',').filter(Boolean) : [];
-  if (minerals.length > 0) {
-    const set = new Set(minerals.map((m) => m.toLowerCase()));
-    rows = rows.filter((r) => {
-      const lm = (r.lesseeMineral ?? '').toLowerCase();
-      const dm = (r.dealerMineral ?? '').toLowerCase();
-      return [...set].some((m) => lm.includes(m) || dm.includes(m));
-    });
-  }
+  rows = applyPostFetchDistrictFilters(rows, query);
 
   const latest = await prisma.reportDistrictSummary.findFirst({
     orderBy: { lastScrapedAt: 'desc' },
@@ -157,8 +212,26 @@ export async function fetchDistrictBrowse(prisma, query) {
     snapshotCount: rows.length,
     snapshotsTruncated: false,
     latestScrapedAt: latest?.lastScrapedAt?.toISOString() ?? null,
-    rows: rows.map((r) => mapSummaryRow(r, consignerCounts)),
+    rows: rows.map((r) => mapDistrictDto(r, consignerCounts)),
   };
+}
+
+/**
+ * All Reports (no date range): latest scraped snapshot district rows.
+ * Date range: CQRS read model with lastReportDate filter.
+ *
+ * @param {import('@vahanplus/db').PrismaClient} prisma
+ */
+export async function fetchDistrictBrowse(prisma, query) {
+  const dateFrom = typeof query.dateFrom === 'string' ? query.dateFrom : '';
+  const dateTo = typeof query.dateTo === 'string' ? query.dateTo : '';
+  const isRange = query.dateMode === 'range' && (dateFrom || dateTo);
+
+  if (!isRange) {
+    return fetchLatestSnapshotDistrictBrowse(prisma, query);
+  }
+
+  return fetchReadModelDistrictBrowse(prisma, query);
 }
 
 /**
@@ -206,9 +279,9 @@ export async function fetchMineralBrowse(prisma, query) {
   }
   minerals.sort((a, b) => b.totalPasses - a.totalPasses);
 
-  const latest = await prisma.reportDistrictSummary.findFirst({
-    orderBy: { lastScrapedAt: 'desc' },
-    select: { lastScrapedAt: true },
+  const latest = await prisma.epassSnapshot.findFirst({
+    orderBy: { scrapedAt: 'desc' },
+    select: { scrapedAt: true, reportDate: true },
   });
 
   return {
@@ -216,12 +289,56 @@ export async function fetchMineralBrowse(prisma, query) {
     entityCount: minerals.length,
     snapshotCount: minerals.length,
     snapshotsTruncated: false,
-    latestScrapedAt: latest?.lastScrapedAt?.toISOString() ?? null,
+    latestScrapedAt: latest?.scrapedAt?.toISOString() ?? null,
+    reportDate: latest?.reportDate ?? null,
     minerals,
   };
 }
 
 export async function fetchFilterOptions(prisma, query = {}) {
+  const isAllScope = query.reportScope === 'all';
+  const dateFrom = typeof query.dateFrom === 'string' ? query.dateFrom : '';
+  const dateTo = typeof query.dateTo === 'string' ? query.dateTo : '';
+  const isRange = query.dateMode === 'range' && (dateFrom || dateTo);
+
+  if (isAllScope && !isRange && !query.snapshotId) {
+    const latest = await prisma.epassSnapshot.findFirst({
+      orderBy: { scrapedAt: 'desc' },
+      select: { id: true, scrapedAt: true },
+    });
+    if (latest) {
+      const [districtRows, consignerRows] = await Promise.all([
+        prisma.epassDistrictRow.findMany({
+          where: { snapshotId: latest.id },
+          select: { dmoName: true, lesseeMineral: true, dealerMineral: true },
+        }),
+        prisma.epassConsignerRow.findMany({
+          where: { snapshotId: latest.id },
+          select: { mineral: true },
+        }),
+      ]);
+
+      const districtSet = new Set(districtRows.map((d) => d.dmoName));
+      const mineralSet = new Set(
+        consignerRows.map((r) => r.mineral).filter((m) => m != null && String(m).trim()),
+      );
+      for (const row of districtRows) {
+        if (row.lesseeMineral?.trim()) mineralSet.add(row.lesseeMineral);
+        if (row.dealerMineral?.trim()) mineralSet.add(row.dealerMineral);
+      }
+
+      return {
+        districts: [...districtSet].sort((a, b) => a.localeCompare(b)),
+        minerals: [...mineralSet].sort((a, b) => a.localeCompare(b)),
+        latestScrapedAt: latest.scrapedAt.toISOString(),
+        entityCount: districtRows.length,
+        consigneeCount: 0,
+        snapshotCount: districtRows.length,
+        snapshotsTruncated: false,
+      };
+    }
+  }
+
   const snapshotId = typeof query.snapshotId === 'string' ? query.snapshotId.trim() : '';
   const snapshotWhere = snapshotId ? { lastSnapshotId: snapshotId } : {};
 

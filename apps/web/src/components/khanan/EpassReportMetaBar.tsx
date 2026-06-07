@@ -22,6 +22,8 @@ interface EpassReportMetaBarProps {
   /** Optional second metric column (snapshot or all-reports scope). */
   secondaryMetric?: { label: string; value: number };
   latestScrapedAt?: string | null;
+  /** Latest scraped report date label (All Reports scope). */
+  reportDate?: string | null;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -36,6 +38,7 @@ export function EpassReportMetaBar({
   rowCount,
   secondaryMetric,
   latestScrapedAt,
+  reportDate,
   dateFrom,
   dateTo,
 }: EpassReportMetaBarProps) {
@@ -50,7 +53,9 @@ export function EpassReportMetaBar({
         ? dateFrom || dateTo
           ? `${dateFrom ? formatReportDateNumeric(dateFrom) : '…'} – ${dateTo ? formatReportDateNumeric(dateTo) : dateFrom ? formatReportDateNumeric(dateFrom) : '…'}`
           : 'Date range'
-        : 'All reports';
+        : reportDate
+          ? `Latest report · ${formatReportDateLong(reportDate)}`
+          : 'All reports';
 
     return (
       <Card>

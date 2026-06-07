@@ -1,11 +1,18 @@
 'use client';
 
-import { CSSProperties, ReactNode, RefObject, useEffect, useLayoutEffect, useState } from 'react';
+import {
+  CSSProperties,
+  ReactNode,
+  RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { cn } from '@/lib/utils';
 
@@ -136,6 +143,7 @@ function useFilterEscapeDismiss(open: boolean, onClose?: () => void) {
 function useFilterOutsideDismiss(
   open: boolean,
   anchorRef: RefObject<HTMLElement | null>,
+  panelRef: RefObject<HTMLElement | null>,
   onClose?: () => void,
 ) {
   useEffect(() => {
@@ -145,13 +153,14 @@ function useFilterOutsideDismiss(
     function onPointerDown(e: PointerEvent) {
       const target = e.target as Node;
       if (anchorRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
       if ((target as Element).closest?.(`[${FILTER_PANEL_ATTR}]`)) return;
       dismiss?.();
     }
 
     document.addEventListener('pointerdown', onPointerDown);
     return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [open, anchorRef, onClose]);
+  }, [open, anchorRef, panelRef, onClose]);
 }
 
 export function FilterDropdownPanel({
@@ -170,16 +179,21 @@ export function FilterDropdownPanel({
   onClose?: () => void;
 }) {
   const [mounted, setMounted] = useState(() => typeof document !== 'undefined');
+  const panelRef = useRef<HTMLDivElement>(null);
   const desktopStyle = useFilterPanelPosition(anchorRef, open);
 
   useEffect(() => {
     setMounted(true);
   }, []);
   useFilterBodyScrollLock(open);
-  useFilterOutsideDismiss(open, anchorRef, onClose);
+  useFilterOutsideDismiss(open, anchorRef, panelRef, onClose);
   useFilterEscapeDismiss(open, onClose);
 
   if (!open) return null;
+
+  const stopPanelPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+  };
 
   const bodyContent = (
     <>
@@ -199,13 +213,15 @@ export function FilterDropdownPanel({
         className="fixed inset-0 z-[35] touch-none bg-black/65 backdrop-blur-sm md:hidden"
         onClick={onClose}
       />
-      <Card
+      <div
+        ref={panelRef}
         data-filter-dropdown-panel=""
+        onPointerDown={stopPanelPointerDown}
         className="fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-[36] flex max-h-[70dvh] flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:hidden"
       >
         <div className={panelBodyClass}>{bodyContent}</div>
         <div className={filterPanelFooterClass}>{footer}</div>
-      </Card>
+      </div>
     </>
   );
 
@@ -218,7 +234,9 @@ export function FilterDropdownPanel({
         onClick={onClose}
       />
       <div
+        ref={panelRef}
         data-filter-dropdown-panel=""
+        onPointerDown={stopPanelPointerDown}
         style={desktopStyle}
         className="z-[36] hidden flex-col overflow-hidden rounded-[1.75rem] border border-border-default/80 bg-surface-primary p-0 shadow-2xl md:flex"
       >

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChalaanDetailDialog } from '@/components/khanan/ChalaanDetailDialog';
+import { ChallanDetailDialog } from '@/components/khanan/ChallanDetailDialog';
 import { Card } from '@/components/ui/Card';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { Chip } from '@/components/ui/Chip';
@@ -10,9 +10,9 @@ import { formatQty } from '@/lib/epass-aggregate';
 import { normalizeMineralLabel } from '@/lib/epass-consignee-view';
 import { normalizeReportDate } from '@/lib/epass-report-date';
 import type {
-  ChalaanSortDir,
-  ChalaanSortKey,
-  EpassChalaanPassListItemDto,
+  ChallanSortDir,
+  ChallanSortKey,
+  EpassChallanPassListItemDto,
 } from '@/lib/epass-types';
 
 function SortIndicator({
@@ -20,9 +20,9 @@ function SortIndicator({
   sortKey,
   sortDir,
 }: {
-  columnKey: ChalaanSortKey;
-  sortKey: ChalaanSortKey | null;
-  sortDir: ChalaanSortDir;
+  columnKey: ChallanSortKey;
+  sortKey: ChallanSortKey | null;
+  sortDir: ChallanSortDir;
 }) {
   if (sortKey !== columnKey) {
     return <span className="ml-1 text-text-secondary/40">↕</span>;
@@ -49,16 +49,16 @@ function EyeIcon({ className }: { className?: string }) {
   );
 }
 
-interface ChalaanTableProps {
-  rows: EpassChalaanPassListItemDto[];
-  sortKey?: ChalaanSortKey | null;
-  sortDir?: ChalaanSortDir;
-  onSort?: (key: ChalaanSortKey) => void;
+interface ChallanTableProps {
+  rows: EpassChallanPassListItemDto[];
+  sortKey?: ChallanSortKey | null;
+  sortDir?: ChallanSortDir;
+  onSort?: (key: ChallanSortKey) => void;
 }
 
-export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: ChalaanTableProps) {
+export function ChallanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: ChallanTableProps) {
   const sortable = Boolean(onSort);
-  const [selectedRow, setSelectedRow] = useState<EpassChalaanPassListItemDto | null>(null);
+  const [selectedRow, setSelectedRow] = useState<EpassChallanPassListItemDto | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const selectedRowIdRef = useRef<string | null>(null);
 
@@ -72,7 +72,7 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
     }
   }, [rows, detailOpen]);
 
-  const openDetail = useCallback((row: EpassChalaanPassListItemDto) => {
+  const openDetail = useCallback((row: EpassChallanPassListItemDto) => {
     selectedRowIdRef.current = row.id;
     setSelectedRow(row);
     setDetailOpen(true);
@@ -94,7 +94,7 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
     align,
   }: {
     label: string;
-    columnKey: ChalaanSortKey;
+    columnKey: ChallanSortKey;
     align?: 'right';
   }) {
     if (!sortable || !onSort) {
@@ -227,7 +227,7 @@ export function ChalaanTable({ rows, sortKey = null, sortDir = 'asc', onSort }: 
           </table>
         </div>
       </Card>
-      <ChalaanDetailDialog row={selectedRow} open={detailOpen} onClose={closeDetail} />
+      <ChallanDetailDialog row={selectedRow} open={detailOpen} onClose={closeDetail} />
     </>
   );
 }

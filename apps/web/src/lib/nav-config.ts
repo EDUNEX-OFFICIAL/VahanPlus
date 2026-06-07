@@ -22,7 +22,7 @@ export type NavIcon =
   | 'consignee'
   | 'district'
   | 'mineral'
-  | 'chalaan'
+  | 'challan'
   | 'vehicle'
   | 'status'
   | 'config'
@@ -40,7 +40,7 @@ export const navItems: NavItem[] = [
       { label: 'Consignee Data', href: '/khanan/consignee', icon: 'consignee' },
       { label: 'District', href: '/khanan/district', icon: 'district' },
       { label: 'Mineral', href: '/khanan/mineral', icon: 'mineral' },
-      { label: 'Chalaan', href: '/khanan/chalaan', icon: 'chalaan' },
+      { label: 'Challan', href: '/khanan/challan', icon: 'challan' },
       { label: 'Vehicle Data', href: '/khanan/vehicle-data', icon: 'vehicle' },
       { label: 'Vehicle Status', href: '/khanan/vehicle-status', icon: 'status' },
       { label: 'Import Data', href: '/khanan/import', icon: 'import' },
@@ -62,7 +62,7 @@ export const navItems: NavItem[] = [
 export const quickNavItems = [
   { label: 'Home', href: '/', icon: 'dashboard' as const },
   { label: 'Consigner', href: '/khanan/consigner', icon: 'consigner' as const },
-  { label: 'Chalaan', href: '/khanan/chalaan', icon: 'chalaan' as const },
+  { label: 'Challan', href: '/khanan/challan', icon: 'challan' as const },
   { label: 'Status', href: '/khanan/vehicle-status', icon: 'status' as const },
 ];
 

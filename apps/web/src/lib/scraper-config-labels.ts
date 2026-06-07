@@ -4,7 +4,7 @@ const JOB_TYPE_LABELS: Record<string, string> = {
   bihar_epass: 'District summary report',
   bihar_epass_consigner: 'Consignee / dealer details',
   bihar_epass_challan: 'Challan details',
-  bihar_epass_challan_pass: 'Chalaan (pass) details',
+  bihar_epass_challan_pass: 'Challan (pass) details',
   bihar_mcv_vehicle_status: 'Vehicle registration check',
   vehicle: 'Vehicle lookup',
   khanan: 'Khanan record',

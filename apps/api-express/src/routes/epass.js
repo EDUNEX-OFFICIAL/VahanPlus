@@ -39,7 +39,8 @@ import {
   fetchConsignerList,
   fetchConsignerOptions,
 } from '../services/reporting/consignerReporting.js';
-import { fetchChalaanPassList } from '../services/reporting/chalaanReporting.js';
+import { fetchChallanPassList } from '../services/reporting/challanReporting.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 import { fetchConsigneeChallans } from '../services/reporting/consigneeReporting.js';
 import { fetchVehicleDataList } from '../services/reporting/vehicleReporting.js';
 
@@ -278,7 +279,7 @@ function challanPassDedupeKey(row) {
   ].join('|');
 }
 
-const CHALAAN_PASS_RAW_CAP = 25000;
+const CHALLAN_PASS_RAW_CAP = 25000;
 const CONSIGNER_CHALLAN_RAW_CAP = 25000;
 
 function preferChallanPassRow(a, b) {
@@ -571,7 +572,7 @@ async function sumPortalPassCountForQuery(prisma, snapshotIdOrIds, query) {
   return rows.reduce((sum, row) => sum + row.challanCount, 0);
 }
 
-function mapChalaanListItem(row) {
+function mapChallanListItem(row) {
   const { consignerRow } = row;
   return {
     ...mapChallan(row),
@@ -583,7 +584,7 @@ function mapChalaanListItem(row) {
   };
 }
 
-function buildChalaanWhere(snapshotId, query) {
+function buildChallanBrowseWhere(snapshotId, query) {
   const consignerRow = { snapshotId };
   const operatorType = parseOperatorFromQuery(query);
   if (operatorType) {
@@ -634,7 +635,7 @@ function buildChalaanWhere(snapshotId, query) {
   return where;
 }
 
-function buildChalaanOrderBy(query) {
+function buildChallanBrowseOrderBy(query) {
   const sort = typeof query.sort === 'string' ? query.sort : '';
   const dir = query.dir === 'desc' ? 'desc' : 'asc';
   const slNo = { slNo: 'asc' };
@@ -666,7 +667,7 @@ function buildChalaanOrderBy(query) {
   }
 }
 
-function buildChalaanPassWhere(snapshotIdOrIds, query) {
+function buildChallanPassBrowseWhere(snapshotIdOrIds, query) {
   const consignerRow = Array.isArray(snapshotIdOrIds)
     ? { snapshotId: { in: snapshotIdOrIds } }
     : { snapshotId: snapshotIdOrIds };
@@ -729,7 +730,7 @@ function buildChalaanPassWhere(snapshotIdOrIds, query) {
   return where;
 }
 
-function buildChalaanPassOrderBy(query) {
+function buildChallanPassBrowseOrderBy(query) {
   const sort = typeof query.sort === 'string' ? query.sort : '';
   const dir = query.dir === 'desc' ? 'desc' : 'asc';
   const slNo = { slNo: 'asc' };
@@ -758,7 +759,7 @@ function buildChalaanPassOrderBy(query) {
   }
 }
 
-function compareChalaanPassRows(a, b, sort, dir) {
+function compareChallanPassBrowseRows(a, b, sort, dir) {
   const mult = dir === 'desc' ? -1 : 1;
   const slCmp = (a.slNo ?? 0) - (b.slNo ?? 0);
 
@@ -801,10 +802,10 @@ function compareChalaanPassRows(a, b, sort, dir) {
   return slCmp;
 }
 
-function sortChalaanPassRows(rows, query) {
+function sortChallanPassBrowseRows(rows, query) {
   const sort = typeof query.sort === 'string' ? query.sort : '';
   const dir = query.dir === 'desc' ? 'desc' : 'asc';
-  rows.sort((a, b) => compareChalaanPassRows(a, b, sort, dir));
+  rows.sort((a, b) => compareChallanPassBrowseRows(a, b, sort, dir));
 }
 
 function normalizeVehicleRegNo(raw) {
@@ -865,7 +866,7 @@ async function mergeStatusOnlyVehicleDataAggregates(prisma, aggMap, query) {
 }
 
 function buildVehicleDataPassWhere(snapshotIdOrIds, query) {
-  const where = buildChalaanPassWhere(snapshotIdOrIds, query);
+  const where = buildChallanPassBrowseWhere(snapshotIdOrIds, query);
   const and = [...(where.AND ?? [])];
   and.push({ vehicleRegNo: { not: null } });
   const q = parseVehicleDataSearchQuery(query);
@@ -876,7 +877,7 @@ function buildVehicleDataPassWhere(snapshotIdOrIds, query) {
   return where;
 }
 
-const CHALAAN_PASS_LIST_INCLUDE = {
+const CHALLAN_PASS_LIST_INCLUDE = {
   challanRow: {
     select: {
       detailUrl: true,
@@ -1024,7 +1025,7 @@ function sortVehicleDataAggregates(items, sort, dir) {
   });
 }
 
-function mapChalaanPassListItem(row) {
+function mapChallanPassListItem(row) {
   const { challanRow } = row;
   const { consignerRow } = challanRow;
   return {
@@ -1111,6 +1112,8 @@ router.get('/snapshots/report-dates', async (req, res) => {
       scrapedAt: true,
       sourceUrl: true,
     },
+    orderBy: { scrapedAt: 'desc' },
+    take: maxRows * 3,
   });
 
   const byDate = new Map();
@@ -1406,7 +1409,7 @@ function mapChallanPass(row) {
   };
 }
 
-router.get('/chalaan-passes', async (req, res) => {
+router.get(['/challan-passes', '/chalaan-passes'], async (req, res) => {
   const prisma = getPrisma();
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
@@ -1422,9 +1425,9 @@ router.get('/chalaan-passes', async (req, res) => {
     const rangeError = validateReportingQuery(req.query);
     if (rangeError) return res.status(400).json({ error: rangeError });
     const started = Date.now();
-    const payload = await fetchChalaanPassList(prisma, req.query);
+    const payload = await fetchChallanPassList(prisma, req.query);
     observeEpassQuery(
-      'chalaan-passes',
+      'challan-passes',
       isAllScope ? 'all' : 'range',
       (Date.now() - started) / 1000,
       payload.items.length,
@@ -1461,7 +1464,7 @@ router.get('/chalaan-passes', async (req, res) => {
         items: [],
       });
     }
-    where = buildChalaanPassWhere(snapshotIds, req.query);
+    where = buildChallanPassBrowseWhere(snapshotIds, req.query);
   } else if (useRange) {
     const resolved = await resolveSnapshotsForQuery(prisma, req.query);
     rangeSnapshots = resolved.snapshots;
@@ -1482,7 +1485,7 @@ router.get('/chalaan-passes', async (req, res) => {
         items: [],
       });
     }
-    where = buildChalaanPassWhere(snapshotIds, req.query);
+    where = buildChallanPassBrowseWhere(snapshotIds, req.query);
   } else {
     snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
     if (!snapshot) {
@@ -1498,19 +1501,19 @@ router.get('/chalaan-passes', async (req, res) => {
         items: [],
       });
     }
-    where = buildChalaanPassWhere(snapshot.id, req.query);
+    where = buildChallanPassBrowseWhere(snapshot.id, req.query);
   }
 
   const rows = await prisma.epassChallanPassRow.findMany({
     where,
-    include: CHALAAN_PASS_LIST_INCLUDE,
-    take: CHALAAN_PASS_RAW_CAP,
+    include: CHALLAN_PASS_LIST_INCLUDE,
+    take: CHALLAN_PASS_RAW_CAP,
     orderBy: [{ scrapedAt: 'desc' }, { slNo: 'asc' }],
   });
 
-  const truncated = rows.length >= CHALAAN_PASS_RAW_CAP;
+  const truncated = rows.length >= CHALLAN_PASS_RAW_CAP;
   const deduped = dedupeChallanPassRows(rows);
-  sortChalaanPassRows(deduped, req.query);
+  sortChallanPassBrowseRows(deduped, req.query);
   const total = deduped.length;
   const totalQuantity = deduped.reduce((sum, row) => sum + toNumber(row.quantity), 0);
   const page = deduped.slice(offset, offset + limit);
@@ -1559,7 +1562,7 @@ router.get('/chalaan-passes', async (req, res) => {
     incompleteScrape,
     limit,
     offset,
-    items: page.map(mapChalaanPassListItem),
+    items: page.map(mapChallanPassListItem),
   });
 });
 
@@ -1693,7 +1696,7 @@ router.get('/vehicle-data', async (req, res) => {
 
   const passRows = await prisma.epassChallanPassRow.findMany({
     where,
-    include: CHALAAN_PASS_LIST_INCLUDE,
+    include: CHALLAN_PASS_LIST_INCLUDE,
   });
 
   const aggMap = new Map();
@@ -1787,7 +1790,7 @@ router.get('/vehicle-data/:vehicleRegNo', async (req, res) => {
     prisma.epassChallanPassRow.findMany({
       where,
       orderBy: [{ transportedDate: 'desc' }, { slNo: 'asc' }],
-      include: CHALAAN_PASS_LIST_INCLUDE,
+      include: CHALLAN_PASS_LIST_INCLUDE,
     }),
     prisma.epassVehicleStatusRow.findUnique({
       where: { vehicleRegNo },
@@ -1820,7 +1823,7 @@ router.get('/vehicle-data/:vehicleRegNo', async (req, res) => {
       snapshot: null,
       reportScope: 'all',
       summary,
-      passes: passRows.map(mapChalaanPassListItem),
+      passes: passRows.map(mapChallanPassListItem),
       vehicleStatus: vehicleStatusRow ? mapVehicleStatusListItem(vehicleStatusRow) : null,
     });
   }
@@ -1833,12 +1836,12 @@ router.get('/vehicle-data/:vehicleRegNo', async (req, res) => {
       scrapedAt: snapshot.scrapedAt.toISOString(),
     },
     summary,
-    passes: passRows.map(mapChalaanPassListItem),
+    passes: passRows.map(mapChallanPassListItem),
     vehicleStatus: vehicleStatusRow ? mapVehicleStatusListItem(vehicleStatusRow) : null,
   });
 });
 
-router.get('/chalaans/:id/passes', async (req, res) => {
+router.get(['/challans/:id/passes', '/chalaans/:id/passes'], async (req, res) => {
   const prisma = getPrisma();
   const challanRowId = req.params.id;
 
@@ -1879,7 +1882,7 @@ router.get('/chalaans/:id/passes', async (req, res) => {
   });
 });
 
-router.get('/chalaans', async (req, res) => {
+router.get(['/challans', '/chalaans'], async (req, res) => {
   const prisma = getPrisma();
   const snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
 
@@ -1889,8 +1892,8 @@ router.get('/chalaans', async (req, res) => {
 
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
-  const where = buildChalaanWhere(snapshot.id, req.query);
-  const orderBy = buildChalaanOrderBy(req.query);
+  const where = buildChallanBrowseWhere(snapshot.id, req.query);
+  const orderBy = buildChallanBrowseOrderBy(req.query);
 
   const [total, rows] = await Promise.all([
     prisma.epassChallanRow.count({ where }),
@@ -1916,7 +1919,7 @@ router.get('/chalaans', async (req, res) => {
     total,
     limit,
     offset,
-    items: rows.map(mapChalaanListItem),
+    items: rows.map(mapChallanListItem),
   });
 });
 
@@ -2100,12 +2103,12 @@ router.get('/consigners/:id/challans', async (req, res) => {
   const dateMode = req.query.dateMode === 'range' ? 'range' : 'specific';
   const isAllScope = req.query.reportScope === 'all';
 
-  if (isReportingReadModelEnabled() && (isAllScope || dateMode === 'range')) {
+  if (isReportingReadModelEnabled()) {
     const started = Date.now();
     const payload = await fetchConsigneeChallans(prisma, consigner.id, req.query);
     observeEpassQuery(
       'consigners/challans',
-      isAllScope ? 'all' : 'range',
+      isAllScope ? 'all' : dateMode === 'range' ? 'range' : 'specific',
       (Date.now() - started) / 1000,
       payload.items.length,
       0,
@@ -2306,5 +2309,20 @@ router.post('/vehicle-status/scrape-missing', async (req, res) => {
     ...fanout,
   });
 });
+
+function wrapRouterAsyncHandlers(router) {
+  for (const layer of router.stack) {
+    if (!layer.route) continue;
+    for (const routeLayer of layer.route.stack) {
+      const fn = routeLayer.handle;
+      if (fn.length === 3) {
+        routeLayer.handle = asyncHandler(fn);
+      }
+    }
+  }
+  return router;
+}
+
+wrapRouterAsyncHandlers(router);
 
 export default router;

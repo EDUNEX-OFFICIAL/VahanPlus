@@ -113,7 +113,7 @@ export function buildDashboardKpis(
         label: 'Challan lines',
         value: formatCount(stats?.challanRows ?? 0),
         hint: 'Latest snapshot',
-        href: '/khanan/chalaan',
+        href: '/khanan/challan',
         accent: 'amber',
       },
       {

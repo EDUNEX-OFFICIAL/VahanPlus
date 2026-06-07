@@ -1,4 +1,4 @@
-import { buildChalaanFilterChips } from '@/components/khanan/ChalaanEpassFilters';
+import { buildChallanFilterChips } from '@/components/khanan/ChallanEpassFilters';
 import { serializeConsignerMinerals } from '@/lib/epass-consigner-view';
 import { serializeDistricts } from '@/lib/epass-district-view';
 import { parseEpassFilterParams } from '@/lib/epass-filter-params';
@@ -50,7 +50,7 @@ export function parseVehicleDataFilters(searchParams: URLSearchParams): VehicleD
 }
 
 export function buildVehicleDataFilterChips(values: VehicleDataFilterValues): string[] {
-  const chips = buildChalaanFilterChips(values.epass, {
+  const chips = buildChallanFilterChips(values.epass, {
     reportScope: values.reportScope,
   });
   if (values.portalStatus !== 'all') {

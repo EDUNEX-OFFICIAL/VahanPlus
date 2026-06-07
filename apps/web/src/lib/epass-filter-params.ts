@@ -3,7 +3,7 @@ import {
   serializeConsignerMinerals,
 } from '@/lib/epass-consigner-view';
 import { parseDistrictsParam, serializeDistricts } from '@/lib/epass-district-view';
-import type { ChalaanListParams, EpassBrowseFilterValues } from '@/lib/epass-types';
+import type { ChallanListParams, EpassBrowseFilterValues } from '@/lib/epass-types';
 import { normalizeDateRange, type EpassDateMode } from '@/lib/epass-report-date';
 import { effectiveReportScopeFromSearchParams } from '@/lib/epass-report-scope';
 import { parseOperatorParam } from '@/lib/operator';
@@ -112,7 +112,7 @@ export function buildConsigneeHref(consignerRowId: string, searchParams: URLSear
   return `/khanan/consignee${qs ? `?${qs}` : ''}`;
 }
 
-export function buildChalaanHref(
+export function buildChallanHref(
   searchParams: URLSearchParams,
   patch?: Record<string, string | null>,
 ): string {
@@ -124,7 +124,7 @@ export function buildChalaanHref(
     }
   }
   const qs = next.toString();
-  return `/khanan/chalaan${qs ? `?${qs}` : ''}`;
+  return `/khanan/challan${qs ? `?${qs}` : ''}`;
 }
 
 export function buildConsignerListHref(
@@ -177,14 +177,14 @@ export function toConsignerChallansQueryParams(
   };
 }
 
-export function toChalaanListQueryParams(
+export function toChallanListQueryParams(
   filters: EpassBrowseFilterValues,
   resolvedSnapshotId: string | null,
   sortKey: string | null,
   sortDir: 'asc' | 'desc',
   offset: number,
   limit: number,
-): ChalaanListParams {
+): ChallanListParams {
   const normalized =
     filters.dateMode === 'range'
       ? normalizeDateRange(filters.dateFrom, filters.dateTo)
@@ -205,7 +205,7 @@ export function toChalaanListQueryParams(
     destination: filters.destination.trim() || undefined,
     challan: filters.challanSearch.trim() || undefined,
     hideZeroPasses: filters.hideZeroPasses,
-    sort: sortKey as ChalaanListParams['sort'],
+    sort: sortKey as ChallanListParams['sort'],
     dir: sortKey ? sortDir : undefined,
     limit,
     offset,

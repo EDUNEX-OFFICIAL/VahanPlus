@@ -335,13 +335,13 @@ export interface EpassChallanPassDto {
   scrapedAt: string;
 }
 
-export interface ChalaanPassesResponse {
+export interface ChallanPassesResponse {
   challan: EpassChallanRowDto;
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
   items: EpassChallanPassDto[];
 }
 
-export interface EpassChalaanListItemDto extends EpassChallanRowDto {
+export interface EpassChallanListItemDto extends EpassChallanRowDto {
   consignerName: string;
   operatorType: OperatorType;
   /** @deprecated Use operatorType */
@@ -350,7 +350,7 @@ export interface EpassChalaanListItemDto extends EpassChallanRowDto {
   districtSlNo: number;
 }
 
-export interface EpassChalaanPassListItemDto extends EpassChallanPassDto {
+export interface EpassChallanPassListItemDto extends EpassChallanPassDto {
   consignerRowId: string;
   consignerName: string;
   operatorType: OperatorType;
@@ -360,15 +360,15 @@ export interface EpassChalaanPassListItemDto extends EpassChallanPassDto {
   summaryDetailUrl: string | null;
 }
 
-export interface ChalaanListResponse {
+export interface ChallanListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
   total: number;
   limit: number;
   offset: number;
-  items: EpassChalaanListItemDto[];
+  items: EpassChallanListItemDto[];
 }
 
-export interface ChalaanPassListResponse {
+export interface ChallanPassListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
   reportScope?: 'range' | 'all';
   entityCount?: number;
@@ -383,10 +383,10 @@ export interface ChalaanPassListResponse {
   incompleteScrape?: boolean;
   limit: number;
   offset: number;
-  items: EpassChalaanPassListItemDto[];
+  items: EpassChallanPassListItemDto[];
 }
 
-export type ChalaanSortKey =
+export type ChallanSortKey =
   | 'consignee'
   | 'challanNo'
   | 'mineral'
@@ -397,9 +397,9 @@ export type ChalaanSortKey =
   | 'status'
   | 'slNo';
 
-export type ChalaanSortDir = 'asc' | 'desc';
+export type ChallanSortDir = 'asc' | 'desc';
 
-export interface ChalaanListParams {
+export interface ChallanListParams {
   snapshotId?: string;
   reportScope?: 'all';
   dateMode?: 'specific' | 'range';
@@ -414,8 +414,8 @@ export interface ChalaanListParams {
   destination?: string;
   challan?: string;
   hideZeroPasses?: boolean;
-  sort?: ChalaanSortKey;
-  dir?: ChalaanSortDir;
+  sort?: ChallanSortKey;
+  dir?: ChallanSortDir;
   limit?: number;
   offset?: number;
 }
@@ -583,7 +583,7 @@ export interface VehicleDataDetailResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
   reportScope?: 'all';
   summary: VehicleDataListItemDto | null;
-  passes: EpassChalaanPassListItemDto[];
+  passes: EpassChallanPassListItemDto[];
   vehicleStatus: EpassVehicleStatusListItemDto | null;
 }
 

@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ChalaanEpassFilters } from '@/components/khanan/ChalaanEpassFilters';
+import { ChallanEpassFilters } from '@/components/khanan/ChallanEpassFilters';
 import type { ConsigneeEpassFilterExtras } from '@/components/khanan/ConsigneeEpassFilters';
 import { VehicleDataDetailDialog } from '@/components/khanan/VehicleDataDetailDialog';
 import { VehicleDataTable } from '@/components/khanan/VehicleDataTable';
@@ -457,7 +457,7 @@ function VehicleDataPageContent() {
           Search
         </Button>
       </div>
-      <ChalaanEpassFilters
+      <ChallanEpassFilters
         snapshots={snapshotsData?.items ?? []}
         minerals={minerals}
         districts={districts}

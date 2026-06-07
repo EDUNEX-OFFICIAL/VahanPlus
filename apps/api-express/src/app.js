@@ -12,6 +12,7 @@ import khananBulkRoutes from './routes/khananBulk.js';
 import crmVehicleExpiryRoutes from './routes/crmVehicleExpiry.js';
 import crmConfigRoutes from './routes/crmConfig.js';
 import dashboardRoutes from './routes/dashboard.js';
+import { isDatabaseError } from './lib/asyncHandler.js';
 
 const DEFAULT_CORS_ORIGINS = ['http://localhost:3000'];
 
@@ -79,6 +80,13 @@ export function createApp() {
   app.use((err, _req, res, _next) => {
     if (err?.message?.startsWith('CORS blocked')) {
       return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (isDatabaseError(err)) {
+      console.error('Database error:', err);
+      return res.status(503).json({
+        error: 'Database unavailable',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      });
     }
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

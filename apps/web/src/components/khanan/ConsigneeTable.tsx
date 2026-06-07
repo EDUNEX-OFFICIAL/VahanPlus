@@ -29,7 +29,7 @@ interface ConsigneeTableProps {
   sortKey?: ConsigneeSortKey | null;
   sortDir?: ConsigneeSortDir;
   onSort?: (key: ConsigneeSortKey) => void;
-  getChalaanHref?: (row: EpassChallanRowDto) => string | null;
+  getChallanHref?: (row: EpassChallanRowDto) => string | null;
 }
 
 export function ConsigneeTable({
@@ -37,7 +37,7 @@ export function ConsigneeTable({
   sortKey = null,
   sortDir = 'asc',
   onSort,
-  getChalaanHref,
+  getChallanHref,
 }: ConsigneeTableProps) {
   const sortable = Boolean(onSort);
 
@@ -75,7 +75,7 @@ export function ConsigneeTable({
     <>
       <div className="space-y-3 md:hidden">
         {rows.map((row, index) => {
-          const chalaanHref = row.challanCount > 0 && getChalaanHref ? getChalaanHref(row) : null;
+          const challanHref = row.challanCount > 0 && getChallanHref ? getChallanHref(row) : null;
           return (
             <MobileDataCard
               key={row.id}
@@ -88,9 +88,9 @@ export function ConsigneeTable({
                 </>
               }
               action={
-                chalaanHref ? (
+                challanHref ? (
                   <Link
-                    href={chalaanHref}
+                    href={challanHref}
                     className="inline-flex min-h-10 items-center rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 text-xs font-bold text-indigo-100"
                   >
                     View
@@ -102,9 +102,9 @@ export function ConsigneeTable({
                 <DataField
                   label="Passes"
                   value={
-                    chalaanHref ? (
+                    challanHref ? (
                       <Link
-                        href={chalaanHref}
+                        href={challanHref}
                         className="text-indigo-200 underline-offset-2 hover:underline"
                       >
                         {formatInt(row.challanCount)}
@@ -137,8 +137,8 @@ export function ConsigneeTable({
             </thead>
             <tbody>
               {rows.map((row, index) => {
-                const chalaanHref =
-                  row.challanCount > 0 && getChalaanHref ? getChalaanHref(row) : null;
+                const challanHref =
+                  row.challanCount > 0 && getChallanHref ? getChallanHref(row) : null;
                 return (
                   <tr
                     key={row.id}
@@ -151,9 +151,9 @@ export function ConsigneeTable({
                     <td className="px-4 py-2.5 font-medium text-white">{row.consigneeName}</td>
                     <td className="px-4 py-2.5">{normalizeMineralLabel(row.mineral)}</td>
                     <td className="px-4 py-2.5 text-right">
-                      {chalaanHref ? (
+                      {challanHref ? (
                         <Link
-                          href={chalaanHref}
+                          href={challanHref}
                           className="font-medium text-indigo-300 underline-offset-2 hover:underline tabular-nums"
                         >
                           {formatInt(row.challanCount)}

@@ -1,9 +1,9 @@
 import { apiFetch } from '@/lib/api';
 import type {
-  ChalaanListParams,
-  ChalaanListResponse,
-  ChalaanPassListResponse,
-  ChalaanPassesResponse,
+  ChallanListParams,
+  ChallanListResponse,
+  ChallanPassListResponse,
+  ChallanPassesResponse,
   EpassFilterOptionsResponse,
   VehicleDataDetailResponse,
   VehicleDataListParams,
@@ -131,7 +131,7 @@ export function fetchConsignerOptions(params: ConsignerOptionsParams = {}) {
   return apiFetch<ConsignerOptionsResponse>(`/epass/consigners/options${qs ? `?${qs}` : ''}`);
 }
 
-export function fetchChalaanList(params: ChalaanListParams = {}) {
+export function fetchChallanList(params: ChallanListParams = {}) {
   const q = new URLSearchParams();
   if (params.snapshotId) q.set('snapshotId', params.snapshotId);
   if (params.operator) q.set('operator', params.operator);
@@ -147,20 +147,20 @@ export function fetchChalaanList(params: ChalaanListParams = {}) {
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
   const qs = q.toString();
-  return apiFetch<ChalaanListResponse>(`/epass/chalaans${qs ? `?${qs}` : ''}`);
+  return apiFetch<ChallanListResponse>(`/epass/challans${qs ? `?${qs}` : ''}`);
 }
 
-export function fetchChalaanPassList(params: ChalaanListParams = {}) {
+export function fetchChallanPassList(params: ChallanListParams = {}) {
   const q = new URLSearchParams();
-  appendChalaanBrowseQuery(q, params);
+  appendChallanBrowseQuery(q, params);
   if (params.destination) q.set('destination', params.destination);
   if (params.challan) q.set('challan', params.challan);
   const qs = q.toString();
-  return apiFetch<ChalaanPassListResponse>(`/epass/chalaan-passes${qs ? `?${qs}` : ''}`);
+  return apiFetch<ChallanPassListResponse>(`/epass/challan-passes${qs ? `?${qs}` : ''}`);
 }
 
-export function fetchChalaanPasses(challanRowId: string) {
-  return apiFetch<ChalaanPassesResponse>(`/epass/chalaans/${challanRowId}/passes`);
+export function fetchChallanPasses(challanRowId: string) {
+  return apiFetch<ChallanPassesResponse>(`/epass/challans/${challanRowId}/passes`);
 }
 
 export function updateConsignerGhatNumber(consignerRowId: string, ghatNumber: string) {
@@ -184,7 +184,7 @@ type EpassPassBrowseQueryParams = {
   dateMode?: 'specific' | 'range';
   dateFrom?: string;
   dateTo?: string;
-  operator?: ChalaanListParams['operator'];
+  operator?: ChallanListParams['operator'];
   district?: string;
   dmo?: string;
   mineral?: string;
@@ -199,7 +199,7 @@ type EpassPassBrowseQueryParams = {
   offset?: number;
 };
 
-function appendChalaanBrowseQuery(q: URLSearchParams, params: EpassPassBrowseQueryParams) {
+function appendChallanBrowseQuery(q: URLSearchParams, params: EpassPassBrowseQueryParams) {
   if (params.reportScope === 'all') q.set('reportScope', 'all');
   else if (params.snapshotId) q.set('snapshotId', params.snapshotId);
   if (params.dateMode === 'range') q.set('dateMode', 'range');
@@ -222,7 +222,7 @@ function appendChalaanBrowseQuery(q: URLSearchParams, params: EpassPassBrowseQue
 
 export function fetchVehicleDataList(params: VehicleDataListParams = {}) {
   const q = new URLSearchParams();
-  appendChalaanBrowseQuery(q, params);
+  appendChallanBrowseQuery(q, params);
   const qs = q.toString();
   return apiFetch<VehicleDataListResponse>(`/epass/vehicle-data${qs ? `?${qs}` : ''}`);
 }
@@ -232,7 +232,7 @@ export function fetchVehicleDataDetail(
   params: Omit<VehicleDataListParams, 'limit' | 'offset' | 'sort' | 'dir'> = {},
 ) {
   const q = new URLSearchParams();
-  appendChalaanBrowseQuery(q, params);
+  appendChallanBrowseQuery(q, params);
   const encoded = encodeURIComponent(vehicleRegNo);
   const qs = q.toString();
   return apiFetch<VehicleDataDetailResponse>(`/epass/vehicle-data/${encoded}${qs ? `?${qs}` : ''}`);

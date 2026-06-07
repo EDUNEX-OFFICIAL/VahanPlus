@@ -10,17 +10,17 @@ import { getEpassBrowseEmptyState, isEpassBrowseEmpty } from '@/lib/epass-empty-
 import { useStaleEpassSnapshotParams } from '@/hooks/useStaleEpassSnapshotParams';
 import { ResponsivePagination } from '@/components/ui/ResponsivePagination';
 import { PageStack } from '@/components/ui/ResponsiveLayout';
-import { ChalaanEpassFilters } from '@/components/khanan/ChalaanEpassFilters';
-import { ChalaanTable } from '@/components/khanan/ChalaanTable';
+import { ChallanEpassFilters } from '@/components/khanan/ChallanEpassFilters';
+import { ChallanTable } from '@/components/khanan/ChallanTable';
 import { IncompleteScrapeBanner } from '@/components/khanan/IncompleteScrapeBanner';
 import { EpassReportMetaBar } from '@/components/khanan/EpassReportMetaBar';
 import { EpassBrowsePageLoading, EpassBrowsePageSkeleton } from '@/components/khanan/skeletons';
 import { isSnapshotResolving } from '@/lib/epass-page-loading';
-import { parseChalaanSortDir, parseChalaanSortKey } from '@/lib/epass-chalaan-view';
+import { parseChallanSortDir, parseChallanSortKey } from '@/lib/epass-challan-view';
 import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import {
   EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
-  fetchChalaanPassList,
+  fetchChallanPassList,
   fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
   fetchSnapshotDistrictRows,
@@ -28,14 +28,14 @@ import {
 import {
   parseEpassFilterParams,
   serializeEpassFilterParams,
-  toChalaanListQueryParams,
+  toChallanListQueryParams,
 } from '@/lib/epass-filter-params';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
 import { allReportsBootstrapPatch, allReportsClearPatch } from '@/lib/epass-report-scope';
 import type { ConsigneeEpassFilterExtras } from '@/components/khanan/ConsigneeEpassFilters';
 import type {
-  ChalaanSortDir,
-  ChalaanSortKey,
+  ChallanSortDir,
+  ChallanSortKey,
   EpassBrowseFilterValues,
   EpassSnapshotDto,
 } from '@/lib/epass-types';
@@ -57,10 +57,10 @@ function snapshotFromList(
   };
 }
 
-function useChalaanSortHandlers(searchParams: URLSearchParams) {
+function useChallanSortHandlers(searchParams: URLSearchParams) {
   const router = useRouter();
-  const sortKey = parseChalaanSortKey(searchParams.get('sort'));
-  const sortDir: ChalaanSortDir = parseChalaanSortDir(searchParams.get('dir'));
+  const sortKey = parseChallanSortKey(searchParams.get('sort'));
+  const sortDir: ChallanSortDir = parseChallanSortDir(searchParams.get('dir'));
 
   const updateParams = useCallback(
     (patch: Record<string, string | null>) => {
@@ -69,13 +69,13 @@ function useChalaanSortHandlers(searchParams: URLSearchParams) {
         if (value == null || value === '') next.delete(key);
         else next.set(key, value);
       }
-      router.replace(`/khanan/chalaan?${next.toString()}`);
+      router.replace(`/khanan/challan?${next.toString()}`);
     },
     [router, searchParams],
   );
 
   const handleSort = useCallback(
-    (key: ChalaanSortKey) => {
+    (key: ChallanSortKey) => {
       if (sortKey !== key) {
         updateParams({ sort: key, dir: 'asc', offset: '0' });
         return;
@@ -109,14 +109,14 @@ function useChalaanSortHandlers(searchParams: URLSearchParams) {
   return { sortKey, sortDir, updateParams, handleSort, handleApplyFilters };
 }
 
-function ChalaanPageContent() {
+function ChallanPageContent() {
   const searchParams = useSearchParams();
   const appliedFilters = useMemo(() => parseEpassFilterParams(searchParams), [searchParams]);
   const isAllReports = appliedFilters.reportScope === 'all';
   const offset = Math.max(Number(searchParams.get('offset') || '0'), 0);
   const pageSize = Math.max(Number(searchParams.get('limit') || String(PAGE_SIZE)), 10);
   const { sortKey, sortDir, updateParams, handleSort, handleApplyFilters } =
-    useChalaanSortHandlers(searchParams);
+    useChallanSortHandlers(searchParams);
 
   const {
     data: snapshotsData,
@@ -244,7 +244,7 @@ function ChalaanPageContent() {
   });
 
   const { data: districtRowsData } = useQuery({
-    queryKey: ['epass', 'snapshot-rows', snapshotId, 'chalaan-filters'],
+    queryKey: ['epass', 'snapshot-rows', snapshotId, 'challan-filters'],
     queryFn: () => {
       if (!snapshotId) throw new Error('Snapshot required');
       return fetchSnapshotDistrictRows(snapshotId);
@@ -263,7 +263,7 @@ function ChalaanPageContent() {
   }, [isRangeMode, isAllReports, rangeFilterOptions?.districts, districtRowsData?.rows]);
 
   const listParams = useMemo(
-    () => toChalaanListQueryParams(appliedFilters, snapshotId, sortKey, sortDir, offset, pageSize),
+    () => toChallanListQueryParams(appliedFilters, snapshotId, sortKey, sortDir, offset, pageSize),
     [appliedFilters, snapshotId, sortKey, sortDir, offset, pageSize],
   );
 
@@ -271,9 +271,9 @@ function ChalaanPageContent() {
     !browseEmpty && (isAllReports || (isRangeMode ? hasInRangeSnapshots : Boolean(snapshotId)));
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['epass', 'chalaan-pass-list', listParams],
+    queryKey: ['epass', 'challan-pass-list', listParams],
     queryFn: () => {
-      return fetchChalaanPassList(listParams);
+      return fetchChallanPassList(listParams);
     },
     enabled: listEnabled,
   });
@@ -348,7 +348,7 @@ function ChalaanPageContent() {
         <EpassReportMetaBar snapshot={snapshot} />
       )}
 
-      <ChalaanEpassFilters
+      <ChallanEpassFilters
         snapshots={snapshotsData?.items ?? []}
         minerals={minerals}
         districts={districts}
@@ -368,12 +368,12 @@ function ChalaanPageContent() {
           {data.incompleteScrape && data.portalPassTotal != null ? (
             <IncompleteScrapeBanner portalCount={data.portalPassTotal} storedCount={total} />
           ) : null}
-          <ChalaanTable rows={data.items} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+          <ChallanTable rows={data.items} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
           {data.items.length > 0 ? (
             <Card>
               <div className="flex flex-wrap gap-6 text-sm">
                 <p className="tabular-nums text-text-secondary">
-                  Total Chalaan: <span className="font-semibold text-white">{total}</span>
+                  Total Challan: <span className="font-semibold text-white">{total}</span>
                 </p>
                 <p className="tabular-nums text-text-secondary">
                   Total Quantity:{' '}
@@ -402,10 +402,10 @@ function ChalaanPageContent() {
   );
 }
 
-export default function ChalaanPage() {
+export default function ChallanPage() {
   return (
     <Suspense fallback={<EpassBrowsePageSkeleton />}>
-      <ChalaanPageContent />
+      <ChallanPageContent />
     </Suspense>
   );
 }

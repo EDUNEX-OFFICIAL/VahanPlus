@@ -22,7 +22,7 @@ import { collectDistricts, collectMinerals } from '@/lib/epass-district-view';
 import { applyConsigneeFilters, sortConsigneeRows } from '@/lib/epass-consignee-view';
 import { normalizeConsigneeFilterQuery } from '@/lib/epass-query-normalize';
 import {
-  buildChalaanHref,
+  buildChallanHref,
   parseEpassFilterParams,
   serializeEpassFilterParams,
   toConsignerChallansQueryParams,
@@ -47,6 +47,15 @@ import type {
 } from '@/lib/epass-types';
 
 const SNAPSHOTS_STALE_MS = 5 * 60 * 1000;
+
+const EPASS_BROWSE_QUERY_OPTS = {
+  staleTime: SNAPSHOTS_STALE_MS,
+  retry: (failureCount: number, error: Error) => failureCount < 1 && !error.message.includes('503'),
+} as const;
+
+function queryErrorMessage(error: unknown): string | undefined {
+  return error instanceof Error ? error.message : undefined;
+}
 
 function snapshotFromListItem(snap: EpassSnapshotReportDateItemDto): EpassSnapshotDto {
   return {
@@ -96,6 +105,7 @@ function ConsigneePageContent() {
     data: snapshotsData,
     isLoading: snapshotsLoading,
     isError: snapshotsError,
+    error: snapshotsQueryError,
     refetch: refetchSnapshots,
   } = useQuery({
     queryKey: EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
@@ -218,6 +228,7 @@ function ConsigneePageContent() {
     queryFn: () =>
       fetchConsignerOptions(toConsignerOptionsQueryParams(appliedFilters, resolvedSnapshotId)),
     enabled: optionsEnabled,
+    ...EPASS_BROWSE_QUERY_OPTS,
   });
 
   const { data: districtRowsData } = useQuery({
@@ -246,6 +257,7 @@ function ConsigneePageContent() {
       if (!consignerRowId) throw new Error('Consigner required');
       return fetchConsignerChallans(consignerRowId, toConsignerChallansQueryParams(appliedFilters));
     },
+    ...EPASS_BROWSE_QUERY_OPTS,
   });
 
   const displayRows = useMemo(() => {
@@ -265,12 +277,12 @@ function ConsigneePageContent() {
   const totals = useMemo(() => {
     return displayRows.reduce(
       (acc, row) => {
-        acc.totalChalaan += row.challanCount;
+        acc.totalChallan += row.challanCount;
         acc.totalPasses += row.challanCount;
         acc.totalQuantity += row.dispatchedQty;
         return acc;
       },
-      { totalChalaan: 0, totalPasses: 0, totalQuantity: 0 },
+      { totalChallan: 0, totalPasses: 0, totalQuantity: 0 },
     );
   }, [displayRows]);
 
@@ -421,14 +433,20 @@ function ConsigneePageContent() {
   const awaitingConsignerSelection =
     !browseEmpty && !consignerRowId && consignerOptionCount > 0 && !optionsQuery.isLoading;
 
-  if (snapshotsError || optionsQuery.isError || challansQuery.isError) {
+  const criticalLoadError = snapshotsError
+    ? queryErrorMessage(snapshotsQueryError)
+    : optionsEnabled && optionsQuery.isError
+      ? queryErrorMessage(optionsQuery.error)
+      : undefined;
+
+  if (criticalLoadError) {
     return (
       <PageStack>
         <DataErrorCard
+          message={criticalLoadError}
           onRetry={() => {
             void refetchSnapshots();
             void optionsQuery.refetch();
-            void challansQuery.refetch();
           }}
         />
       </PageStack>
@@ -509,7 +527,14 @@ function ConsigneePageContent() {
 
       {consignerRowId ? (
         <>
-          {challansQuery.data ? (
+          {challansQuery.isError ? (
+            <DataErrorCard
+              message={queryErrorMessage(challansQuery.error)}
+              onRetry={() => {
+                void challansQuery.refetch();
+              }}
+            />
+          ) : challansQuery.data ? (
             <>
               <h2 className="text-xl font-semibold text-white">
                 {challansQuery.data.consigner.consignerName}
@@ -548,11 +573,11 @@ function ConsigneePageContent() {
                   sortKey={sortKey}
                   sortDir={sortDir}
                   onSort={handleSort}
-                  getChalaanHref={
+                  getChallanHref={
                     challansQuery.data
                       ? (row) =>
                           row.challanCount > 0
-                            ? buildChalaanHref(searchParams, {
+                            ? buildChallanHref(searchParams, {
                                 district: challansQuery.data!.districtRow.dmoName,
                                 consigner: challansQuery.data!.consigner.consignerName,
                                 consignee: normalizeConsigneeFilterQuery(row.consigneeName),
@@ -567,8 +592,8 @@ function ConsigneePageContent() {
                 <Card>
                   <div className="flex flex-wrap gap-6 text-sm">
                     <p className="tabular-nums text-text-secondary">
-                      Total Chalaan:{' '}
-                      <span className="font-semibold text-white">{totals.totalChalaan}</span>
+                      Total Challan:{' '}
+                      <span className="font-semibold text-white">{totals.totalChallan}</span>
                     </p>
                     <p className="tabular-nums text-text-secondary">
                       Total Passes:{' '}

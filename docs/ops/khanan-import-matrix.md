@@ -14,7 +14,7 @@ Central hub: **`/khanan/import`** → `POST /epass/import/analyze` and `POST /ep
 | **Vehicle Data**   | No direct import    | —         | Weights from status rows        | Cannot aggregate passes without VRN              |
 | **Consigner**      | Ghat bulk (planned) | P1        | N/A                             | `consignerName`, `dmo`, `operator`, `ghatNumber` |
 | **Consignee**      | No                  | —         | —                               | —                                                |
-| **Chalaan**        | Defer               | P3        | `challanNo` + VRN               | High duplicate / wrong-snapshot risk             |
+| **Challan**        | Defer               | P3        | `challanNo` + VRN               | High duplicate / wrong-snapshot risk             |
 | **Khanan Config**  | No                  | —         | —                               | —                                                |
 
 ## Live import types
@@ -64,7 +64,7 @@ Central hub: **`/khanan/import`** → `POST /epass/import/analyze` and `POST /ep
 12. **UTF-8 BOM** — Stripped from first header (CSV + Excel).
 13. **Large import bodies** — `POST /epass/import/analyze` and `/commit` use 15mb JSON limit; ingress allows 20mb. Analyze sends only headers + 5 sample rows; full-file khanan stats are computed in the browser.
 
-## Chalaan / pass import
+## Challan / pass import
 
 Use **`khanan_pass`** on Import Data for Khanan Mongo/CSV exports. Template: [`khanan-import-template.csv`](khanan-import-template.csv). Sample shape: [`docs/khanan_sample_5000.json`](../khanan_sample_5000.json).
 

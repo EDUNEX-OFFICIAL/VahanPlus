@@ -5,6 +5,20 @@ const apiOrigin = process.env.API_ORIGIN || 'http://localhost:3001';
 const nextConfig: NextConfig = {
   output: 'standalone',
   transpilePackages: ['@vahanplus/contracts', '@vahanplus/rc-advance-client'],
+  async redirects() {
+    return [
+      {
+        source: '/khanan/chalaan',
+        destination: '/khanan/challan',
+        permanent: true,
+      },
+      {
+        source: '/khanan/chalaan/:path*',
+        destination: '/khanan/challan/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

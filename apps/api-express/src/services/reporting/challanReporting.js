@@ -135,7 +135,7 @@ function sortPasses(items, query) {
   });
 }
 
-export async function fetchChalaanPassList(prisma, query) {
+export async function fetchChallanPassList(prisma, query) {
   const { limit, offset } = resolvePageParams(query);
   const where = buildPassWhere(query);
 

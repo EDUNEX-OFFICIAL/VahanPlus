@@ -31,9 +31,9 @@ interface ConsigneeEpassFiltersProps {
   values: EpassBrowseFilterValues;
   onApply: (next: EpassBrowseFilterValues, extras?: ConsigneeEpassFilterExtras) => void;
   onClear: () => void;
-  /** Show challan number search (Chalaan page only). */
+  /** Show challan number search (Challan page only). */
   showChallanSearch?: boolean;
-  /** Show destination search (Chalaan + Consignee; pass-level field). */
+  /** Show destination search (Challan + Consignee; pass-level field). */
   showDestinationSearch?: boolean;
   /** Vehicle Data: allow "All reports" in date selector. */
   allowAllReports?: boolean;
@@ -90,7 +90,7 @@ export function buildConsigneeFilterChips(
   if (values.consignerSearch.trim()) chips.push(values.consignerSearch.trim());
   if (values.consigneeSearch.trim()) chips.push(`Consignee: ${values.consigneeSearch.trim()}`);
   if (values.destination.trim()) chips.push(`Destination: ${values.destination.trim()}`);
-  if (values.challanSearch.trim()) chips.push(`Chalaan: ${values.challanSearch.trim()}`);
+  if (values.challanSearch.trim()) chips.push(`Challan: ${values.challanSearch.trim()}`);
   if (values.hideZeroPasses) chips.push('No zero passes');
   if (extras?.portalStatus && extras.portalStatus !== 'all') {
     chips.push(`Portal: ${mcvPortalStatusLabel(extras.portalStatus)}`);
@@ -444,9 +444,9 @@ export function ConsigneeEpassFilters({
                   </FilterSection>
 
                   {showChallanSearch ? (
-                    <FilterSection title="Chalaan">
+                    <FilterSection title="Challan">
                       <input
-                        id="chalaan-number-search"
+                        id="challan-number-search"
                         type="search"
                         value={draft.challanSearch}
                         onChange={(e) => patch({ challanSearch: e.target.value })}

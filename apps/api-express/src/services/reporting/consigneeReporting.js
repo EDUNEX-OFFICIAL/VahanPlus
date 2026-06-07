@@ -16,29 +16,10 @@ export async function fetchConsigneeChallans(prisma, consignerRowId, query) {
     return { items: [], consigner: null };
   }
 
-  const entityPrefix = [
-    (consigner.districtRow.dmoName ?? '').toLowerCase(),
-    consigner.operatorType,
-    (consigner.consignerName ?? '')
-      .toLowerCase()
-      .replace(/-\d{5,}$/g, '')
-      .trim(),
-  ].join('|');
-
   let rows = await prisma.reportConsigneeSummary.findMany({
-    where: {
-      consignerRowId,
-      OR: [{ entityKey: { startsWith: entityPrefix } }],
-    },
+    where: { consignerRowId },
     orderBy: [{ slNo: 'asc' }],
   });
-
-  if (rows.length === 0) {
-    rows = await prisma.reportConsigneeSummary.findMany({
-      where: { consignerRowId },
-      orderBy: [{ slNo: 'asc' }],
-    });
-  }
 
   const consignee = normalizeConsigneeFilterQuery(query.consignee);
   if (consignee) {

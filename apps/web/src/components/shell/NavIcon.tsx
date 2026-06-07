@@ -23,7 +23,7 @@ const icons = {
   consignee: Shield,
   district: MapPinned,
   mineral: Gem,
-  chalaan: FileText,
+  challan: FileText,
   vehicle: Truck,
   status: CircleGauge,
   config: Settings2,

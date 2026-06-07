@@ -47,7 +47,7 @@ Implemented in `@vahanplus/report-aggregator` (`semantics.js`). APIs must not re
 - **Source:** `EpassChallanRow`
 - **Read table:** `ReportConsigneeSummary`
 
-### Chalaan pass
+### Challan pass
 
 - **Key:** pass fingerprint (reportDate, challanNo, VRN, transport date, destination, qty, unit, mineral, checkStatus, consignee)
 - **Read table:** `ReportChallanPassSummary`

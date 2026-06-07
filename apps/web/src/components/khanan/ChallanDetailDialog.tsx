@@ -4,10 +4,10 @@ import { AdaptiveDialog } from '@/components/ui/AdaptiveDialog';
 import { Button } from '@/components/ui/Button';
 import { formatQty } from '@/lib/epass-aggregate';
 import { formatOperatorType } from '@/lib/operator';
-import type { EpassChalaanPassListItemDto } from '@/lib/epass-types';
+import type { EpassChallanPassListItemDto } from '@/lib/epass-types';
 
-interface ChalaanDetailDialogProps {
-  row: EpassChalaanPassListItemDto | null;
+interface ChallanDetailDialogProps {
+  row: EpassChallanPassListItemDto | null;
   open: boolean;
   onClose: () => void;
 }
@@ -32,7 +32,7 @@ function DetailField({ label, value, wide }: { label: string; value: string; wid
   );
 }
 
-export function ChalaanDetailDialog({ row, open, onClose }: ChalaanDetailDialogProps) {
+export function ChallanDetailDialog({ row, open, onClose }: ChallanDetailDialogProps) {
   const operatorLabel = row ? formatOperatorType(row.operatorType ?? row.role) : '';
   const portalUrl = row ? (row.summaryDetailUrl ?? row.portalChallanUrl) : null;
 

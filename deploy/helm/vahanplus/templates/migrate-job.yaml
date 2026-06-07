@@ -30,11 +30,11 @@ spec:
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           workingDir: /app
           command:
-            - node
-            - node_modules/prisma/build/index.js
-            - migrate
-            - deploy
-            - --schema=packages/db/prisma/schema.prisma
+            - sh
+            - -ec
+            - |
+              node packages/db/scripts/clear-stale-migrate-lock.mjs || true
+              exec node node_modules/prisma/build/index.js migrate deploy --schema=packages/db/prisma/schema.prisma
           env:
             - name: DATABASE_URL
               valueFrom:

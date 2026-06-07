@@ -67,5 +67,5 @@ Run: `pnpm --filter @vahanplus/report-aggregator test`
 ## Invariants
 
 1. Reporting routes never load multiple snapshots at request time (post Phase 4).
-2. Summary tables updated only by `report:aggregate` worker jobs.
+2. Summary tables updated only by `report_aggregate` worker jobs.
 3. Raw snapshot tables remain append-only audit source.

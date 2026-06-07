@@ -5,7 +5,7 @@ export const QUEUE_NAMES = {
   VEHICLE: 'scrape:vehicle',
   KHANAN: 'scrape:khanan',
   SYSTEM_HEALTH: 'system:health',
-  REPORT_AGGREGATE: 'report:aggregate',
+  REPORT_AGGREGATE: 'report_aggregate',
 } as const;
 
 export type JobStatus = 'pending' | 'active' | 'completed' | 'failed';

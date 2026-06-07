@@ -98,6 +98,7 @@ export interface EpassBrowseFilterValues {
   dateTo: string;
   reportDate: string;
   snapshotId: string;
+  reportScope?: 'all' | 'specific';
   districts: string[];
   consignerSearch: string;
   hideZeroChallans: boolean;
@@ -171,6 +172,22 @@ export interface SnapshotDistrictRowsResponse {
   rows: EpassDistrictRowDto[];
 }
 
+export interface EpassAllScopeMeta {
+  snapshotCount: number;
+  totalSnapshotCount?: number;
+  snapshotsTruncated?: boolean;
+}
+
+export interface DistrictRowsBrowseResponse {
+  snapshot: null;
+  reportScope: 'all';
+  snapshotCount: number;
+  totalSnapshotCount?: number;
+  snapshotsTruncated?: boolean;
+  latestScrapedAt: string | null;
+  rows: EpassDistrictRowDto[];
+}
+
 export type DistrictSortKey = 'district' | 'totalUsers' | 'mineral' | 'passes' | 'quantity';
 
 export type DistrictSortDir = 'asc' | 'desc';
@@ -200,6 +217,11 @@ export interface EpassConsignerListItemDto extends EpassConsignerRowDto {
 
 export interface ConsignerListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
+  reportScope?: 'all';
+  snapshotCount?: number;
+  totalSnapshotCount?: number;
+  snapshotsTruncated?: boolean;
+  latestScrapedAt?: string | null;
   total: number;
   limit: number;
   offset: number;
@@ -225,6 +247,7 @@ export interface ConsignerOptionsResponse {
 
 export interface ConsignerOptionsParams {
   snapshotId?: string;
+  reportScope?: 'all';
   dateMode?: 'specific' | 'range';
   dateFrom?: string;
   dateTo?: string;
@@ -239,6 +262,7 @@ export interface ConsignerOptionsParams {
 
 export interface ConsignerChallansParams {
   snapshotId?: string;
+  reportScope?: 'all';
   dateMode?: 'specific' | 'range';
   dateFrom?: string;
   dateTo?: string;
@@ -266,6 +290,7 @@ export interface ConsignerViewFilters {
 
 export interface ConsignerListParams {
   snapshotId?: string;
+  reportScope?: 'all';
   operator?: OperatorType;
   /** @deprecated Use operator */
   role?: OperatorType;
@@ -342,8 +367,10 @@ export interface ChalaanListResponse {
 
 export interface ChalaanPassListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
-  reportScope?: 'range';
+  reportScope?: 'range' | 'all';
   snapshotCount?: number;
+  totalSnapshotCount?: number;
+  snapshotsTruncated?: boolean;
   latestScrapedAt?: string | null;
   total: number;
   totalQuantity?: number;
@@ -370,6 +397,7 @@ export type ChalaanSortDir = 'asc' | 'desc';
 
 export interface ChalaanListParams {
   snapshotId?: string;
+  reportScope?: 'all';
   dateMode?: 'specific' | 'range';
   dateFrom?: string;
   dateTo?: string;
@@ -521,6 +549,8 @@ export interface VehicleDataListResponse {
   snapshot: { id: string; reportDate: string; scrapedAt: string } | null;
   reportScope?: 'all';
   snapshotCount?: number;
+  totalSnapshotCount?: number;
+  snapshotsTruncated?: boolean;
   total: number;
   limit: number;
   offset: number;
@@ -531,6 +561,9 @@ export interface EpassFilterOptionsResponse {
   districts: string[];
   minerals: string[];
   latestScrapedAt: string | null;
+  snapshotCount?: number;
+  totalSnapshotCount?: number;
+  snapshotsTruncated?: boolean;
 }
 
 export interface VehicleStatusEnqueueResponse {

@@ -55,14 +55,20 @@ export function resolveRunStatus(
         dotClass: 'bg-amber-400',
         labelClass: 'text-amber-300',
       };
-    case 'running':
+    case 'running': {
+      const waiting = (q.waiting ?? 0) + (q.delayed ?? 0);
+      const active = q.active ?? 0;
+      const parts: string[] = [];
+      if (active > 0) parts.push(`${active} running`);
+      if (waiting > 0) parts.push(`${waiting} in queue`);
       return {
         state: 'running',
         label: 'Running',
-        detail: null,
+        detail: parts.length > 0 ? parts.join(' · ') : null,
         dotClass: 'bg-emerald-400 animate-pulse',
         labelClass: 'text-emerald-400',
       };
+    }
     default:
       return {
         state: 'idle',

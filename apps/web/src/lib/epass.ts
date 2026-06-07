@@ -23,6 +23,7 @@ import type {
   EpassSnapshotReportDatesResponse,
   LatestEpassResponse,
   OperatorType,
+  DistrictRowsBrowseResponse,
   SnapshotDistrictRowsResponse,
 } from '@/lib/epass-types';
 
@@ -46,6 +47,12 @@ export function fetchSnapshotDistrictRows(snapshotId: string) {
   return apiFetch<SnapshotDistrictRowsResponse>(`/epass/snapshots/${snapshotId}/rows`);
 }
 
+export function fetchDistrictRowsBrowse(params: { reportScope: 'all' } = { reportScope: 'all' }) {
+  const q = new URLSearchParams();
+  q.set('reportScope', params.reportScope);
+  return apiFetch<DistrictRowsBrowseResponse>(`/epass/district-rows/browse?${q.toString()}`);
+}
+
 export function fetchDistrictConsigners(districtRowId: string, operatorType: OperatorType) {
   const q = new URLSearchParams({ operator: operatorType });
   return apiFetch<DistrictConsignersResponse>(
@@ -56,7 +63,8 @@ export function fetchDistrictConsigners(districtRowId: string, operatorType: Ope
 type EpassBrowseQueryParams = ConsignerOptionsParams & ConsignerChallansParams;
 
 function appendBrowseQuery(q: URLSearchParams, params: EpassBrowseQueryParams) {
-  if (params.snapshotId) q.set('snapshotId', params.snapshotId);
+  if (params.reportScope === 'all') q.set('reportScope', 'all');
+  else if (params.snapshotId) q.set('snapshotId', params.snapshotId);
   if (params.dateMode) q.set('dateMode', params.dateMode);
   if (params.dateFrom) q.set('dateFrom', params.dateFrom);
   if (params.dateTo) q.set('dateTo', params.dateTo);
@@ -84,7 +92,8 @@ export function fetchConsignerChallans(
 
 export function fetchConsignerList(params: ConsignerListParams = {}) {
   const q = new URLSearchParams();
-  if (params.snapshotId) q.set('snapshotId', params.snapshotId);
+  if (params.reportScope === 'all') q.set('reportScope', 'all');
+  else if (params.snapshotId) q.set('snapshotId', params.snapshotId);
   const operator = params.operator ?? params.role;
   if (operator) q.set('operator', operator);
   const district = params.district ?? params.dmo;

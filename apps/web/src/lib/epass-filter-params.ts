@@ -5,6 +5,7 @@ import {
 import { parseDistrictsParam, serializeDistricts } from '@/lib/epass-district-view';
 import type { ChalaanListParams, EpassBrowseFilterValues } from '@/lib/epass-types';
 import { normalizeDateRange, type EpassDateMode } from '@/lib/epass-report-date';
+import { effectiveReportScopeFromSearchParams } from '@/lib/epass-report-scope';
 import { parseOperatorParam } from '@/lib/operator';
 
 export type { EpassBrowseFilterValues, EpassDateMode };
@@ -12,6 +13,7 @@ export type { EpassBrowseFilterValues, EpassDateMode };
 const PRESERVE_KEYS = [
   'snapshotId',
   'reportDate',
+  'reportScope',
   'dateMode',
   'dateFrom',
   'dateTo',
@@ -30,14 +32,16 @@ const PRESERVE_KEYS = [
 
 export function parseEpassFilterParams(searchParams: URLSearchParams): EpassBrowseFilterValues {
   const districtRaw = searchParams.get('district') ?? searchParams.get('dmo') ?? '';
+  const reportScope = effectiveReportScopeFromSearchParams(searchParams);
   return {
     operator: parseOperatorParam(searchParams.get('operator'), searchParams.get('role')),
     minerals: parseConsignerMineralsParam(searchParams.get('mineral')),
     dateMode: searchParams.get('dateMode') === 'range' ? 'range' : 'specific',
     dateFrom: searchParams.get('dateFrom') ?? '',
     dateTo: searchParams.get('dateTo') ?? '',
-    reportDate: searchParams.get('reportDate') ?? '',
-    snapshotId: searchParams.get('snapshotId') ?? '',
+    reportDate: reportScope === 'all' ? '' : (searchParams.get('reportDate') ?? ''),
+    snapshotId: reportScope === 'all' ? '' : (searchParams.get('snapshotId') ?? ''),
+    reportScope,
     districts: parseDistrictsParam(districtRaw),
     consignerSearch: searchParams.get('consigner') ?? '',
     hideZeroChallans: searchParams.get('hideZeroChallans') === '1',
@@ -58,10 +62,12 @@ export function serializeEpassFilterParams(
     ? normalizeDateRange(filters.dateFrom, filters.dateTo)
     : { dateFrom: filters.dateFrom, dateTo: filters.dateTo };
   const rangeActive = isRange && (normalized.dateFrom || normalized.dateTo);
+  const isAllScope = filters.reportScope === 'all' && !rangeActive;
 
   return {
-    snapshotId: rangeActive ? null : filters.snapshotId || null,
-    reportDate: rangeActive ? null : filters.reportDate || null,
+    reportScope: isAllScope ? 'all' : null,
+    snapshotId: rangeActive || isAllScope ? null : filters.snapshotId || null,
+    reportDate: rangeActive || isAllScope ? null : filters.reportDate || null,
     dateMode: filters.dateMode === 'specific' ? null : filters.dateMode,
     dateFrom: normalized.dateFrom || null,
     dateTo: normalized.dateTo || null,
@@ -140,8 +146,10 @@ export function toConsignerOptionsQueryParams(
   filters: EpassBrowseFilterValues,
   resolvedSnapshotId: string | null,
 ): Record<string, string | undefined> {
+  const isAllScope = filters.reportScope === 'all' && filters.dateMode !== 'range';
   return {
-    snapshotId: resolvedSnapshotId ?? undefined,
+    reportScope: isAllScope ? 'all' : undefined,
+    snapshotId: isAllScope ? undefined : (resolvedSnapshotId ?? undefined),
     dateMode: filters.dateMode === 'range' ? filters.dateMode : undefined,
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
@@ -156,8 +164,10 @@ export function toConsignerOptionsQueryParams(
 export function toConsignerChallansQueryParams(
   filters: EpassBrowseFilterValues,
 ): Record<string, string | undefined> {
+  const isAllScope = filters.reportScope === 'all' && filters.dateMode !== 'range';
   return {
-    snapshotId: filters.snapshotId || undefined,
+    reportScope: isAllScope ? 'all' : undefined,
+    snapshotId: isAllScope ? undefined : filters.snapshotId || undefined,
     dateMode: filters.dateMode === 'range' ? filters.dateMode : undefined,
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
@@ -180,8 +190,10 @@ export function toChalaanListQueryParams(
       ? normalizeDateRange(filters.dateFrom, filters.dateTo)
       : { dateFrom: filters.dateFrom, dateTo: filters.dateTo };
   const isRange = filters.dateMode === 'range' && (normalized.dateFrom || normalized.dateTo);
+  const isAllScope = filters.reportScope === 'all' && !isRange;
   return {
-    snapshotId: isRange ? undefined : (resolvedSnapshotId ?? undefined),
+    reportScope: isAllScope ? 'all' : undefined,
+    snapshotId: isRange || isAllScope ? undefined : (resolvedSnapshotId ?? undefined),
     dateMode: isRange ? 'range' : undefined,
     dateFrom: isRange ? normalized.dateFrom || undefined : undefined,
     dateTo: isRange ? normalized.dateTo || normalized.dateFrom || undefined : undefined,

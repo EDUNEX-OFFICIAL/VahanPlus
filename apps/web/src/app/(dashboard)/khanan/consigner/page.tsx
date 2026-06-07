@@ -38,12 +38,17 @@ import {
   EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
   fetchConsignerList,
   fetchDistrictConsigners,
+  fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
-  fetchLatestEpass,
   fetchSnapshotDistrictRows,
   updateConsignerGhatNumber,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
+import {
+  allReportsBootstrapPatch,
+  allReportsClearPatch,
+  effectiveReportScopeFromSearchParams,
+} from '@/lib/epass-report-scope';
 import { parseOperatorParam } from '@/lib/operator';
 import type {
   ConsignerSortDir,
@@ -88,14 +93,16 @@ function parseDateMode(value: string | null): ConsignerDateMode {
 
 function filtersFromParams(searchParams: URLSearchParams): ConsignerFilterValues {
   const districtRaw = searchParams.get('district') ?? searchParams.get('dmo') ?? '';
+  const reportScope = effectiveReportScopeFromSearchParams(searchParams);
   return {
     operator: parseOperatorParam(searchParams.get('operator'), searchParams.get('role')),
     minerals: parseConsignerMineralsParam(searchParams.get('mineral')),
     dateMode: parseDateMode(searchParams.get('dateMode')),
     dateFrom: searchParams.get('dateFrom') ?? '',
     dateTo: searchParams.get('dateTo') ?? '',
-    reportDate: searchParams.get('reportDate') ?? '',
-    snapshotId: searchParams.get('snapshotId') ?? '',
+    reportDate: reportScope === 'all' ? '' : (searchParams.get('reportDate') ?? ''),
+    snapshotId: reportScope === 'all' ? '' : (searchParams.get('snapshotId') ?? ''),
+    reportScope,
     districts: parseDistrictsParam(districtRaw),
     consignerSearch: searchParams.get('consigner') ?? '',
     hideZeroChallans: searchParams.get('hideZeroChallans') === '1',
@@ -108,9 +115,11 @@ function paramsFromFilters(
   sortDir: ConsignerSortDir,
   offset: number,
 ): Record<string, string | null> {
+  const isAllScope = filters.reportScope === 'all' && filters.dateMode !== 'range';
   return {
-    snapshotId: filters.snapshotId || null,
-    reportDate: filters.reportDate || null,
+    reportScope: isAllScope ? 'all' : null,
+    snapshotId: isAllScope ? null : filters.snapshotId || null,
+    reportDate: isAllScope ? null : filters.reportDate || null,
     dateMode: filters.dateMode === 'specific' ? null : filters.dateMode,
     dateFrom: filters.dateFrom || null,
     dateTo: filters.dateTo || null,
@@ -282,6 +291,10 @@ function ConsignerBrowse() {
   const searchParams = useSearchParams();
   const onSaveGhatNumber = useSaveGhatNumber();
   const appliedFilters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
+  const isAllReports = appliedFilters.reportScope === 'all';
+  const isRangeMode =
+    appliedFilters.dateMode === 'range' &&
+    Boolean(appliedFilters.dateFrom || appliedFilters.dateTo);
   const offset = Math.max(Number(searchParams.get('offset') || '0'), 0);
   const { sortKey, sortDir, updateParams, handleSort, handleApplyFilters } =
     useConsignerSortHandlers(searchParams, router);
@@ -332,14 +345,24 @@ function ConsignerBrowse() {
     appliedFilters.snapshotId || null,
     appliedFilters.reportDate || null,
     updateParams,
+    isAllReports,
   );
 
   useEffect(() => {
+    const hasScope = searchParams.has('reportScope');
+    const hasSnapshot = searchParams.has('snapshotId');
+    if (!hasScope && !hasSnapshot && !isRangeMode) {
+      updateParams(allReportsBootstrapPatch());
+    }
+  }, [searchParams, updateParams, isRangeMode]);
+
+  useEffect(() => {
+    if (isAllReports) return;
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (snapshotId) return;
     if (browseEmpty) return;
 
-    if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
+    if (isRangeMode) {
       const inRange = snapshotsForDateMode(
         snapshotsData.items,
         appliedFilters.dateMode,
@@ -350,30 +373,12 @@ function ConsignerBrowse() {
         const pick = [...inRange].sort(
           (a, b) => new Date(b.scrapedAt).getTime() - new Date(a.scrapedAt).getTime(),
         )[0];
-        updateParams({ snapshotId: pick.id, reportDate: pick.reportDate });
+        updateParams({ snapshotId: pick.id, reportDate: pick.reportDate, reportScope: null });
       }
-      return;
     }
-
-    const bootstrap = async () => {
-      try {
-        const latest = await fetchLatestEpass();
-        if (latest.snapshot) {
-          updateParams({
-            snapshotId: latest.snapshot.id,
-            reportDate: latest.snapshot.reportDate,
-          });
-        }
-      } catch {
-        const first = snapshotsData.items[0];
-        if (first) {
-          updateParams({ snapshotId: first.id, reportDate: first.reportDate });
-        }
-      }
-    };
-
-    void bootstrap();
   }, [
+    isAllReports,
+    isRangeMode,
     snapshotId,
     snapshotsLoading,
     snapshotsData,
@@ -385,6 +390,7 @@ function ConsignerBrowse() {
   ]);
 
   useEffect(() => {
+    if (isAllReports) return;
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (!appliedFilters.snapshotId) return;
     if (snapshotId === appliedFilters.snapshotId) return;
@@ -393,8 +399,23 @@ function ConsignerBrowse() {
       reportDate: snapshotId
         ? (snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null)
         : null,
+      reportScope: null,
     });
-  }, [snapshotId, appliedFilters.snapshotId, snapshotsLoading, snapshotsData, updateParams]);
+  }, [
+    isAllReports,
+    snapshotId,
+    appliedFilters.snapshotId,
+    snapshotsLoading,
+    snapshotsData,
+    updateParams,
+  ]);
+
+  const { data: allFilterOptions } = useQuery({
+    queryKey: ['epass', 'filter-options', 'all'],
+    queryFn: () => fetchEpassFilterOptions({ reportScope: 'all' }),
+    enabled: isAllReports && Boolean(snapshotsData?.items.length),
+    staleTime: SNAPSHOTS_STALE_MS,
+  });
 
   const { data: districtRowsData } = useQuery({
     queryKey: ['epass', 'snapshot-rows', snapshotId, 'minerals'],
@@ -402,18 +423,20 @@ function ConsignerBrowse() {
       if (!snapshotId) throw new Error('Snapshot required');
       return fetchSnapshotDistrictRows(snapshotId);
     },
-    enabled: Boolean(snapshotId),
+    enabled: Boolean(snapshotId) && !isAllReports,
   });
 
-  const minerals = useMemo(
-    () => (districtRowsData?.rows ? collectMinerals(districtRowsData.rows) : []),
-    [districtRowsData?.rows],
-  );
+  const minerals = useMemo(() => {
+    if (districtRowsData?.rows) return collectMinerals(districtRowsData.rows);
+    if (isAllReports) return allFilterOptions?.minerals ?? [];
+    return [];
+  }, [districtRowsData?.rows, isAllReports, allFilterOptions?.minerals]);
 
-  const districts = useMemo(
-    () => (districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : []),
-    [districtRowsData?.rows],
-  );
+  const districts = useMemo(() => {
+    if (districtRowsData?.rows) return collectDistricts(districtRowsData.rows);
+    if (isAllReports) return allFilterOptions?.districts ?? [];
+    return [];
+  }, [districtRowsData?.rows, isAllReports, allFilterOptions?.districts]);
   const pageSize = Math.max(Number(searchParams.get('limit') || String(PAGE_SIZE)), 10);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -433,7 +456,8 @@ function ConsignerBrowse() {
     ],
     queryFn: () => {
       return fetchConsignerList({
-        snapshotId: snapshotId || undefined,
+        reportScope: isAllReports ? 'all' : undefined,
+        snapshotId: isAllReports ? undefined : snapshotId || undefined,
         operator: roleFilter,
         district: serializeDistricts(appliedFilters.districts) ?? undefined,
         mineral: serializeConsignerMinerals(appliedFilters.minerals),
@@ -445,7 +469,7 @@ function ConsignerBrowse() {
         offset,
       });
     },
-    enabled: Boolean(snapshotId),
+    enabled: (isAllReports || Boolean(snapshotId)) && !browseEmpty,
   });
 
   const useGroupedView = sortKey == null || sortKey === 'district';
@@ -461,35 +485,38 @@ function ConsignerBrowse() {
   }, [displayItems, useGroupedView, sortKey, sortDir]);
 
   const handleClearFilters = useCallback(() => {
-    const latest = snapshotsData?.items[0];
     updateParams({
+      ...allReportsClearPatch(),
       role: null,
       mineral: null,
-      dateMode: null,
-      dateFrom: null,
-      dateTo: null,
       district: null,
       dmo: null,
       consigner: null,
       hideZeroChallans: null,
-      snapshotId: latest?.id ?? null,
-      reportDate: latest?.reportDate ?? null,
       sort: null,
       dir: null,
       offset: null,
     });
-  }, [snapshotsData, updateParams]);
+  }, [updateParams]);
 
   const snapshot = snapshotFromList(data?.snapshot ?? null);
   const total = data?.total ?? 0;
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
-  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, browseEmpty);
-  const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && isLoading);
+  const snapshotResolving = isSnapshotResolving(
+    snapshotsLoaded,
+    snapshotId,
+    browseEmpty,
+    isAllReports,
+  );
+  const pageLoading =
+    snapshotsLoading ||
+    snapshotResolving ||
+    ((isAllReports || Boolean(snapshotId)) && !browseEmpty && isLoading);
   const isErrorAll = snapshotsError || isError;
 
   const refetchAll = () => {
     void refetchSnapshots();
-    if (snapshotId) void refetch();
+    if (isAllReports || snapshotId) void refetch();
   };
 
   if (isErrorAll) {
@@ -507,7 +534,18 @@ function ConsignerBrowse() {
 
   return (
     <>
-      {snapshotId && snapshot ? <EpassReportMetaBar snapshot={snapshot} /> : null}
+      {isAllReports && data?.reportScope === 'all' ? (
+        <EpassReportMetaBar
+          snapshot={null}
+          reportScope="all"
+          snapshotCount={data.snapshotCount}
+          totalSnapshotCount={data.totalSnapshotCount}
+          snapshotsTruncated={data.snapshotsTruncated}
+          latestScrapedAt={data.latestScrapedAt}
+        />
+      ) : snapshotId && snapshot ? (
+        <EpassReportMetaBar snapshot={snapshot} />
+      ) : null}
 
       {snapshotsData ? (
         <ConsignerEpassFilters
@@ -517,12 +555,14 @@ function ConsignerBrowse() {
           values={appliedFilters}
           onApply={handleApplyFilters}
           onClear={handleClearFilters}
+          allowAllReports
+          reportScope={appliedFilters.reportScope ?? 'specific'}
         />
       ) : null}
 
       {browseEmpty ? <EpassEmptyState {...browseEmptyState} /> : null}
 
-      {!browseEmpty && data && snapshotId ? (
+      {!browseEmpty && data && (isAllReports || snapshotId) ? (
         <>
           {data.items.length === 0 ? (
             <EmptyStateCard message="No consigners found" />

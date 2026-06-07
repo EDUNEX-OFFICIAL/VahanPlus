@@ -17,14 +17,16 @@ import {
   canonicalTransportDate,
   isReportDateInRange,
   parseDateFlexible,
+  compareReportDates,
   parseReportDate,
   reportDateLookupVariantsInIsoRange,
 } from '../utils/epassDates.js';
 import {
-  buildVehicleStatusOrderBy,
-  buildVehicleStatusWhere,
-  mapVehicleStatusListItem,
-} from '../services/vehicleStatusList.js';
+  fetchVehicleStatusGlobalStats,
+  fetchVehicleStatusPage,
+  loadCrmLookupSets,
+} from '../services/vehicleStatusDb.js';
+import { mapVehicleStatusListItem } from '../services/vehicleStatusList.js';
 
 const router = express.Router();
 
@@ -206,6 +208,32 @@ function preferConsignerRecord(a, b) {
   return a;
 }
 
+function preferLatestScrapedConsigner(a, b) {
+  const aScraped = new Date(a.districtRow?.snapshot?.scrapedAt ?? a.scrapedAt ?? 0);
+  const bScraped = new Date(b.districtRow?.snapshot?.scrapedAt ?? b.scrapedAt ?? 0);
+  return bScraped > aScraped ? b : a;
+}
+
+/** All-reports browse: one row per consigner identity, summed challan counts. */
+function mergeConsignerRecordsForAllScope(rows) {
+  const byKey = new Map();
+  for (const row of rows) {
+    const key = consignerOptionIdentityKey(row);
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, row);
+      continue;
+    }
+    const base = preferLatestScrapedConsigner(prev, row);
+    byKey.set(key, {
+      ...base,
+      challanCount: prev.challanCount + row.challanCount,
+      _count: { challans: (prev._count?.challans ?? 0) + (row._count?.challans ?? 0) },
+    });
+  }
+  return [...byKey.values()];
+}
+
 function dedupeConsignerRecords(rows) {
   const byKey = new Map();
   for (const row of rows) {
@@ -269,6 +297,26 @@ function parseIsoDateInput(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+const ALL_SCOPE_SNAPSHOT_LIMIT = 100;
+
+async function resolveAllScopeSnapshots(prisma) {
+  const [totalSnapshotCount, snapshots] = await Promise.all([
+    prisma.epassSnapshot.count(),
+    prisma.epassSnapshot.findMany({
+      orderBy: { scrapedAt: 'desc' },
+      take: ALL_SCOPE_SNAPSHOT_LIMIT,
+    }),
+  ]);
+  return {
+    snapshots,
+    allScopeMeta: {
+      snapshotCount: snapshots.length,
+      totalSnapshotCount,
+      snapshotsTruncated: totalSnapshotCount > snapshots.length,
+    },
+  };
+}
+
 async function resolveSnapshotsForQuery(prisma, query) {
   const dateMode = query.dateMode === 'range' ? 'range' : 'specific';
 
@@ -277,31 +325,37 @@ async function resolveSnapshotsForQuery(prisma, query) {
     const to = typeof query.dateTo === 'string' ? query.dateTo : query.dateFrom || '';
     const reportDates = reportDateLookupVariantsInIsoRange(from, to);
     if (reportDates === null) {
-      return prisma.epassSnapshot.findMany({ orderBy: { scrapedAt: 'desc' } });
+      const snapshots = await prisma.epassSnapshot.findMany({ orderBy: { scrapedAt: 'desc' } });
+      return { snapshots, allScopeMeta: null };
     }
-    if (reportDates.length === 0) return [];
+    if (reportDates.length === 0) return { snapshots: [], allScopeMeta: null };
     const snapshots = await prisma.epassSnapshot.findMany({
       where: { reportDate: { in: reportDates } },
       orderBy: { scrapedAt: 'desc' },
     });
-    return snapshots.filter((s) => isReportDateInRange(s.reportDate, from || null, to || null));
+    return {
+      snapshots: snapshots.filter((s) =>
+        isReportDateInRange(s.reportDate, from || null, to || null),
+      ),
+      allScopeMeta: null,
+    };
+  }
+
+  if (query.reportScope === 'all') {
+    return resolveAllScopeSnapshots(prisma);
   }
 
   const all = await prisma.epassSnapshot.findMany({
     orderBy: { scrapedAt: 'desc' },
-    take: 100,
+    take: ALL_SCOPE_SNAPSHOT_LIMIT,
   });
-
-  if (query.reportScope === 'all') {
-    return all;
-  }
 
   if (query.snapshotId) {
     const one = all.find((s) => s.id === query.snapshotId);
-    return one ? [one] : [];
+    return { snapshots: one ? [one] : [], allScopeMeta: null };
   }
 
-  return all.length > 0 ? [all[0]] : [];
+  return { snapshots: all.length > 0 ? [all[0]] : [], allScopeMeta: null };
 }
 
 function buildConsignerWhereForSnapshots(snapshotIds, query) {
@@ -1068,10 +1122,7 @@ router.get('/snapshots/report-dates', async (req, res) => {
   }
 
   const items = [...byDate.values()]
-    .sort((a, b) => {
-      if (a.reportDate === b.reportDate) return 0;
-      return a.reportDate < b.reportDate ? 1 : -1;
-    })
+    .sort((a, b) => compareReportDates(b.reportDate, a.reportDate))
     .slice(0, maxRows);
 
   res.json({
@@ -1105,6 +1156,64 @@ router.get('/snapshots', async (req, res) => {
       rowCount: s._count.rows,
       jobId: s.jobId,
     })),
+  });
+});
+
+function latestScrapedAtFromSnapshots(snapshots) {
+  if (!snapshots.length) return null;
+  return snapshots.reduce(
+    (latest, s) => (s.scrapedAt > latest ? s.scrapedAt : latest),
+    snapshots[0].scrapedAt,
+  );
+}
+
+function spreadAllScopeMeta(allScopeMeta) {
+  if (!allScopeMeta) return {};
+  return {
+    snapshotCount: allScopeMeta.snapshotCount,
+    totalSnapshotCount: allScopeMeta.totalSnapshotCount,
+    snapshotsTruncated: allScopeMeta.snapshotsTruncated,
+  };
+}
+
+router.get('/district-rows/browse', async (req, res) => {
+  const prisma = getPrisma();
+  if (req.query.reportScope !== 'all') {
+    return res.status(400).json({ error: 'reportScope=all is required' });
+  }
+
+  const { snapshots, allScopeMeta } = await resolveSnapshotsForQuery(prisma, req.query);
+  const snapshotIds = snapshots.map((s) => s.id);
+  if (snapshotIds.length === 0) {
+    return res.json({
+      snapshot: null,
+      reportScope: 'all',
+      snapshotCount: 0,
+      totalSnapshotCount: 0,
+      snapshotsTruncated: false,
+      latestScrapedAt: null,
+      rows: [],
+    });
+  }
+
+  const rows = await prisma.epassDistrictRow.findMany({
+    where: { snapshotId: { in: snapshotIds } },
+    orderBy: [{ snapshotId: 'asc' }, { slNo: 'asc' }],
+  });
+
+  const consignerCounts = await buildConsignerCountMap(
+    prisma,
+    rows.map((r) => r.id),
+  );
+
+  const latestScrapedAt = latestScrapedAtFromSnapshots(snapshots);
+
+  res.json({
+    snapshot: null,
+    reportScope: 'all',
+    latestScrapedAt: latestScrapedAt?.toISOString() ?? null,
+    ...spreadAllScopeMeta(allScopeMeta),
+    rows: rows.map((r) => mapRow(r, consignerCounts)),
   });
 });
 
@@ -1288,16 +1397,44 @@ router.get('/chalaan-passes', async (req, res) => {
   const offset = Math.max(Number(req.query.offset) || 0, 0);
 
   const dateMode = req.query.dateMode === 'range' ? 'range' : 'specific';
+  const isAllScope = req.query.reportScope === 'all';
   const useRange =
+    !isAllScope &&
     dateMode === 'range' &&
     (typeof req.query.dateFrom === 'string' || typeof req.query.dateTo === 'string');
 
   let snapshot = null;
   let rangeSnapshots = [];
+  let allScopeMeta = null;
   let where;
 
-  if (useRange) {
-    rangeSnapshots = await resolveSnapshotsForQuery(prisma, req.query);
+  if (isAllScope) {
+    const resolved = await resolveSnapshotsForQuery(prisma, req.query);
+    rangeSnapshots = resolved.snapshots;
+    allScopeMeta = resolved.allScopeMeta;
+    const snapshotIds = rangeSnapshots.map((s) => s.id);
+    if (snapshotIds.length === 0) {
+      return res.json({
+        snapshot: null,
+        reportScope: 'all',
+        snapshotCount: 0,
+        totalSnapshotCount: 0,
+        snapshotsTruncated: false,
+        latestScrapedAt: null,
+        total: 0,
+        totalQuantity: 0,
+        truncated: false,
+        portalPassTotal: null,
+        incompleteScrape: false,
+        limit,
+        offset,
+        items: [],
+      });
+    }
+    where = buildChalaanPassWhere(snapshotIds, req.query);
+  } else if (useRange) {
+    const resolved = await resolveSnapshotsForQuery(prisma, req.query);
+    rangeSnapshots = resolved.snapshots;
     const snapshotIds = rangeSnapshots.map((s) => s.id);
     if (snapshotIds.length === 0) {
       return res.json({
@@ -1348,7 +1485,8 @@ router.get('/chalaan-passes', async (req, res) => {
   const totalQuantity = deduped.reduce((sum, row) => sum + toNumber(row.quantity), 0);
   const page = deduped.slice(offset, offset + limit);
 
-  const snapshotIdsForPortalTotal = useRange ? rangeSnapshots.map((s) => s.id) : snapshot.id;
+  const snapshotIdsForPortalTotal =
+    isAllScope || useRange ? rangeSnapshots.map((s) => s.id) : snapshot.id;
   const portalPassTotal = await sumPortalPassCountForQuery(
     prisma,
     snapshotIdsForPortalTotal,
@@ -1358,28 +1496,32 @@ router.get('/chalaan-passes', async (req, res) => {
     portalPassTotal != null && portalPassTotal > 0 && total < portalPassTotal;
 
   const latestScrapedAt =
-    useRange && rangeSnapshots.length > 0
-      ? rangeSnapshots.reduce(
-          (latest, s) => (s.scrapedAt > latest ? s.scrapedAt : latest),
-          rangeSnapshots[0].scrapedAt,
-        )
+    (isAllScope || useRange) && rangeSnapshots.length > 0
+      ? latestScrapedAtFromSnapshots(rangeSnapshots)
       : null;
 
   res.json({
-    snapshot: useRange
-      ? null
-      : {
-          id: snapshot.id,
-          reportDate: snapshot.reportDate,
-          scrapedAt: snapshot.scrapedAt.toISOString(),
-        },
-    ...(useRange
+    snapshot:
+      useRange || isAllScope
+        ? null
+        : {
+            id: snapshot.id,
+            reportDate: snapshot.reportDate,
+            scrapedAt: snapshot.scrapedAt.toISOString(),
+          },
+    ...(isAllScope
       ? {
-          reportScope: 'range',
-          snapshotCount: rangeSnapshots.length,
+          reportScope: 'all',
           latestScrapedAt: latestScrapedAt?.toISOString() ?? null,
+          ...spreadAllScopeMeta(allScopeMeta),
         }
-      : {}),
+      : useRange
+        ? {
+            reportScope: 'range',
+            snapshotCount: rangeSnapshots.length,
+            latestScrapedAt: latestScrapedAt?.toISOString() ?? null,
+          }
+        : {}),
     total,
     totalQuantity,
     truncated,
@@ -1397,10 +1539,17 @@ router.get('/filter-options', async (req, res) => {
     return res.status(400).json({ error: 'reportScope=all is required' });
   }
 
-  const snapshots = await resolveSnapshotsForQuery(prisma, req.query);
+  const { snapshots, allScopeMeta } = await resolveSnapshotsForQuery(prisma, req.query);
   const snapshotIds = snapshots.map((s) => s.id);
   if (snapshotIds.length === 0) {
-    return res.json({ districts: [], minerals: [], latestScrapedAt: null });
+    return res.json({
+      districts: [],
+      minerals: [],
+      latestScrapedAt: null,
+      snapshotCount: 0,
+      totalSnapshotCount: 0,
+      snapshotsTruncated: false,
+    });
   }
 
   const districtRows = await prisma.epassDistrictRow.findMany({
@@ -1420,6 +1569,7 @@ router.get('/filter-options', async (req, res) => {
     districts: [...districtSet].sort((a, b) => a.localeCompare(b)),
     minerals: [...mineralSet].sort((a, b) => a.localeCompare(b)),
     latestScrapedAt: snapshots[0]?.scrapedAt?.toISOString() ?? null,
+    ...spreadAllScopeMeta(allScopeMeta),
   });
 });
 
@@ -1437,14 +1587,19 @@ router.get('/vehicle-data', async (req, res) => {
   let snapshotIds = [];
   let where;
 
+  let allScopeMeta = null;
+
   if (isAllScope) {
-    const snapshots = await resolveSnapshotsForQuery(prisma, req.query);
-    snapshotIds = snapshots.map((s) => s.id);
+    const resolved = await resolveSnapshotsForQuery(prisma, req.query);
+    snapshotIds = resolved.snapshots.map((s) => s.id);
+    allScopeMeta = resolved.allScopeMeta;
     if (snapshotIds.length === 0) {
       return res.json({
         snapshot: null,
         reportScope: 'all',
         snapshotCount: 0,
+        totalSnapshotCount: 0,
+        snapshotsTruncated: false,
         total: 0,
         limit,
         offset,
@@ -1487,11 +1642,11 @@ router.get('/vehicle-data', async (req, res) => {
     return res.json({
       snapshot: null,
       reportScope: 'all',
-      snapshotCount: snapshotIds.length,
       total,
       limit,
       offset,
       items,
+      ...spreadAllScopeMeta(allScopeMeta),
     });
   }
 
@@ -1520,7 +1675,7 @@ router.get('/vehicle-data/:vehicleRegNo', async (req, res) => {
   let passWhereBase;
 
   if (isAllScope) {
-    const snapshots = await resolveSnapshotsForQuery(prisma, req.query);
+    const { snapshots } = await resolveSnapshotsForQuery(prisma, req.query);
     const snapshotIds = snapshots.map((s) => s.id);
     if (snapshotIds.length === 0) {
       return res.json({
@@ -1691,7 +1846,7 @@ router.get('/chalaans', async (req, res) => {
 
 router.get('/consigners/options', async (req, res) => {
   const prisma = getPrisma();
-  const snapshots = await resolveSnapshotsForQuery(prisma, req.query);
+  const { snapshots } = await resolveSnapshotsForQuery(prisma, req.query);
 
   if (snapshots.length === 0) {
     return res.json({ snapshot: null, items: [] });
@@ -1742,17 +1897,65 @@ router.get('/consigners/options', async (req, res) => {
 
 router.get('/consigners', async (req, res) => {
   const prisma = getPrisma();
+  const isAllScope = req.query.reportScope === 'all';
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
+  const orderBy = buildConsignerOrderBy(req.query);
+
+  if (isAllScope) {
+    const { snapshots, allScopeMeta } = await resolveSnapshotsForQuery(prisma, req.query);
+    const snapshotIds = snapshots.map((s) => s.id);
+    if (snapshotIds.length === 0) {
+      return res.json({
+        snapshot: null,
+        reportScope: 'all',
+        snapshotCount: 0,
+        totalSnapshotCount: 0,
+        snapshotsTruncated: false,
+        latestScrapedAt: null,
+        total: 0,
+        limit,
+        offset,
+        items: [],
+      });
+    }
+
+    const where = buildConsignerWhereForSnapshots(snapshotIds, req.query);
+    const allMatching = await prisma.epassConsignerRow.findMany({
+      where,
+      orderBy,
+      include: {
+        districtRow: {
+          include: { snapshot: { select: { scrapedAt: true } } },
+        },
+        _count: { select: { challans: true } },
+        ...CONSIGNER_GHAT_CHALLAN_INCLUDE,
+      },
+    });
+
+    const merged = mergeConsignerRecordsForAllScope(allMatching);
+    const page = merged.slice(offset, offset + limit);
+    const latestScrapedAt = latestScrapedAtFromSnapshots(snapshots);
+
+    return res.json({
+      snapshot: null,
+      reportScope: 'all',
+      latestScrapedAt: latestScrapedAt?.toISOString() ?? null,
+      total: merged.length,
+      limit,
+      offset,
+      items: page.map(mapConsignerListItem),
+      ...spreadAllScopeMeta(allScopeMeta),
+    });
+  }
+
   const snapshot = await resolveSnapshot(prisma, req.query.snapshotId);
 
   if (!snapshot) {
-    return res.json({ snapshot: null, total: 0, items: [] });
+    return res.json({ snapshot: null, total: 0, limit, offset, items: [] });
   }
 
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
-  const offset = Math.max(Number(req.query.offset) || 0, 0);
   const where = buildConsignerWhere(snapshot.id, req.query);
-
-  const orderBy = buildConsignerOrderBy(req.query);
 
   const allMatching = await prisma.epassConsignerRow.findMany({
     where,
@@ -1792,14 +1995,16 @@ router.get('/consigners/:id/challans', async (req, res) => {
   }
 
   const dateMode = req.query.dateMode === 'range' ? 'range' : 'specific';
+  const isAllScope = req.query.reportScope === 'all';
   const useRange =
+    !isAllScope &&
     dateMode === 'range' &&
     (typeof req.query.dateFrom === 'string' || typeof req.query.dateTo === 'string');
 
   let consignerRowIds = [consigner.id];
 
-  if (useRange) {
-    const snapshots = await resolveSnapshotsForQuery(prisma, req.query);
+  if (isAllScope || useRange) {
+    const { snapshots } = await resolveSnapshotsForQuery(prisma, req.query);
     const snapshotIds = snapshots.map((s) => s.id);
     if (snapshotIds.length > 0) {
       const siblings = await prisma.epassConsignerRow.findMany({
@@ -1919,84 +2124,33 @@ router.get('/vehicle-status', async (req, res) => {
   const prisma = getPrisma();
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 1000);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
-  const where = buildVehicleStatusWhere(req.query);
-  const orderBy = buildVehicleStatusOrderBy(req.query);
-
-  const [rows, statsTotal, statsFound, statsNotFound, latestRow] = await Promise.all([
-    prisma.epassVehicleStatusRow.findMany({ where, orderBy }),
-    prisma.epassVehicleStatusRow.count(),
-    prisma.epassVehicleStatusRow.count({ where: { found: true } }),
-    prisma.epassVehicleStatusRow.count({ where: { found: false } }),
-    prisma.epassVehicleStatusRow.findFirst({
-      orderBy: { scrapedAt: 'desc' },
-      select: { scrapedAt: true },
-    }),
-  ]);
   const includeCrm = req.query.includeCrm === '1' || req.query.includeCrm === 'true';
-  let crmManualActive = null;
-  let crmSuppressed = null;
-  if (includeCrm) {
-    const crmRows = await prisma.crmVehicleExpiryEntry.findMany({
-      where: {
-        OR: [{ status: 'active', source: 'manual' }, { status: 'removed' }],
-      },
-      select: { vehicleRegNo: true, status: true, source: true },
-    });
-    crmManualActive = new Set();
-    crmSuppressed = new Set();
-    for (const entry of crmRows) {
-      if (entry.status === 'removed') crmSuppressed.add(entry.vehicleRegNo);
-      if (entry.status === 'active' && entry.source === 'manual') {
-        crmManualActive.add(entry.vehicleRegNo);
-      }
-    }
-  }
 
-  let mapped = rows.map((row) => {
+  const [pageResult, stats, crmLookup] = await Promise.all([
+    fetchVehicleStatusPage(prisma, req.query, { limit, offset }),
+    fetchVehicleStatusGlobalStats(prisma),
+    includeCrm ? loadCrmLookupSets(prisma) : Promise.resolve(null),
+  ]);
+
+  const items = pageResult.rows.map((row) => {
     const item = mapVehicleStatusListItem(row);
-    if (!includeCrm) return item;
-    const inCrmManual = crmManualActive.has(row.vehicleRegNo);
-    const suppressed = crmSuppressed.has(row.vehicleRegNo);
+    if (!crmLookup) return item;
+    const inCrmManual = crmLookup.manualActive.has(row.vehicleRegNo);
+    const suppressed = crmLookup.suppressed.has(row.vehicleRegNo);
     const autoQualifies =
       !suppressed &&
       ((item.insuranceDaysLeft != null && item.insuranceDaysLeft <= 30) ||
         (item.rcDaysLeft != null && item.rcDaysLeft <= 30) ||
         (item.fitnessDaysLeft != null && item.fitnessDaysLeft <= 30));
-    return {
-      ...item,
-      inCrm: inCrmManual || autoQualifies,
-    };
+    return { ...item, inCrm: inCrmManual || autoQualifies };
   });
-  const insuranceExpiryDays = Number(req.query.insuranceExpiryDays);
-  const rcExpiryDays = Number(req.query.rcExpiryDays);
-  const fitnessExpiryDays = Number(req.query.fitnessExpiryDays);
-  if (Number.isFinite(insuranceExpiryDays)) {
-    mapped = mapped.filter(
-      (r) => r.insuranceDaysLeft != null && r.insuranceDaysLeft <= insuranceExpiryDays,
-    );
-  }
-  if (Number.isFinite(rcExpiryDays)) {
-    mapped = mapped.filter((r) => r.rcDaysLeft != null && r.rcDaysLeft <= rcExpiryDays);
-  }
-  if (Number.isFinite(fitnessExpiryDays)) {
-    mapped = mapped.filter(
-      (r) => r.fitnessDaysLeft != null && r.fitnessDaysLeft <= fitnessExpiryDays,
-    );
-  }
-  const total = mapped.length;
-  const pageItems = mapped.slice(offset, offset + limit);
 
   res.json({
-    total,
+    total: pageResult.total,
     limit,
     offset,
-    items: pageItems,
-    stats: {
-      total: statsTotal,
-      found: statsFound,
-      notFound: statsNotFound,
-      lastScrapedAt: latestRow?.scrapedAt?.toISOString() ?? null,
-    },
+    items,
+    stats,
   });
 });
 

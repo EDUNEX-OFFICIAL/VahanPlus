@@ -405,7 +405,7 @@ router.get('/live', async (_req, res) => {
   const status = await buildStatus(prisma);
 
   const snapshots = await prisma.epassSnapshot.findMany({
-    orderBy: [{ reportDate: 'desc' }, { scrapedAt: 'desc' }],
+    orderBy: { scrapedAt: 'desc' },
     take: 8,
     select: {
       id: true,

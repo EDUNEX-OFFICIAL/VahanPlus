@@ -13,6 +13,13 @@ const REPORT_MONTHS = {
   dec: 11,
 };
 
+export function compareReportDates(a, b) {
+  const da = parseReportDate(a);
+  const db = parseReportDate(b);
+  if (da && db) return da.getTime() - db.getTime();
+  return String(a).localeCompare(String(b));
+}
+
 export function parseReportDate(value) {
   const m = /^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/.exec(String(value).trim());
   if (!m) return null;

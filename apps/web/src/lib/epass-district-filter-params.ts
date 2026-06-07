@@ -4,6 +4,7 @@ import type {
 } from '@/components/khanan/DistrictEpassFilters';
 import { parseDistrictsParam, serializeDistricts } from '@/lib/epass-district-view';
 import type { DistrictSortDir, DistrictSortKey } from '@/lib/epass-types';
+import { effectiveReportScopeFromSearchParams } from '@/lib/epass-report-scope';
 import { parseOperatorParam } from '@/lib/operator';
 
 export function parseDistrictSortKey(value: string | null): DistrictSortKey | null {
@@ -29,14 +30,16 @@ export function parseDateMode(value: string | null): DistrictDateMode {
 }
 
 export function districtFiltersFromParams(searchParams: URLSearchParams): DistrictFilterValues {
+  const reportScope = effectiveReportScopeFromSearchParams(searchParams);
   return {
     operator: parseOperatorParam(searchParams.get('operator'), searchParams.get('role')),
     minerals: parseMineralsParam(searchParams.get('mineral')),
     dateMode: parseDateMode(searchParams.get('dateMode')),
     dateFrom: searchParams.get('dateFrom') ?? '',
     dateTo: searchParams.get('dateTo') ?? '',
-    reportDate: searchParams.get('reportDate') ?? '',
-    snapshotId: searchParams.get('snapshotId') ?? '',
+    reportDate: reportScope === 'all' ? '' : (searchParams.get('reportDate') ?? ''),
+    snapshotId: reportScope === 'all' ? '' : (searchParams.get('snapshotId') ?? ''),
+    reportScope,
     districts: parseDistrictsParam(searchParams.get('district')),
     hideZeroPasses: searchParams.get('hideZeroPasses') === '1',
   };
@@ -47,14 +50,16 @@ export function districtParamsFromFilters(
   sortKey: DistrictSortKey | null,
   sortDir: DistrictSortDir,
 ): Record<string, string | null> {
+  const isAllScope = filters.reportScope === 'all' && filters.dateMode !== 'range';
   return {
-    snapshotId: filters.snapshotId || null,
+    reportScope: isAllScope ? 'all' : null,
+    snapshotId: isAllScope ? null : filters.snapshotId || null,
     operator: filters.operator === 'all' ? null : filters.operator,
     mineral: serializeMinerals(filters.minerals),
     dateMode: filters.dateMode === 'specific' ? null : filters.dateMode,
     dateFrom: filters.dateFrom || null,
     dateTo: filters.dateTo || null,
-    reportDate: filters.reportDate || null,
+    reportDate: isAllScope ? null : filters.reportDate || null,
     district: serializeDistricts(filters.districts),
     hideZeroPasses: filters.hideZeroPasses ? '1' : null,
     sort: sortKey,

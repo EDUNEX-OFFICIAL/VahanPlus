@@ -5,6 +5,20 @@ import { config } from '../config.js';
 
 const router = express.Router();
 
+/** Reused for readiness probes — avoids connect/disconnect per /ready hit. */
+let readinessRedis = null;
+
+function getReadinessRedis() {
+  if (!readinessRedis) {
+    readinessRedis = new Redis(config.redisUrl, {
+      maxRetriesPerRequest: 1,
+      lazyConnect: true,
+      enableOfflineQueue: false,
+    });
+  }
+  return readinessRedis;
+}
+
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'api-express' });
 });
@@ -20,15 +34,13 @@ router.get('/ready', async (_req, res) => {
     checks.postgres = false;
   }
 
-  const redis = new Redis(config.redisUrl, { maxRetriesPerRequest: 1, lazyConnect: true });
+  const redis = getReadinessRedis();
   try {
-    await redis.connect();
+    if (redis.status !== 'ready') await redis.connect();
     await redis.ping();
     checks.redis = true;
   } catch {
     checks.redis = false;
-  } finally {
-    redis.disconnect();
   }
 
   const ready = checks.postgres && checks.redis;

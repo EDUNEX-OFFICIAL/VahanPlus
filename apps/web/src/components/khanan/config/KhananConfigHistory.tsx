@@ -16,7 +16,6 @@ import {
   HISTORY_SHOW_MORE_STEP,
   sliceForHistoryPreview,
 } from '@/lib/khanan-config-history-view';
-import { formatJobStatusLabel } from '@/lib/scraper-config-labels';
 import {
   SCRAPER_SNAPSHOT_HISTORY_QUERY_KEY,
   fetchScraperSnapshotHistory,
@@ -45,24 +44,47 @@ function districtHref(row: LiveSnapshotRow): string {
   return `/khanan/district?${params.toString()}`;
 }
 
-function StatusChips({ status }: { status: ScraperConfigStatus }) {
-  const counts = status.scrapeJobsByStatus ?? {};
-  const chips = [
-    { key: 'completed', label: formatJobStatusLabel('completed'), tone: 'emerald' as const },
-    { key: 'failed', label: formatJobStatusLabel('failed'), tone: 'red' as const },
-    { key: 'pending', label: formatJobStatusLabel('pending'), tone: 'amber' as const },
-    { key: 'active', label: formatJobStatusLabel('active'), tone: 'amber' as const },
-  ].filter((c) => (counts[c.key] ?? 0) > 0);
+/** Current BullMQ queue — what is in line / running right now (not lifetime DB totals). */
+function QueueStatusChips({
+  status,
+  scrapeActive,
+}: {
+  status: ScraperConfigStatus;
+  scrapeActive: boolean;
+}) {
+  const q = status.queue;
+  const waiting = q.waiting ?? 0;
+  const active = q.active ?? 0;
+  const delayed = q.delayed ?? 0;
+  const inQueue = waiting + delayed;
+
+  if (!scrapeActive && inQueue === 0 && active === 0) return null;
+
+  const chips: Array<{ key: string; label: string; tone: 'amber' | 'emerald' }> = [];
+  if (inQueue > 0) {
+    chips.push({ key: 'queue', label: `In queue: ${formatCount(inQueue)}`, tone: 'amber' });
+  }
+  if (active > 0) {
+    chips.push({ key: 'active', label: `Running: ${formatCount(active)}`, tone: 'emerald' });
+  }
+  if (chips.length === 0 && scrapeActive) {
+    chips.push({ key: 'busy', label: 'Finishing up…', tone: 'amber' });
+  }
 
   if (chips.length === 0) return null;
 
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {chips.map((chip) => (
-        <Chip key={chip.key} tone={chip.tone}>
-          {chip.label}: {counts[chip.key]}
-        </Chip>
-      ))}
+    <div className="mt-3 space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <Chip key={chip.key} tone={chip.tone}>
+            {chip.label}
+          </Chip>
+        ))}
+      </div>
+      <p className="text-xs text-text-secondary">
+        Queue status for the current scrape session — not total rows scraped.
+      </p>
     </div>
   );
 }
@@ -171,12 +193,15 @@ export function KhananConfigHistory({ status, scrapeActive = false }: Props) {
   return (
     <Card>
       <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary">History</h3>
-      <StatusChips status={status} />
+      <QueueStatusChips status={status} scrapeActive={scrapeActive} />
 
       <div className="mt-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary">
           Scrape runs
         </h4>
+        <p className="mt-1 text-xs text-text-secondary">
+          Completed report dates — sorted by most recently scraped.
+        </p>
         <div className="mt-3">
           {snapshotsLoading ? (
             <HistorySkeleton />

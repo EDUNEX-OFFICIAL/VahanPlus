@@ -25,11 +25,13 @@ import {
 } from '@/lib/epass-district-view';
 import {
   EPASS_SNAPSHOT_REPORT_DATES_QUERY_KEY,
+  fetchDistrictRowsBrowse,
+  fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
-  fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
+import { allReportsBootstrapPatch, allReportsClearPatch } from '@/lib/epass-report-scope';
 import type { DistrictSortDir, DistrictSortKey } from '@/lib/epass-types';
 import {
   districtFiltersFromParams,
@@ -44,6 +46,10 @@ function DistrictPageContent() {
   const searchParams = useSearchParams();
 
   const appliedFilters = useMemo(() => districtFiltersFromParams(searchParams), [searchParams]);
+  const isAllReports = appliedFilters.reportScope === 'all';
+  const isRangeMode =
+    appliedFilters.dateMode === 'range' &&
+    Boolean(appliedFilters.dateFrom || appliedFilters.dateTo);
   const sortKey = parseDistrictSortKey(searchParams.get('sort'));
   const sortDir: DistrictSortDir = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
 
@@ -103,7 +109,28 @@ function DistrictPageContent() {
     appliedFilters.snapshotId || null,
     appliedFilters.reportDate || null,
     updateParams,
+    isAllReports,
   );
+
+  useEffect(() => {
+    const hasScope = searchParams.has('reportScope');
+    const hasSnapshot = searchParams.has('snapshotId');
+    if (!hasScope && !hasSnapshot && !isRangeMode) {
+      updateParams(allReportsBootstrapPatch());
+    }
+  }, [searchParams, updateParams, isRangeMode]);
+
+  const {
+    data: allRowsData,
+    isLoading: allRowsLoading,
+    isError: allRowsError,
+    refetch: refetchAllRows,
+  } = useQuery({
+    queryKey: ['epass', 'district-rows-browse'],
+    queryFn: () => fetchDistrictRowsBrowse({ reportScope: 'all' }),
+    enabled: isAllReports && !browseEmpty,
+    staleTime: SNAPSHOTS_STALE_MS,
+  });
 
   const {
     data: rowsData,
@@ -116,15 +143,23 @@ function DistrictPageContent() {
       if (!snapshotId) throw new Error('Snapshot required');
       return fetchSnapshotDistrictRows(snapshotId);
     },
-    enabled: Boolean(snapshotId),
+    enabled: Boolean(snapshotId) && !isAllReports,
+  });
+
+  const { data: allFilterOptions } = useQuery({
+    queryKey: ['epass', 'filter-options', 'all'],
+    queryFn: () => fetchEpassFilterOptions({ reportScope: 'all' }),
+    enabled: isAllReports && Boolean(snapshotsData?.items.length),
+    staleTime: SNAPSHOTS_STALE_MS,
   });
 
   useEffect(() => {
+    if (isAllReports) return;
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (snapshotId) return;
     if (browseEmpty) return;
 
-    if (appliedFilters.dateMode === 'range' && (appliedFilters.dateFrom || appliedFilters.dateTo)) {
+    if (isRangeMode) {
       const inRange = snapshotsForDateMode(
         snapshotsData.items,
         appliedFilters.dateMode,
@@ -135,30 +170,13 @@ function DistrictPageContent() {
         const pick = [...inRange].sort(
           (a, b) => new Date(b.scrapedAt).getTime() - new Date(a.scrapedAt).getTime(),
         )[0];
-        updateParams({ snapshotId: pick.id, reportDate: pick.reportDate });
+        updateParams({ snapshotId: pick.id, reportDate: pick.reportDate, reportScope: null });
       }
       return;
     }
-
-    const bootstrap = async () => {
-      try {
-        const latest = await fetchLatestEpass();
-        if (latest.snapshot) {
-          updateParams({
-            snapshotId: latest.snapshot.id,
-            reportDate: latest.snapshot.reportDate,
-          });
-        }
-      } catch {
-        const first = snapshotsData.items[0];
-        if (first) {
-          updateParams({ snapshotId: first.id, reportDate: first.reportDate });
-        }
-      }
-    };
-
-    void bootstrap();
   }, [
+    isAllReports,
+    isRangeMode,
     snapshotId,
     snapshotsLoading,
     snapshotsData,
@@ -170,6 +188,7 @@ function DistrictPageContent() {
   ]);
 
   useEffect(() => {
+    if (isAllReports) return;
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (!appliedFilters.snapshotId) return;
     if (snapshotId === appliedFilters.snapshotId) return;
@@ -178,23 +197,38 @@ function DistrictPageContent() {
       reportDate: snapshotId
         ? (snapshotsData.items.find((s) => s.id === snapshotId)?.reportDate ?? null)
         : null,
+      reportScope: null,
     });
-  }, [snapshotId, appliedFilters.snapshotId, snapshotsLoading, snapshotsData, updateParams]);
+  }, [
+    isAllReports,
+    snapshotId,
+    appliedFilters.snapshotId,
+    snapshotsLoading,
+    snapshotsData,
+    updateParams,
+  ]);
 
-  const minerals = useMemo(
-    () => (rowsData?.rows ? collectMinerals(rowsData.rows) : []),
-    [rowsData?.rows],
-  );
+  const sourceRows = isAllReports ? allRowsData?.rows : rowsData?.rows;
 
-  const districts = useMemo(
-    () => (rowsData?.rows ? collectDistricts(rowsData.rows) : []),
-    [rowsData?.rows],
-  );
+  const minerals = useMemo(() => {
+    if (sourceRows?.length) return collectMinerals(sourceRows);
+    if (isAllReports) return allFilterOptions?.minerals ?? [];
+    return [];
+  }, [sourceRows, isAllReports, allFilterOptions?.minerals]);
+
+  const districts = useMemo(() => {
+    if (sourceRows?.length) return collectDistricts(sourceRows);
+    if (isAllReports) return allFilterOptions?.districts ?? [];
+    return [];
+  }, [sourceRows, isAllReports, allFilterOptions?.districts]);
 
   const displayRows = useMemo(() => {
-    if (!snapshotId || browseEmpty || !rowsData?.rows) return [];
+    const canShow = isAllReports
+      ? !browseEmpty && sourceRows
+      : snapshotId && !browseEmpty && sourceRows;
+    if (!canShow || !sourceRows) return [];
     const aggregated = aggregateDistrictRowsByDmo(
-      rowsData.rows,
+      sourceRows,
       appliedFilters.operator,
       appliedFilters.minerals,
     );
@@ -204,7 +238,7 @@ function DistrictPageContent() {
       hideZeroPasses: appliedFilters.hideZeroPasses,
     });
     return sortDistrictRows(filtered, sortKey, sortDir);
-  }, [rowsData?.rows, appliedFilters, sortKey, sortDir, snapshotId, browseEmpty]);
+  }, [sourceRows, appliedFilters, sortKey, sortDir, snapshotId, browseEmpty, isAllReports]);
 
   const handleApplyFilters = useCallback(
     (next: DistrictFilterValues) => {
@@ -215,21 +249,16 @@ function DistrictPageContent() {
   );
 
   const handleClearFilters = useCallback(() => {
-    const latest = snapshotsData?.items[0];
     updateParams({
+      ...allReportsClearPatch(),
       operator: null,
       mineral: null,
-      dateMode: null,
-      dateFrom: null,
-      dateTo: null,
       district: null,
       hideZeroPasses: null,
-      snapshotId: latest?.id ?? null,
-      reportDate: latest?.reportDate ?? null,
       sort: null,
       dir: null,
     });
-  }, [snapshotsData, updateParams]);
+  }, [updateParams]);
 
   const handleSort = useCallback(
     (key: DistrictSortKey) => {
@@ -247,12 +276,22 @@ function DistrictPageContent() {
   );
 
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
-  const snapshotResolving = isSnapshotResolving(snapshotsLoaded, snapshotId, browseEmpty);
-  const pageLoading = snapshotsLoading || snapshotResolving || (Boolean(snapshotId) && rowsLoading);
-  const isError = snapshotsError || rowsError;
+  const snapshotResolving = isSnapshotResolving(
+    snapshotsLoaded,
+    snapshotId,
+    browseEmpty,
+    isAllReports,
+  );
+  const rowsQueryLoading = isAllReports ? allRowsLoading : rowsLoading;
+  const pageLoading =
+    snapshotsLoading ||
+    snapshotResolving ||
+    ((isAllReports || Boolean(snapshotId)) && !browseEmpty && rowsQueryLoading);
+  const isError = snapshotsError || rowsError || allRowsError;
   const refetch = () => {
     void refetchSnapshots();
-    if (snapshotId) void refetchRows();
+    if (isAllReports) void refetchAllRows();
+    else if (snapshotId) void refetchRows();
   };
 
   if (isError) {
@@ -265,7 +304,16 @@ function DistrictPageContent() {
 
   return (
     <PageStack>
-      {snapshotId && rowsData?.snapshot ? (
+      {isAllReports && allRowsData ? (
+        <EpassReportMetaBar
+          snapshot={null}
+          reportScope="all"
+          snapshotCount={allRowsData.snapshotCount}
+          totalSnapshotCount={allRowsData.totalSnapshotCount}
+          snapshotsTruncated={allRowsData.snapshotsTruncated}
+          latestScrapedAt={allRowsData.latestScrapedAt}
+        />
+      ) : snapshotId && rowsData?.snapshot ? (
         <EpassReportMetaBar snapshot={rowsData.snapshot} />
       ) : null}
 
@@ -277,6 +325,8 @@ function DistrictPageContent() {
           values={appliedFilters}
           onApply={handleApplyFilters}
           onClear={handleClearFilters}
+          allowAllReports
+          reportScope={appliedFilters.reportScope ?? 'specific'}
         />
       ) : null}
 

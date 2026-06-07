@@ -3,6 +3,8 @@ export function isSnapshotResolving(
   snapshotsLoaded: boolean,
   resolvedSnapshotId: string | null,
   noSnapshotsInRange: boolean,
+  reportScopeAll = false,
 ): boolean {
+  if (reportScopeAll) return false;
   return snapshotsLoaded && !resolvedSnapshotId && !noSnapshotsInRange;
 }

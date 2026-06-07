@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 import { Card } from '@/components/ui/Card';
 import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
 import { auditLiveScrapeDates, type LiveScrapeDateAudit } from '@/lib/live-scrape-date-audit';
-import { compareReportDates } from '@/lib/epass-report-date';
 import type {
   LiveSnapshotRow,
   ScraperConfigStatus,
@@ -268,10 +267,14 @@ function IdleSummary({ status }: { status: ScraperConfigStatus }) {
 }
 
 function LiveDetail({ live }: { live: ScraperLiveResponse }) {
-  const recentSnapshots = useMemo(
-    () => withDateAudit(live.snapshots.slice(0, LIVE_SNAPSHOT_LIMIT)),
-    [live.snapshots],
-  );
+  const recentSnapshots = useMemo(() => {
+    const audited = withDateAudit(live.snapshots);
+    return audited
+      .sort((a, b) => new Date(b.scrapedAt).getTime() - new Date(a.scrapedAt).getTime())
+      .slice(0, LIVE_SNAPSHOT_LIMIT);
+  }, [live.snapshots]);
+
+  const latestRow = recentSnapshots[0] ?? null;
 
   const grouped = useMemo(() => {
     if (!recentSnapshots.length) return [];
@@ -283,9 +286,9 @@ function LiveDetail({ live }: { live: ScraperLiveResponse }) {
       byDate.set(key, list);
     }
     return [...byDate.entries()].sort((a, b) => {
-      const sampleA = a[1][0]?.reportDate ?? '';
-      const sampleB = b[1][0]?.reportDate ?? '';
-      return compareReportDates(sampleB, sampleA);
+      const latestA = Math.max(...a[1].map((r) => new Date(r.scrapedAt).getTime()));
+      const latestB = Math.max(...b[1].map((r) => new Date(r.scrapedAt).getTime()));
+      return latestB - latestA;
     });
   }, [recentSnapshots]);
 
@@ -302,6 +305,26 @@ function LiveDetail({ live }: { live: ScraperLiveResponse }) {
 
   return (
     <div className="mt-5 space-y-5">
+      {latestRow ? (
+        <div
+          className={cn(
+            'rounded-xl border border-emerald-500/25 border-l-[3px] bg-emerald-500/5 p-4',
+            accentClass(latestRow.dateAudit.status),
+          )}
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-200/90">
+            Latest update
+          </p>
+          <p className="mt-1 text-xl font-semibold text-white">
+            {latestRow.dateAudit.reportDateDisplay}
+          </p>
+          <p className="mt-2 flex items-center gap-2 text-sm text-text-secondary">
+            <Clock className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+            <time dateTime={latestRow.scrapedAt}>{latestRow.dateAudit.scrapedAtDisplay}</time>
+          </p>
+        </div>
+      ) : null}
+
       <MetricsGrid totals={overallTotals} />
 
       <div className="space-y-5">
@@ -311,7 +334,7 @@ function LiveDetail({ live }: { live: ScraperLiveResponse }) {
       </div>
 
       <p className="text-center text-xs text-text-secondary">
-        Showing latest {recentSnapshots.length} of {live.snapshots.length} updates
+        Showing latest {recentSnapshots.length} of {live.snapshots.length} updates (by scrape time)
       </p>
     </div>
   );
@@ -367,6 +390,13 @@ export function KhananConfigLiveScrape({ status, scrapeActive, live, loading }: 
 
   const showLive = live && live.snapshots.length > 0;
   const updateCount = live?.snapshots.length ?? 0;
+  const latestLiveSnapshot = live?.snapshots.reduce<LiveSnapshotRow | null>((best, row) => {
+    if (!best || new Date(row.scrapedAt) > new Date(best.scrapedAt)) return row;
+    return best;
+  }, null);
+  const latestLiveAudit = latestLiveSnapshot
+    ? auditLiveScrapeDates(latestLiveSnapshot.reportDate, latestLiveSnapshot.scrapedAt)
+    : null;
 
   return (
     <Card className="relative overflow-hidden border-emerald-500/25" aria-live="polite">
@@ -374,9 +404,11 @@ export function KhananConfigLiveScrape({ status, scrapeActive, live, loading }: 
       <SectionHeader
         title="Live activity"
         subtitle={
-          showLive
-            ? `${Math.min(updateCount, LIVE_SNAPSHOT_LIMIT)} recent updates`
-            : 'Starting scrape'
+          showLive && latestLiveAudit
+            ? `Latest: ${latestLiveAudit.reportDateDisplay} · ${latestLiveAudit.scrapedAtDisplay}`
+            : showLive
+              ? `${Math.min(updateCount, LIVE_SNAPSHOT_LIMIT)} recent updates`
+              : 'Starting scrape'
         }
         live
       />

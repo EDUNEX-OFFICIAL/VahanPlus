@@ -1,0 +1,42 @@
+# k3s on Linux VPS (Hostinger) — reuse production DB/Redis secrets.
+# Do NOT use host.docker.internal (Docker Desktop only; fails on Linux k3s).
+#
+# Install:
+#   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+#   helm upgrade --install vahanplus-local deploy/helm/vahanplus \
+#     -n vahanplus -f deploy/helm/vahanplus/values-local-k3s-vps.yaml
+#
+global:
+  imagePullPolicy: IfNotPresent
+
+apiExpress:
+  replicaCount: 1
+  image: vahanplus-api-express:latest
+
+web:
+  replicaCount: 1
+  image: vahanplus-web:latest
+
+worker:
+  replicaCount: 1
+  image: vahanplus-worker:latest
+  browserPoolStub: true
+
+ingress:
+  enabled: false
+
+networkPolicy:
+  enabled: false
+
+hpa:
+  enabled: false
+
+migrate:
+  enabled: false
+
+monitoring:
+  serviceMonitor:
+    enabled: false
+
+secrets:
+  existingSecret: vahanplus-app-secrets

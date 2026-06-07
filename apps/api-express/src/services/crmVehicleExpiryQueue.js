@@ -1,6 +1,10 @@
 import { normalizeVehicleRegNo } from '@vahanplus/scraper-bihar-epass';
 import {
-  buildVehicleStatusWhere,
+  fetchAutoQualifyingStatusRows,
+  fetchLatestVehicleStatusScrapedAt,
+  fetchStatusRowsForVrns,
+} from './vehicleStatusDb.js';
+import {
   mapVehicleStatusListItem,
   matchesAnyExpiryThreshold,
   sortVehicleStatusItems,
@@ -54,33 +58,35 @@ export async function buildActiveCrmQueue(prisma, query, thresholds) {
   const rcDays = thresholds.rcExpiryDays;
   const fitnessDays = thresholds.fitnessExpiryDays;
 
-  const where = buildVehicleStatusWhere(query);
-  const [statusRows, crmEntries, latestRow] = await Promise.all([
-    prisma.epassVehicleStatusRow.findMany({ where }),
+  const [crmEntries, lastScrapedAt, autoRows] = await Promise.all([
     prisma.crmVehicleExpiryEntry.findMany(),
-    prisma.epassVehicleStatusRow.findFirst({
-      orderBy: { scrapedAt: 'desc' },
-      select: { scrapedAt: true },
-    }),
+    fetchLatestVehicleStatusScrapedAt(prisma),
+    fetchAutoQualifyingStatusRows(
+      prisma,
+      query,
+      { insuranceExpiryDays: insuranceDays, rcExpiryDays: rcDays, fitnessExpiryDays: fitnessDays },
+      [],
+    ),
   ]);
 
   const crmByVrn = new Map(crmEntries.map((e) => [e.vehicleRegNo, e]));
+  const removedVrns = crmEntries.filter((e) => e.status === 'removed').map((e) => e.vehicleRegNo);
+
+  const suppressed = new Set(removedVrns);
   const queue = [];
   const seen = new Set();
 
-  for (const row of statusRows) {
+  for (const row of autoRows) {
+    if (suppressed.has(row.vehicleRegNo)) continue;
     const item = mapVehicleStatusListItem(row);
     const crm = crmByVrn.get(row.vehicleRegNo);
-    const suppressed = crm?.status === 'removed';
     const manualActive = crm?.status === 'active' && crm?.source === 'manual';
     const autoQualifies = matchesAnyExpiryThreshold(item, insuranceDays, rcDays, fitnessDays);
+    if (!autoQualifies) continue;
 
-    if (!manualActive && (!autoQualifies || suppressed)) continue;
-
-    const crmSource = resolveCrmSource(manualActive, autoQualifies);
     queue.push({
       ...item,
-      crmSource,
+      crmSource: resolveCrmSource(manualActive, autoQualifies),
       crmStatus: 'active',
       crmEntryId: crm?.id ?? null,
       notes: crm?.notes ?? null,
@@ -94,9 +100,7 @@ export async function buildActiveCrmQueue(prisma, query, thresholds) {
   if (manualPending.length > 0) {
     const manualVrns = manualPending.map((e) => e.vehicleRegNo);
     const [manualFilteredRows, allManualRows] = await Promise.all([
-      prisma.epassVehicleStatusRow.findMany({
-        where: { AND: [where, { vehicleRegNo: { in: manualVrns } }] },
-      }),
+      fetchStatusRowsForVrns(prisma, query, manualVrns),
       prisma.epassVehicleStatusRow.findMany({
         where: { vehicleRegNo: { in: manualVrns } },
       }),
@@ -130,28 +134,22 @@ export async function buildActiveCrmQueue(prisma, query, thresholds) {
     }
   }
 
-  return { queue, lastScrapedAt: latestRow?.scrapedAt?.toISOString() ?? null };
+  return { queue, lastScrapedAt };
 }
 
 export async function buildRemovedCrmQueue(prisma, query) {
-  const where = buildVehicleStatusWhere(query);
-  const [removedEntries, latestRow] = await Promise.all([
+  const [removedEntries, lastScrapedAt] = await Promise.all([
     prisma.crmVehicleExpiryEntry.findMany({ where: { status: 'removed' } }),
-    prisma.epassVehicleStatusRow.findFirst({
-      orderBy: { scrapedAt: 'desc' },
-      select: { scrapedAt: true },
-    }),
+    fetchLatestVehicleStatusScrapedAt(prisma),
   ]);
 
   const queue = [];
   const removedVrns = removedEntries.map((e) => e.vehicleRegNo);
-  let allRemovedRows = [];
   let filteredRemovedRows = [];
+  let allRemovedRows = [];
   if (removedVrns.length > 0) {
     [filteredRemovedRows, allRemovedRows] = await Promise.all([
-      prisma.epassVehicleStatusRow.findMany({
-        where: { AND: [where, { vehicleRegNo: { in: removedVrns } }] },
-      }),
+      fetchStatusRowsForVrns(prisma, query, removedVrns),
       prisma.epassVehicleStatusRow.findMany({
         where: { vehicleRegNo: { in: removedVrns } },
       }),
@@ -176,7 +174,7 @@ export async function buildRemovedCrmQueue(prisma, query) {
     });
   }
 
-  return { queue, lastScrapedAt: latestRow?.scrapedAt?.toISOString() ?? null };
+  return { queue, lastScrapedAt };
 }
 
 export function applyCrmQueueFilters(queue, query) {

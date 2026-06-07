@@ -9,10 +9,12 @@ export function useStaleEpassSnapshotParams(
   snapshotId: string | null,
   reportDate: string | null,
   updateParams: (patch: Record<string, string | null>) => void,
+  reportScopeAll = false,
 ) {
   useEffect(() => {
+    if (reportScopeAll) return;
     if (!snapshotsLoaded || snapshotCount > 0) return;
     if (!snapshotId && !reportDate) return;
     updateParams({ snapshotId: null, reportDate: null });
-  }, [snapshotsLoaded, snapshotCount, snapshotId, reportDate, updateParams]);
+  }, [snapshotsLoaded, snapshotCount, snapshotId, reportDate, updateParams, reportScopeAll]);
 }

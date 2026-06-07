@@ -5,6 +5,22 @@ function toNumber(value) {
   return Number(value);
 }
 
+export function parseExpiryDaysParams(query) {
+  const insuranceExpiryDays = Number(query.insuranceExpiryDays);
+  const rcExpiryDays = Number(query.rcExpiryDays);
+  const fitnessExpiryDays = Number(query.fitnessExpiryDays);
+  return {
+    insuranceDays: Number.isFinite(insuranceExpiryDays) ? insuranceExpiryDays : null,
+    rcDays: Number.isFinite(rcExpiryDays) ? rcExpiryDays : null,
+    fitnessDays: Number.isFinite(fitnessExpiryDays) ? fitnessExpiryDays : null,
+  };
+}
+
+export function hasExpiryDayFilters(query) {
+  const { insuranceDays, rcDays, fitnessDays } = parseExpiryDaysParams(query);
+  return insuranceDays != null || rcDays != null || fitnessDays != null;
+}
+
 export function buildVehicleStatusWhere(query) {
   const where = {};
   const q = typeof query.q === 'string' ? query.q.trim() : '';

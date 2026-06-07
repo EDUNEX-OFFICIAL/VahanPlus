@@ -34,10 +34,11 @@ import {
   fetchConsignerOptions,
   fetchEpassFilterOptions,
   fetchEpassSnapshotReportDates,
-  fetchLatestEpass,
   fetchSnapshotDistrictRows,
 } from '@/lib/epass';
 import { resolveSnapshotIdForDateFilters, snapshotsForDateMode } from '@/lib/epass-report-date';
+import { allReportsBootstrapPatch, allReportsClearPatch } from '@/lib/epass-report-scope';
+import type { ConsigneeEpassFilterExtras } from '@/components/khanan/ConsigneeEpassFilters';
 import type {
   ConsigneeSortDir,
   ConsigneeSortKey,
@@ -62,6 +63,7 @@ function ConsigneePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const appliedFilters = useMemo(() => parseEpassFilterParams(searchParams), [searchParams]);
+  const isAllReports = appliedFilters.reportScope === 'all';
   const consignerRowId = appliedFilters.consignerRowId;
 
   const [sortKey, setSortKey] = useState<ConsigneeSortKey | null>(null);
@@ -146,46 +148,27 @@ function ConsigneePageContent() {
     appliedFilters.snapshotId || null,
     appliedFilters.reportDate || null,
     updateParams,
+    isAllReports,
   );
 
   useEffect(() => {
+    const hasScope = searchParams.has('reportScope');
+    const hasSnapshot = searchParams.has('snapshotId');
+    if (!hasScope && !hasSnapshot && !isRangeMode) {
+      updateParams(allReportsBootstrapPatch());
+    }
+  }, [searchParams, updateParams, isRangeMode]);
+
+  useEffect(() => {
+    if (isAllReports) return;
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (resolvedSnapshotId) return;
     if (browseEmpty) return;
-
     if (isRangeMode) return;
-
-    const bootstrap = async () => {
-      try {
-        const latest = await fetchLatestEpass();
-        if (latest.snapshot) {
-          updateParams({
-            snapshotId: latest.snapshot.id,
-            reportDate: latest.snapshot.reportDate,
-          });
-        }
-      } catch {
-        const first = snapshotsData.items[0];
-        if (first) {
-          updateParams({ snapshotId: first.id, reportDate: first.reportDate });
-        }
-      }
-    };
-
-    void bootstrap();
-  }, [
-    snapshotsLoading,
-    snapshotsData,
-    resolvedSnapshotId,
-    browseEmpty,
-    updateParams,
-    appliedFilters.dateMode,
-    appliedFilters.dateFrom,
-    appliedFilters.dateTo,
-    isRangeMode,
-  ]);
+  }, [isAllReports, snapshotsLoading, snapshotsData, resolvedSnapshotId, browseEmpty, isRangeMode]);
 
   useEffect(() => {
+    if (isAllReports) return;
     if (isRangeMode) return;
     if (snapshotsLoading || !snapshotsData?.items.length) return;
     if (!appliedFilters.snapshotId) return;
@@ -196,8 +179,10 @@ function ConsigneePageContent() {
         ? (snapshotsData.items.find((s) => s.id === resolvedSnapshotId)?.reportDate ?? null)
         : null,
       consignerRowId: resolvedSnapshotId ? consignerRowId : null,
+      reportScope: null,
     });
   }, [
+    isAllReports,
     resolvedSnapshotId,
     appliedFilters.snapshotId,
     snapshotsLoading,
@@ -220,16 +205,16 @@ function ConsigneePageContent() {
   const { data: rangeFilterOptions } = useQuery({
     queryKey: ['epass', 'filter-options', filterOptionsParams],
     queryFn: () => fetchEpassFilterOptions(filterOptionsParams),
-    enabled: isRangeMode && Boolean(snapshotsData?.items.length),
+    enabled: (isRangeMode || isAllReports) && Boolean(snapshotsData?.items.length),
     staleTime: SNAPSHOTS_STALE_MS,
   });
 
-  const optionsEnabled = isRangeMode
-    ? hasInRangeSnapshots && !browseEmpty
-    : Boolean(resolvedSnapshotId) && !browseEmpty;
+  const optionsEnabled =
+    !browseEmpty &&
+    (isAllReports || (isRangeMode ? hasInRangeSnapshots : Boolean(resolvedSnapshotId)));
 
   const optionsQuery = useQuery({
-    queryKey: ['epass', 'consigner-options', resolvedSnapshotId, appliedFilters],
+    queryKey: ['epass', 'consigner-options', isAllReports, resolvedSnapshotId, appliedFilters],
     queryFn: () =>
       fetchConsignerOptions(toConsignerOptionsQueryParams(appliedFilters, resolvedSnapshotId)),
     enabled: optionsEnabled,
@@ -241,18 +226,18 @@ function ConsigneePageContent() {
       if (!resolvedSnapshotId) throw new Error('Snapshot required');
       return fetchSnapshotDistrictRows(resolvedSnapshotId);
     },
-    enabled: Boolean(resolvedSnapshotId) && !isRangeMode,
+    enabled: Boolean(resolvedSnapshotId) && !isRangeMode && !isAllReports,
   });
 
   const minerals = useMemo(() => {
-    if (isRangeMode) return rangeFilterOptions?.minerals ?? [];
+    if (isRangeMode || isAllReports) return rangeFilterOptions?.minerals ?? [];
     return districtRowsData?.rows ? collectMinerals(districtRowsData.rows) : [];
-  }, [isRangeMode, rangeFilterOptions?.minerals, districtRowsData?.rows]);
+  }, [isRangeMode, isAllReports, rangeFilterOptions?.minerals, districtRowsData?.rows]);
 
   const districts = useMemo(() => {
-    if (isRangeMode) return rangeFilterOptions?.districts ?? [];
+    if (isRangeMode || isAllReports) return rangeFilterOptions?.districts ?? [];
     return districtRowsData?.rows ? collectDistricts(districtRowsData.rows) : [];
-  }, [isRangeMode, rangeFilterOptions?.districts, districtRowsData?.rows]);
+  }, [isRangeMode, isAllReports, rangeFilterOptions?.districts, districtRowsData?.rows]);
 
   const challansQuery = useQuery({
     queryKey: ['epass', 'challans', consignerRowId, appliedFilters],
@@ -290,21 +275,22 @@ function ConsigneePageContent() {
   }, [displayRows]);
 
   const handleApplyFilters = useCallback(
-    (next: typeof appliedFilters) => {
-      updateParams(serializeEpassFilterParams(next));
+    (next: typeof appliedFilters, extras?: ConsigneeEpassFilterExtras) => {
+      const nextReportScope = extras?.reportScope ?? next.reportScope ?? 'specific';
+      updateParams({
+        ...serializeEpassFilterParams({ ...next, reportScope: nextReportScope }),
+        reportScope: nextReportScope === 'all' ? 'all' : null,
+      });
     },
     [updateParams],
   );
 
   const handleClearFilters = useCallback(() => {
-    const latest = snapshotsData?.items[0];
     updateParams({
+      ...allReportsClearPatch(),
       operator: null,
       role: null,
       mineral: null,
-      dateMode: null,
-      dateFrom: null,
-      dateTo: null,
       district: null,
       consigner: null,
       consignee: null,
@@ -312,10 +298,8 @@ function ConsigneePageContent() {
       hideZeroPasses: null,
       destination: null,
       consignerRowId: null,
-      snapshotId: latest?.id ?? null,
-      reportDate: latest?.reportDate ?? null,
     });
-  }, [snapshotsData, updateParams]);
+  }, [updateParams]);
 
   // Clear consigner when it no longer matches filtered options
   useEffect(() => {
@@ -414,9 +398,21 @@ function ConsigneePageContent() {
     appliedFilters.dateTo,
   ]);
 
+  const allReportsMeta = useMemo(() => {
+    if (!isAllReports || !rangeFilterOptions) return null;
+    return {
+      snapshotCount: rangeFilterOptions.snapshotCount ?? 0,
+      totalSnapshotCount: rangeFilterOptions.totalSnapshotCount,
+      snapshotsTruncated: rangeFilterOptions.snapshotsTruncated,
+      latestScrapedAt: rangeFilterOptions.latestScrapedAt ?? null,
+    };
+  }, [isAllReports, rangeFilterOptions]);
+
   const snapshotsLoaded = Boolean(snapshotsData?.items.length) && !snapshotsLoading;
   const snapshotResolving =
-    !isRangeMode && isSnapshotResolving(snapshotsLoaded, resolvedSnapshotId, browseEmpty);
+    !isRangeMode &&
+    !isAllReports &&
+    isSnapshotResolving(snapshotsLoaded, resolvedSnapshotId, browseEmpty);
   const pageLoading =
     snapshotsLoading ||
     snapshotResolving ||
@@ -452,12 +448,23 @@ function ConsigneePageContent() {
 
   return (
     <PageStack>
-      {isRangeMode && rangeMeta ? (
+      {isAllReports && allReportsMeta ? (
         <EpassReportMetaBar
           snapshot={null}
           reportScope="all"
+          snapshotCount={allReportsMeta.snapshotCount}
+          totalSnapshotCount={allReportsMeta.totalSnapshotCount}
+          snapshotsTruncated={allReportsMeta.snapshotsTruncated}
+          latestScrapedAt={allReportsMeta.latestScrapedAt}
+        />
+      ) : isRangeMode && rangeMeta ? (
+        <EpassReportMetaBar
+          snapshot={null}
+          reportScope="range"
           snapshotCount={rangeMeta.snapshotCount}
           latestScrapedAt={rangeMeta.latestScrapedAt}
+          dateFrom={appliedFilters.dateFrom}
+          dateTo={appliedFilters.dateTo}
         />
       ) : metaSnapshot ? (
         <EpassReportMetaBar snapshot={metaSnapshot} />
@@ -471,6 +478,8 @@ function ConsigneePageContent() {
           values={appliedFilters}
           onApply={handleApplyFilters}
           onClear={handleClearFilters}
+          allowAllReports
+          reportScope={appliedFilters.reportScope ?? 'specific'}
         />
       ) : null}
 

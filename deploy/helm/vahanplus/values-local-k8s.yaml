@@ -1,4 +1,5 @@
 # Docker Desktop Kubernetes — local staging (no Ingress controller required).
+# On Linux k3s VPS use values-local-k3s-vps.yaml instead (host.docker.internal does not resolve).
 global:
   # IfNotPresent: use images built with `docker build` while Kubernetes is running (Docker Desktop shares them with kind).
   imagePullPolicy: IfNotPresent

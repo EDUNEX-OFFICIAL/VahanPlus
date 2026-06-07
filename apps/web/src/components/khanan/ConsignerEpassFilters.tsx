@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FilterDropdownPanel } from '@/components/ui/AdaptiveFilterSheet';
 import { Button } from '@/components/ui/Button';
 import { formatMineralLabel } from '@/lib/epass-district-view';
+import { ALL_REPORTS_SNAPSHOT_ID } from '@/components/khanan/ConsigneeEpassFilters';
 import { ReportDateYearSelect } from '@/components/khanan/ReportDateYearSelect';
 import {
   formatReportDateNumeric,
@@ -23,6 +24,7 @@ export interface ConsignerFilterDraft {
   dateTo: string;
   reportDate: string;
   snapshotId: string;
+  reportScope: 'all' | 'specific';
   districts: string[];
   consignerSearch: string;
   hideZeroChallans: boolean;
@@ -37,6 +39,8 @@ interface ConsignerEpassFiltersProps {
   values: ConsignerFilterValues;
   onApply: (next: ConsignerFilterValues) => void;
   onClear: () => void;
+  allowAllReports?: boolean;
+  reportScope?: 'all' | 'specific';
 }
 
 const inputClass =
@@ -54,7 +58,11 @@ export function buildConsignerFilterChips(values: ConsignerFilterValues): string
         : '…';
     chips.push(`${from} – ${to}`);
   }
-  if (values.reportDate) chips.push(formatReportDateNumeric(values.reportDate));
+  if (values.reportScope === 'all') {
+    chips.push('All reports');
+  } else if (values.reportDate) {
+    chips.push(formatReportDateNumeric(values.reportDate));
+  }
   if (values.districts.length > 0) {
     chips.push(
       values.districts.length === 1
@@ -74,14 +82,19 @@ export function ConsignerEpassFilters({
   values,
   onApply,
   onClear,
+  allowAllReports = true,
+  reportScope = 'specific',
 }: ConsignerEpassFiltersProps) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<ConsignerFilterDraft>(values);
+  const [draft, setDraft] = useState<ConsignerFilterDraft>(() => ({
+    ...values,
+    reportScope: values.reportScope ?? reportScope,
+  }));
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) setDraft(values);
-  }, [open, values]);
+    if (!open) setDraft({ ...values, reportScope: values.reportScope ?? reportScope });
+  }, [open, values, reportScope]);
 
   useEffect(() => {
     if (!open) return;
@@ -101,8 +114,12 @@ export function ConsignerEpassFilters({
 
   const dateOptions = useMemo(() => reportDateOptions(filteredSnapshots), [filteredSnapshots]);
 
+  const effectiveSnapshotId =
+    draft.reportScope === 'all' ? ALL_REPORTS_SNAPSHOT_ID : draft.snapshotId;
+
   useEffect(() => {
     if (!open) return;
+    if (draft.reportScope === 'all') return;
     if (dateOptions.length === 0) {
       setDraft((d) => ({ ...d, reportDate: '', snapshotId: '' }));
       return;
@@ -116,7 +133,7 @@ export function ConsignerEpassFilters({
         snapshotId: first.snapshotId,
       }));
     }
-  }, [open, dateOptions, draft.snapshotId]);
+  }, [open, dateOptions, draft.snapshotId, draft.reportScope]);
 
   const chips = buildConsignerFilterChips(values);
 
@@ -127,15 +144,26 @@ export function ConsignerEpassFilters({
   function handleApply() {
     let snapshotId = '';
     let reportDate = '';
-    if (dateOptions.length > 0) {
+    let nextReportScope = draft.reportScope;
+
+    if (draft.reportScope === 'all') {
+      snapshotId = '';
+      reportDate = '';
+    } else if (draft.dateMode === 'range') {
+      snapshotId = '';
+      reportDate = '';
+      nextReportScope = 'specific';
+    } else if (dateOptions.length > 0) {
       const match =
         dateOptions.find((o) => o.snapshotId === draft.snapshotId) ??
         dateOptions.find((o) => o.reportDate === draft.reportDate) ??
         dateOptions[0];
       snapshotId = match.snapshotId;
       reportDate = match.reportDate;
+      nextReportScope = 'specific';
     }
-    onApply({ ...draft, snapshotId, reportDate });
+
+    onApply({ ...draft, snapshotId, reportDate, reportScope: nextReportScope });
     setOpen(false);
   }
 
@@ -301,13 +329,26 @@ export function ConsignerEpassFilters({
                     </div>
                   ) : null}
 
-                  <ReportDateYearSelect
-                    idPrefix="consigner"
-                    options={dateOptions}
-                    snapshotId={draft.snapshotId}
-                    onChange={(snapshotId, reportDate) => patch({ snapshotId, reportDate })}
-                    inputClass={inputClass}
-                  />
+                  {draft.dateMode !== 'range' || draft.reportScope === 'all' ? (
+                    <ReportDateYearSelect
+                      idPrefix="consigner"
+                      options={dateOptions}
+                      snapshotId={effectiveSnapshotId}
+                      allowAllReports={allowAllReports}
+                      onChange={(snapshotId, reportDate) => {
+                        if (snapshotId === ALL_REPORTS_SNAPSHOT_ID) {
+                          patch({ reportScope: 'all', snapshotId: '', reportDate: '' });
+                        } else {
+                          patch({
+                            reportScope: 'specific',
+                            snapshotId,
+                            reportDate,
+                          });
+                        }
+                      }}
+                      inputClass={inputClass}
+                    />
+                  ) : null}
 
                   <div>
                     <p className="text-xs uppercase tracking-wider text-text-secondary">District</p>

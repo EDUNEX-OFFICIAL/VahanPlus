@@ -1,2 +1,1 @@
--- AlterTable
-ALTER TABLE "system"."ReportAggregateCheckpoint" ALTER COLUMN "id" SET DEFAULT 'default';
+-- No-op: ReportAggregateCheckpoint is created in 20260607120000_reporting_read_models (later timestamp).

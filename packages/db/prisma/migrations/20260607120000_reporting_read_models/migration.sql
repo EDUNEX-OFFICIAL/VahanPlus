@@ -202,7 +202,7 @@ CREATE INDEX "ReportPassContribution_vehicleRegNo_idx" ON "processed"."ReportPas
 CREATE INDEX "ReportPassContribution_entityKey_idx" ON "processed"."ReportPassContribution"("entityKey");
 
 CREATE TABLE "system"."ReportAggregateCheckpoint" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL DEFAULT 'default',
     "aggregatorVersion" INTEGER NOT NULL DEFAULT 1,
     "lastSnapshotId" TEXT,
     "updatedAt" TIMESTAMP(3) NOT NULL,

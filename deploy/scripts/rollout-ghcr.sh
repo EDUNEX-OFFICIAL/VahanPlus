@@ -138,6 +138,36 @@ if [[ "$HELM_WAIT" == "true" ]]; then
   HELM_ARGS+=(--wait --timeout 15m)
 fi
 
+# Recover from a stuck release (e.g. CI cancelled mid-upgrade via concurrency).
+unlock_stuck_helm_release() {
+  local status
+  status="$(helm status "$RELEASE" -n "$NAMESPACE" -o json 2>/dev/null \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('info',{}).get('status',''))" 2>/dev/null || true)"
+  case "$status" in
+    pending-upgrade | pending-install | pending-rollback)
+      echo "==> Helm release stuck in ${status}; rolling back to last deployed revision"
+      local rev
+      rev="$(helm history "$RELEASE" -n "$NAMESPACE" -o json 2>/dev/null \
+        | python3 -c "
+import json, sys
+revs = [r for r in json.load(sys.stdin) if r.get('status') == 'deployed']
+print(revs[-1]['revision'] if revs else '')
+" 2>/dev/null || true)"
+      if [[ -z "$rev" ]]; then
+        echo "ERROR: no deployed revision to roll back to for ${RELEASE} in ${NAMESPACE}" >&2
+        exit 1
+      fi
+      local rollback_args=(rollback "$RELEASE" "$rev" -n "$NAMESPACE")
+      if [[ "$HELM_WAIT" == "true" ]]; then
+        rollback_args+=(--wait --timeout 5m)
+      fi
+      helm "${rollback_args[@]}"
+      ;;
+  esac
+}
+
+unlock_stuck_helm_release
+
 echo "==> Helm upgrade"
 helm "${HELM_ARGS[@]}"
 

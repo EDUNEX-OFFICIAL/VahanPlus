@@ -11,8 +11,9 @@ env:
 
 jobs:
   build-and-push:
+    # Per-image group: matrix jobs must not cancel each other (same ref group did that).
     concurrency:
-      group: docker-build-${{ github.ref }}
+      group: docker-build-${{ github.ref }}-${{ matrix.image }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     permissions:
